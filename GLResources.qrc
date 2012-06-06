@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>GLResources/shaders/blinn.frag</file>
+        <file>GLResources/shaders/blinn.vert</file>
+        <file>GLResources/shaders/default.frag</file>
+        <file>GLResources/shaders/default.vert</file>
+        <file>GLResources/shaders/plainColour.frag</file>
+        <file>GLResources/shaders/plainColour.vert</file>
+        <file>GLResources/shaders/standardSurface.frag</file>
+        <file>GLResources/shaders/standardSurface.vert</file>
+    </qresource>
+</RCC>
