@@ -3,6 +3,8 @@
 
 #include "X3DGlobal.h"
 #include "XList"
+#undef min
+#undef max
 #include "Eigen/Geometry"
 #include "XVector3D"
 #include "XMatrix4x4"
