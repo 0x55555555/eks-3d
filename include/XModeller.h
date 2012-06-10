@@ -45,6 +45,7 @@ public:
 
     void drawCone(const XVector3D &point, const XVector3D &direction, float length, float radius, xuint32 divs=6);
 
+    void drawSphere(float radius, int lats = 8, int longs = 12);
     void drawCube( XVector3D horizontal=XVector3D(1,0,0), XVector3D vertical=XVector3D(0,1,0), XVector3D depth=XVector3D(0,0,1), float tX=0.0, float tY=0.0 );
     void drawQuad( XVector3D horizontal, XVector3D vertical );
     void drawLocator( XSize size=XSize(1,1,1), XVector3D center=XVector3D() );
@@ -77,7 +78,7 @@ private:
         {
         State() : normal(XVector3D::Zero()),
             texture(XVector2D::Zero()),
-            colour(1.0f, 1.0f, 1.0f, 1.0f),
+            colour(0.0f, 0.0f, 0.0f, 0.0f),
             type( None ),
             normalsAutomatic( false )
           {

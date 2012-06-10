@@ -1,4 +1,4 @@
-varying vec3 normal;
+varying vec3 normalData;
 uniform vec4 diffuse;
 
 void main(void)
@@ -11,6 +11,6 @@ void main(void)
     }
   else
     {
-    gl_FragColor = vec4( abs(normalize(normal)), 1.0 );
+    gl_FragColor = vec4( abs(normalize(normalData)), 1.0 );
     }
   }

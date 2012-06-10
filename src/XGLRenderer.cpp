@@ -301,6 +301,17 @@ void XGLRenderer::debugRenderLocator(DebugLocatorMode m)
     glVertex3f(0, 0, -0.5);
     glVertex3f(0, 0, 0.5);
   glEnd();
+
+
+  glBegin(GL_TRIANGLES);
+    glVertex3f(-0.5, 0, 0);
+    glVertex3f(0, 0, 0);
+    glVertex3f(0, -0.5, 0);
+
+    glVertex3f(0, 0, 0);
+    glVertex3f(-0.5, 0, 0);
+    glVertex3f(0, -0.5, 0);
+  glEnd();
   }
 
 void XGLRenderer::enableRenderFlag( RenderFlags f )
