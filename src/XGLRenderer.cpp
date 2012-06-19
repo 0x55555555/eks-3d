@@ -381,7 +381,7 @@ void XGLRenderer::drawGeometry( const XGeometry &cache )
     glBindBuffer( GL_ARRAY_BUFFER, gC->_vertexArray ) GLE;
 
     m_ids.clear();
-    foreach( const XGLGeometryCache::DrawCache &ref, gC->_cache )
+    Q_FOREACH( const XGLGeometryCache::DrawCache &ref, gC->_cache )
       {
       int location( _currentShader->shader.attributeLocation(ref.name) );
       if( location >= 0 )
@@ -413,7 +413,7 @@ void XGLRenderer::drawGeometry( const XGeometry &cache )
       glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
       }
 
-    foreach( int id, m_ids )
+    Q_FOREACH( int id, m_ids )
       {
       glDisableVertexAttribArray( id ) GLE;
       }
@@ -439,7 +439,7 @@ void XGLRenderer::setShader( const XShader *shader )
       _currentShader->shader.bind() GLE;
 
       int x=0;
-      foreach( XShaderVariable *var, shader->variables() )
+      Q_FOREACH( XShaderVariable *var, shader->variables() )
         {
         XGLShaderVariable *glVar( static_cast<XGLShaderVariable*>(var->internal()) );
         if( glVar->_texture )
@@ -1212,7 +1212,7 @@ void XGLGeometryCache::setAttribute( QString name, const XVector<XVector4D> &att
 
 int XGLGeometryCache::getCacheOffset( const QString &name, int components, int attrSize )
     {
-    foreach( const DrawCache &ref, _cache )
+    Q_FOREACH( const DrawCache &ref, _cache )
         {
         if( ref.name == name )
             {

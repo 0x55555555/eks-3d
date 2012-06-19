@@ -13,7 +13,7 @@
 template <typename T> XVector <T> toVector( const QVariantList &variantList )
   {
   XVector <T> ret;
-  foreach( const QVariant &variant, variantList )
+  Q_FOREACH( const QVariant &variant, variantList )
     {
     ret << variant.value<T>();
     }
@@ -23,7 +23,7 @@ template <typename T> XVector <T> toVector( const QVariantList &variantList )
 template <typename T> QVariantList toList( const QVector <T> &vector )
   {
   QVariantList ret;
-  foreach( const T &var, vector )
+  Q_FOREACH( const T &var, vector )
     {
     ret << QVariant::fromValue<T>( var );
     }
@@ -352,7 +352,7 @@ XShader::XShader() : _renderer( 0 ), _internal( 0 )
 
 XShader::XShader( const XShader &c ) : _renderer( 0 ), _components(c._components), _internal( 0 )
   {
-  foreach( QString n, c._variables.keys() )
+  Q_FOREACH( QString n, c._variables.keys() )
     {
     XShaderVariable *var = getVariable( n );
     var->setVariantValue( c._variables.value(n)->value() );
@@ -380,7 +380,7 @@ void XShader::clear()
   {
   _components.clear();
 
-  foreach( XShaderVariable *var, _variables )
+  Q_FOREACH( XShaderVariable *var, _variables )
     {
     delete var;
     }
@@ -441,7 +441,7 @@ void XShader::prepareInternal( XRenderer *renderer ) const
 
     XShader *logAccess((XShader*)this);
     logAccess->_log.clear();
-    foreach(const Component &c, _components)
+    Q_FOREACH(const Component &c, _components)
       {
       bool result = _internal->addComponent(c.type, c.source, logAccess->_log);
 
@@ -462,7 +462,7 @@ void XShader::prepareInternal( XRenderer *renderer ) const
       logAccess->_log << "Shader was not valid for use after building.";
       }
 
-    foreach( XShaderVariable *var, _variables )
+    Q_FOREACH( XShaderVariable *var, _variables )
       {
       var->prepareInternal();
       var->internal()->rebind();

@@ -26,7 +26,7 @@ void XDoodad::renderFull( )
 
     if( !testAttribute( DoesntRenderChildren ) )
         {
-        foreach( XDoodad *dood, _childrenDoodads )
+        Q_FOREACH( XDoodad *dood, _childrenDoodads )
             {
             dood->renderFull( );
             }
@@ -46,7 +46,7 @@ XCuboid XDoodad::bounds() const
 XCuboid XDoodad::childrenBounds() const
     {
     XCuboid ret;
-    foreach( XDoodad *dood, _childrenDoodads )
+    Q_FOREACH( XDoodad *dood, _childrenDoodads )
         {
         ret |= dood->bounds();
         }
@@ -110,7 +110,7 @@ void XDoodad::transformEvent( XTransformEvent *event )
         _globalTransform = transform();
         }
 
-    foreach( XDoodad *dood, _childrenDoodads )
+    Q_FOREACH( XDoodad *dood, _childrenDoodads )
         {
         dood->transformEvent( event );
         }
@@ -143,7 +143,7 @@ void XDoodad::setScene( XScene *scene )
         _globalTransform = parentDoodad()->globalTransform() * transform();
         }
 
-    foreach( XDoodad *dood, _childrenDoodads )
+    Q_FOREACH( XDoodad *dood, _childrenDoodads )
         {
         dood->setScene( scene );
         }

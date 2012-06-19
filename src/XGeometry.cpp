@@ -258,7 +258,7 @@ XCuboid XGeometry::computeBounds() const
   const XVector<XVector3D> &vtxList = _attr3["vertex"];
 
   XCuboid ret;
-  foreach( const XVector3D &vtx, vtxList )
+  Q_FOREACH( const XVector3D &vtx, vtxList )
     {
     ret.unite(vtx);
     }
@@ -274,7 +274,7 @@ void XGeometry::setAttribute( const QString &name, const XList<XVector2D> &in )
   {
   XVector<XVector2D> ver;
   ver.reserve( in.size() );
-  foreach( const XVector2D &v, in )
+  Q_FOREACH( const XVector2D &v, in )
     {
     ver << v;
     }
@@ -285,7 +285,7 @@ void XGeometry::setAttribute( const QString &name, const XList<XVector3D> &in )
   {
   XVector<XVector3D> ver;
   ver.reserve( in.size() );
-  foreach( const XVector3D &v, in )
+  Q_FOREACH( const XVector3D &v, in )
     {
     ver << v;
     }
@@ -296,7 +296,7 @@ void XGeometry::setAttribute( const QString &name, const XList<XVector4D> &in )
   {
   XVector<XVector4D> ver;
   ver.reserve( in.size() );
-  foreach( const XVector4D &v, in )
+  Q_FOREACH( const XVector4D &v, in )
     {
     ver << v;
     }
@@ -355,19 +355,19 @@ void XGeometry::prepareInternal( XRenderer *r ) const
       {
       _internal->setAttributesSize( _attributeSize, _attr1.size(), _attr2.size(), _attr3.size(), _attr4.size() );
 
-      foreach( QString na, _attr1.keys() )
+      Q_FOREACH( QString na, _attr1.keys() )
         {
         _internal->setAttribute( na, _attr1[na] );
         }
-      foreach( QString na, _attr2.keys() )
+      Q_FOREACH( QString na, _attr2.keys() )
         {
         _internal->setAttribute( na, _attr2[na] );
         }
-      foreach( QString na, _attr3.keys() )
+      Q_FOREACH( QString na, _attr3.keys() )
         {
         _internal->setAttribute( na, _attr3[na] );
         }
-      foreach( QString na, _attr4.keys() )
+      Q_FOREACH( QString na, _attr4.keys() )
         {
         _internal->setAttribute( na, _attr4[na] );
         }
@@ -375,28 +375,28 @@ void XGeometry::prepareInternal( XRenderer *r ) const
       }
     else
       {
-      foreach( QString na, _changedA1 )
+      Q_FOREACH( QString na, _changedA1 )
         {
         if( _attr1.contains( na ) )
           {
           _internal->setAttribute( na, _attr1[na] );
           }
         }
-      foreach( QString na, _changedA2 )
+      Q_FOREACH( QString na, _changedA2 )
         {
         if( _attr2.contains( na ) )
           {
           _internal->setAttribute( na, _attr2[na] );
           }
         }
-      foreach( QString na, _changedA3 )
+      Q_FOREACH( QString na, _changedA3 )
         {
         if( _attr3.contains( na ) )
           {
           _internal->setAttribute( na, _attr3[na] );
           }
         }
-      foreach( QString na, _changedA4 )
+      Q_FOREACH( QString na, _changedA4 )
         {
         if( _attr4.contains( na ) )
           {
@@ -440,22 +440,22 @@ QDataStream EKS3D_EXPORT &operator>>( QDataStream &s, XGeometry &geo )
   s >> geo._attr1 >> geo._attr2 >> geo._attr3 >> geo._attr4 >> geo._points >> geo._lines >> geo._triangles;
 
   geo._attributeSize = -1;
-  foreach( const XVector<xReal> &vec, geo._attr1 )
+  Q_FOREACH( const XVector<xReal> &vec, geo._attr1 )
     {
     xAssert( geo._attributeSize == -1 || ( geo._attributeSize == vec.size() ) );
     geo._attributeSize = vec.size();
     }
-  foreach( const XVector<XVector2D> &vec, geo._attr2 )
+  Q_FOREACH( const XVector<XVector2D> &vec, geo._attr2 )
     {
     xAssert( geo._attributeSize == -1 || ( geo._attributeSize == vec.size() ) );
     geo._attributeSize = vec.size();
     }
-  foreach( const XVector<XVector3D> &vec, geo._attr3 )
+  Q_FOREACH( const XVector<XVector3D> &vec, geo._attr3 )
     {
     xAssert( geo._attributeSize == -1 || ( geo._attributeSize == vec.size() ) );
     geo._attributeSize = vec.size();
     }
-  foreach( const XVector<XVector4D> &vec, geo._attr4 )
+  Q_FOREACH( const XVector<XVector4D> &vec, geo._attr4 )
     {
     xAssert( geo._attributeSize == -1 || ( geo._attributeSize == vec.size() ) );
     geo._attributeSize = vec.size();

@@ -7,7 +7,7 @@ XAbstractRenderModel::Iterator::~Iterator()
 
 XAbstractRenderModel::~XAbstractRenderModel()
   {
-  foreach(XAbstractCanvas *canvas, _canvases)
+  Q_FOREACH(XAbstractCanvas *canvas, _canvases)
     {
     canvas->setModel(0);
     }
@@ -15,7 +15,7 @@ XAbstractRenderModel::~XAbstractRenderModel()
 
 void XAbstractRenderModel::update(UpdateMode m) const
   {
-  foreach(XAbstractCanvas *canvas, _canvases)
+  Q_FOREACH(XAbstractCanvas *canvas, _canvases)
     {
     canvas->update(m);
     }

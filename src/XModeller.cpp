@@ -399,15 +399,15 @@ void XModeller::drawGeometry( const XGeometry &geo )
   _texture << geo.attributes2D()["textureData"];
   _normals << transformNormals( geo.attributes3D()["normalData"] );
 
-  foreach( const unsigned int &i, geo.triangles() )
+  Q_FOREACH( const unsigned int &i, geo.triangles() )
     {
     _triIndices << begin + i;
     }
-  foreach( const unsigned int &i, geo.lines() )
+  Q_FOREACH( const unsigned int &i, geo.lines() )
     {
     _linIndices << begin + i;
     }
-  foreach( const unsigned int &i, geo.points() )
+  Q_FOREACH( const unsigned int &i, geo.points() )
     {
     _poiIndices << begin + i;
     }
@@ -415,25 +415,25 @@ void XModeller::drawGeometry( const XGeometry &geo )
 
 void XModeller::drawGeometry( XList <XVector3D> positions, const XGeometry &geo )
   {
-  foreach( const XVector3D &pos, positions )
+  Q_FOREACH( const XVector3D &pos, positions )
     {
     unsigned int begin( _vertex.size() );
-    foreach( const XVector3D &curPos, geo.attributes3D()["vertex"] )
+    Q_FOREACH( const XVector3D &curPos, geo.attributes3D()["vertex"] )
       {
       _vertex << transformPoint(curPos + pos);
       }
     _texture << geo.attributes2D()["texture"];
     _normals << transformNormals( geo.attributes3D()["normalData"] );
 
-    foreach( const unsigned int &i, geo.triangles() )
+    Q_FOREACH( const unsigned int &i, geo.triangles() )
       {
       _triIndices << begin + i;
       }
-    foreach( const unsigned int &i, geo.lines() )
+    Q_FOREACH( const unsigned int &i, geo.lines() )
       {
       _linIndices << begin + i;
       }
-    foreach( const unsigned int &i, geo.points() )
+    Q_FOREACH( const unsigned int &i, geo.points() )
       {
       _poiIndices << begin + i;
       }
@@ -494,7 +494,7 @@ XVector <XVector3D> XModeller::transformPoints( const XVector <XVector3D> &list 
   XVector <XVector3D> ret;
   ret.reserve(list.size());
 
-  foreach( const XVector3D &v, list )
+  Q_FOREACH( const XVector3D &v, list )
     {
     ret << _transform * v;
     }
@@ -517,7 +517,7 @@ XVector <XVector3D> XModeller::transformNormals( const XVector <XVector3D> &list
   XVector <XVector3D> ret;
   ret.reserve(list.size());
 
-  foreach( const XVector3D &v, list )
+  Q_FOREACH( const XVector3D &v, list )
     {
     ret << _transform.linear() * v;
     }

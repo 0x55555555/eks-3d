@@ -251,7 +251,7 @@ XGeometry XColladaFile::geometry( QString name ) const
 
         if( semantic == "POSITION" )
             {
-            foreach( QString name, attr3D.keys() )
+            Q_FOREACH( QString name, attr3D.keys() )
                 {
                 if( name == location )
                     {
@@ -262,7 +262,7 @@ XGeometry XColladaFile::geometry( QString name ) const
             }
         if( semantic == "NORMAL" )
             {
-            foreach( QString name, attr3D.keys() )
+            Q_FOREACH( QString name, attr3D.keys() )
                 {
                 if( name == location )
                     {
@@ -273,7 +273,7 @@ XGeometry XColladaFile::geometry( QString name ) const
             }
         if( semantic == "TEXCOORD" )
             {
-            foreach( QString name, attr2D.keys() )
+            Q_FOREACH( QString name, attr2D.keys() )
                 {
                 if( name == location )
                     {
