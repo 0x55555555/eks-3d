@@ -39,12 +39,14 @@ const char *glErrorString( int err )
     return "GL Error: No Error";
     }
 
-#if 1
+#if X_DEBUG
 # define GLE ; { int _GL = glGetError(); xAssertMessage(!_GL, "GL Error", _GL, glErrorString( _GL )); }
 # define GLE_QUIET ; glGetError()
 #else
-# define GLE ; { int _GL = glGetError(); if( _GL ) { qCritical() << __FILE__ << __LINE__<< glErrorString( _GL ); } }
-# define GLE_QUIET ; glGetError()
+# define GLE
+# define GLE_QUIET
+//# define GLE ; { int _GL = glGetError(); if( _GL ) { qCritical() << __FILE__ << __LINE__<< glErrorString( _GL ); } }
+//# define GLE_QUIET ; glGetError()
 #endif
 
 //----------------------------------------------------------------------------------------------------------------------
