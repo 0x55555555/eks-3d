@@ -39,7 +39,7 @@ const char *glErrorString( int err )
     return "GL Error: No Error";
     }
 
-#if X_DEBUG
+#ifdef X_DEBUG
 # define GLE ; { int _GL = glGetError(); xAssertMessage(!_GL, "GL Error", _GL, glErrorString( _GL )); }
 # define GLE_QUIET ; glGetError()
 #else
