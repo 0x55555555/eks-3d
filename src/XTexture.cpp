@@ -15,12 +15,10 @@ XTexture::XTexture( const QImage &im, quint32 opt ) : _texture( im ), _options( 
 
 XTexture::XTexture( const XTexture &cpy ) : _texture( cpy._texture ), _options( cpy._options ), _internal( cpy._internal ), _renderer( 0 )
   {
-  /*if(_internal)
+  if(_internal)
     {
     _internal->refCount().ref();
-    }*/
-  _internal = 0;
-  _texture.detach();
+    }
   }
 
 void XTexture::clean() const
