@@ -130,8 +130,11 @@ void XModeller::vertex( const XVector3D &vec )
 
         _normals[i1] = _normals[i2] = _normals[i3] = _normals[i4] = vec1.cross(vec2).normalized();
         }
-
-      _triIndices << _triIndices[_triIndices.size()-4] << _triIndices[_triIndices.size()-2];
+      
+      xsize idxA = _triIndices.size()-4;
+      xsize idxB = _triIndices.size()-2;
+      _triIndices << _triIndices[idxA];
+      _triIndices << _triIndices[idxB];
       _quadCount = 0;
       }
     }

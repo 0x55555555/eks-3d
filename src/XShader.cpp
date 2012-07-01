@@ -45,11 +45,13 @@ XShaderVariable::XShaderVariable( QString n, XShader *s, XAbstractShaderVariable
 
 XShaderVariable::~XShaderVariable( )
   {
+  X_HEAP_CHECK
   XAbstractShader *sInt = _shader->internal();
   if(sInt && _internal)
     {
     sInt->destroyVariable(_internal);
     }
+  X_HEAP_CHECK
   }
 
 void XShaderVariable::setValue( int value )
@@ -148,7 +150,7 @@ void XShaderVariable::setValue( const QMatrix4x4 &value )
   _internal ? _internal->setValue( value ) : xNoop();
   }
 
-void XShaderVariable::setValue( const XTexture &value )
+void XShaderVariable::setValue( const XTexture *value )
   {
   _value.setValue( value );
   _internal ? _internal->setValue( value ) : xNoop();
@@ -285,8 +287,8 @@ void XShaderVariable::setVariantValue( const QVariant &value )
       setValue( value.value<QMatrix4x3>() );
     else if( value.canConvert<QMatrix4x4>() )
       setValue( value.value<QMatrix4x4>() );
-    else if( value.canConvert<XTexture>() )
-      setValue( value.value<XTexture>() );
+    else if( value.canConvert<const XTexture*>() )
+      setValue( value.value<const XTexture*>() );
     else if( value.type() == QVariant::List )
       {
       QVariantList list = value.toList();
@@ -359,9 +361,26 @@ XShader::XShader( const XShader &c ) : _renderer( 0 ), _components(c._components
     }
   }
 
+XShader& XShader::operator=(const XShader &c)
+  {
+  _renderer = 0;
+  _components = c._components;
+  _internal = 0;
+
+  Q_FOREACH( QString n, c._variables.keys() )
+    {
+    XShaderVariable *var = getVariable( n );
+    var->setVariantValue( c._variables.value(n)->value() );
+    }
+
+  return *this;
+  }
+
 XShader::~XShader()
   {
+  X_HEAP_CHECK
   clear();
+  X_HEAP_CHECK
   }
 
 
@@ -383,10 +402,13 @@ void XShader::clear()
   Q_FOREACH( XShaderVariable *var, _variables )
     {
     delete var;
+    X_HEAP_CHECK
     }
   _variables.clear();
-
+  
+  X_HEAP_CHECK
   delete _internal;
+  X_HEAP_CHECK
   _internal = 0;
   }
 

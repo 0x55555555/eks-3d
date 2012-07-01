@@ -30,6 +30,11 @@ public:
   XTexture( const XTexture & );
   ~XTexture( );
 
+  XTexture& operator=(const XTexture &);
+
+  bool operator==(const XTexture &in) const;
+  bool operator!=(const XTexture &in) const { return !(*this == in); }
+
   void load( const QImage &, quint32 = None );
 
   void prepareInternal( XRenderer * ) const;
@@ -53,6 +58,6 @@ public:
   virtual QImage save( ) = 0;
   };
 
-Q_DECLARE_METATYPE(XTexture)
+Q_DECLARE_METATYPE(const XTexture*)
 
 #endif // XABSTRACTTEXTURE_H

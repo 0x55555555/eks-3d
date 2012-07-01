@@ -149,7 +149,7 @@ public:
     void setValue( const QMatrix4x2 &value );
     void setValue( const QMatrix4x3 &value );
     void setValue( const QMatrix4x4 &value );
-    void setValue( const XTexture &value );
+    void setValue( const XTexture *value );
     void setValueArray( const XVector<int> &values );
     void setValueArray( const XVector<xReal> &values );
     void setValueArray( const XVector<unsigned int> &values );
@@ -183,7 +183,7 @@ private:
     void clear();
     QString _name;
     int _location;
-    XTexture *_texture;
+    const XTexture *_texture;
     QVariant _value;
     friend class XGLRenderer;
     };
@@ -731,12 +731,14 @@ XGLShader::XGLShader( XGLRenderer *renderer ) : XAbstractShader( renderer ), sha
 
 XGLShader::~XGLShader()
   {
+  X_HEAP_CHECK
   XGLRenderer *r = static_cast<XGLRenderer*>(renderer());
   if(r && r->_currentShader == this)
     {
     r->_currentShader = 0;
     shader.release();
     }
+  X_HEAP_CHECK
   }
 
 bool XGLShader::addComponent(ComponentType c, const QString &source, QStringList &log)
@@ -795,11 +797,14 @@ bool XGLShader::isValid()
 
 XAbstractShaderVariable *XGLShader::createVariable( QString in, XAbstractShader *s )
   {
-  return new XGLShaderVariable( s, in );
+  XGLShaderVariable* var = new XGLShaderVariable( s, in );
+  qDebug() << "internal Variable" << var;
+  return var;
   }
 
 void XGLShader::destroyVariable( XAbstractShaderVariable *var )
   {
+  qDebug() << "desroy intrenalVariable" << var;
   delete var;
   }
 
@@ -816,7 +821,7 @@ XGLShaderVariable::XGLShaderVariable( XAbstractShader *s, QString name )
 
 XGLShaderVariable::~XGLShaderVariable( )
   {
-  delete _texture;
+  clear();
   }
 
 void XGLShaderVariable::setValue( int value )
@@ -931,11 +936,11 @@ void XGLShaderVariable::setValue( const QMatrix4x4 &value )
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
   }
 
-void XGLShaderVariable::setValue( const XTexture &value )
+void XGLShaderVariable::setValue( const XTexture *value )
   {
   clear();
   bindShader();
-  _texture = new XTexture( value );
+  _texture = value;
   _texture->prepareInternal( abstractShader()->renderer() ) GLE; // todo, use texture units.
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, (int)0) GLE; // static_cast<XGLTexture*>(_texture->internal())->_id) GLE;
   }
@@ -1043,10 +1048,6 @@ void XGLShaderVariable::rebind()
 
 void XGLShaderVariable::clear()
   {
-  if( _texture )
-    {
-    delete _texture;
-    }
   _texture = 0;
   }
 

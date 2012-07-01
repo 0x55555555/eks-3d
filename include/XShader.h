@@ -44,7 +44,7 @@ public:
   virtual void setValue( const QMatrix4x2 &value ) = 0;
   virtual void setValue( const QMatrix4x3 &value ) = 0;
   virtual void setValue( const QMatrix4x4 &value ) = 0;
-  virtual void setValue( const XTexture &value ) = 0;
+  virtual void setValue( const XTexture *value ) = 0;
   virtual void setValueArray( const XVector<int> &values ) = 0;
   virtual void setValueArray( const XVector<xReal> &values ) = 0;
   virtual void setValueArray( const XVector<unsigned int> &values ) = 0;
@@ -68,7 +68,7 @@ public:
 class EKS3D_EXPORT XShaderVariable
   {
 XProperties:
-  XROProperty( QVariant, value );
+  XRORefProperty( QVariant, value );
   XROProperty( XShader *, shader );
   XROProperty( QString, name );
   XROProperty( XAbstractShaderVariable *, internal );
@@ -92,7 +92,7 @@ public:
   void setValue( const QMatrix4x2 &value );
   void setValue( const QMatrix4x3 &value );
   void setValue( const QMatrix4x4 &value );
-  void setValue( const XTexture &value );
+  void setValue( const XTexture *value );
   void setValueArray( const XVector<int> &values );
   void setValueArray( const XVector<xReal> &values );
   void setValueArray( const XVector<unsigned int> &values );
@@ -161,6 +161,7 @@ public:
   XShader();
   XShader( const XShader & );
   ~XShader();
+  XShader& operator=(const XShader &);
 
   void addComponent(XAbstractShader::ComponentType, const QString &source);
   void clear();

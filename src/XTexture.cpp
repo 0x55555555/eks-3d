@@ -13,12 +13,29 @@ XTexture::XTexture( const QImage &im, quint32 opt ) : _texture( im ), _options( 
   {
   }
 
-XTexture::XTexture( const XTexture &cpy ) : _texture( cpy._texture ), _options( cpy._options ), _internal( cpy._internal ), _renderer( 0 )
+XTexture::XTexture( const XTexture &cpy )
+    : _texture( cpy._texture ),
+      _options( cpy._options ),
+      _internal( 0 ),
+      _renderer( 0 )
   {
+  }
+
+XTexture& XTexture::operator=(const XTexture &cpy)
+  {
+  clean();
+
+  _texture = cpy._texture;
+  _options = cpy._options;
+  _internal = 0;
+  _renderer = 0;
+
   if(_internal)
     {
     _internal->refCount().ref();
     }
+
+  return *this;
   }
 
 void XTexture::clean() const
@@ -39,6 +56,16 @@ XTexture::~XTexture( )
   clean();
   }
 
+bool XTexture::operator==(const XTexture &t) const
+  {
+  if(t._internal && t._internal == _internal)
+    {
+    return true;
+    }
+
+  return false;
+  }
+
 void XTexture::load( const QImage &im, quint32 opt )
   {
   QMutexLocker l(&_lock);
@@ -54,6 +81,8 @@ void XTexture::prepareInternal( XRenderer *r ) const
   if( !_internal )
     {
     _internal = r->getTexture();
+    _internal->refCount().ref();
+
     _renderer = r;
     if( !_texture.isNull() )
       {
