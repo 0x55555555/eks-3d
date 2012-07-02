@@ -174,7 +174,7 @@ public:
       XRenderer *r = GL_SHADER_VARIABLE_PARENT->renderer();
       if(static_cast<XGLRenderer*>(r)->_currentShader != GL_SHADER_VARIABLE_PARENT)
         {
-        static_cast<XGLRenderer*>(r)->_currentShader = GL_SHADER_VARIABLE_PARENT;
+        static_cast<XGLRenderer*>(r)->_currentShader = 0;
         GL_SHADER_VARIABLE_PARENT->shader.bind();
         }
       }
@@ -610,6 +610,7 @@ void XGLTexture::load( const QImage &im )
   {
   clear();
   _id = _renderer->context()->bindTexture( im ) GLE;
+  glBindTexture(GL_TEXTURE_2D, 0);
   }
 
 QImage XGLTexture::save( )
@@ -731,14 +732,12 @@ XGLShader::XGLShader( XGLRenderer *renderer ) : XAbstractShader( renderer ), sha
 
 XGLShader::~XGLShader()
   {
-  X_HEAP_CHECK
   XGLRenderer *r = static_cast<XGLRenderer*>(renderer());
   if(r && r->_currentShader == this)
     {
     r->_currentShader = 0;
     shader.release();
     }
-  X_HEAP_CHECK
   }
 
 bool XGLShader::addComponent(ComponentType c, const QString &source, QStringList &log)
