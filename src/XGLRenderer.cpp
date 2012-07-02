@@ -798,13 +798,11 @@ bool XGLShader::isValid()
 XAbstractShaderVariable *XGLShader::createVariable( QString in, XAbstractShader *s )
   {
   XGLShaderVariable* var = new XGLShaderVariable( s, in );
-  qDebug() << "internal Variable" << var;
   return var;
   }
 
 void XGLShader::destroyVariable( XAbstractShaderVariable *var )
   {
-  qDebug() << "desroy intrenalVariable" << var;
   delete var;
   }
 
