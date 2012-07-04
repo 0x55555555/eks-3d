@@ -402,13 +402,10 @@ void XShader::clear()
   Q_FOREACH( XShaderVariable *var, _variables )
     {
     delete var;
-    X_HEAP_CHECK
     }
   _variables.clear();
   
-  X_HEAP_CHECK
   delete _internal;
-  X_HEAP_CHECK
   _internal = 0;
   }
 
