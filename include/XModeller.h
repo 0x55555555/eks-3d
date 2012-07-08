@@ -38,8 +38,8 @@ public:
     bool normalsAutomatic( ) const;
 
     // Draw Functions
-    void drawGeometry( const XGeometry & );
-    void drawGeometry( XList <XVector3D> positions, const XGeometry & );
+    void drawGeometry( const XGeometry &, bool normaliseNormals=false );
+    void drawGeometry( XList <XVector3D> positions, const XGeometry &, bool normaliseNormals=false );
 
     void drawWireCube( const XCuboid &cube );
 
@@ -63,7 +63,7 @@ private:
     inline XVector <XVector3D> transformPoints( const XVector <XVector3D> & );
 
     inline XVector3D transformNormal( XVector3D );
-    inline XVector <XVector3D> transformNormals( const XVector <XVector3D> & );
+    inline XVector <XVector3D> transformNormals( const XVector <XVector3D> &, bool reNormalize );
 
     XGeometry *_geo;
     XVector <xuint32> _triIndices;

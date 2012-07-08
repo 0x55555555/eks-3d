@@ -394,13 +394,13 @@ void XModeller::drawQuad( XVector3D h, XVector3D v )
   _normals << norm << norm << norm << norm;
   }
 
-void XModeller::drawGeometry( const XGeometry &geo )
+void XModeller::drawGeometry( const XGeometry &geo, bool normaliseNormals )
   {
   unsigned int begin( _vertex.size() );
 
   _vertex << transformPoints( geo.attributes3D()["vertex"] );
   _texture << geo.attributes2D()["textureData"];
-  _normals << transformNormals( geo.attributes3D()["normalData"] );
+  _normals << transformNormals( geo.attributes3D()["normalData"], normaliseNormals );
 
   Q_FOREACH( const unsigned int &i, geo.triangles() )
     {
@@ -416,7 +416,7 @@ void XModeller::drawGeometry( const XGeometry &geo )
     }
   }
 
-void XModeller::drawGeometry( XList <XVector3D> positions, const XGeometry &geo )
+void XModeller::drawGeometry(XList <XVector3D> positions, const XGeometry &geo, bool normaliseNormals)
   {
   Q_FOREACH( const XVector3D &pos, positions )
     {
@@ -426,7 +426,7 @@ void XModeller::drawGeometry( XList <XVector3D> positions, const XGeometry &geo 
       _vertex << transformPoint(curPos + pos);
       }
     _texture << geo.attributes2D()["texture"];
-    _normals << transformNormals( geo.attributes3D()["normalData"] );
+    _normals << transformNormals( geo.attributes3D()["normalData"], normaliseNormals );
 
     Q_FOREACH( const unsigned int &i, geo.triangles() )
       {
@@ -510,7 +510,7 @@ XVector3D XModeller::transformNormal( XVector3D in )
   return _transform.linear() * in;
   }
 
-XVector <XVector3D> XModeller::transformNormals( const XVector <XVector3D> &list )
+XVector <XVector3D> XModeller::transformNormals( const XVector <XVector3D> &list, bool reNormalize )
   {
   if( _transform.isApprox(XTransform::Identity()) )
     {
@@ -520,9 +520,19 @@ XVector <XVector3D> XModeller::transformNormals( const XVector <XVector3D> &list
   XVector <XVector3D> ret;
   ret.reserve(list.size());
 
-  Q_FOREACH( const XVector3D &v, list )
+  if(reNormalize)
     {
-    ret << _transform.linear() * v;
+    Q_FOREACH( const XVector3D &v, list )
+      {
+      ret << (_transform.linear() * v).normalized();
+      }
+    }
+  else
+    {
+    Q_FOREACH( const XVector3D &v, list )
+      {
+      ret << _transform.linear() * v;
+      }
     }
 
   return ret;

@@ -38,7 +38,9 @@ SOURCES += ../src/XDoodad.cpp \
     ../src/XAbstractDelegate.cpp \
     ../src/XAbstractCanvasController.cpp \
     ../src/X3DCanvas.cpp \
-    ../src/XCameraCanvasController.cpp
+    ../src/XCameraCanvasController.cpp \
+    ../src/XObjLoader.cpp
+
 HEADERS += ../include/XDoodad.h \
     ../include/X3DGlobal.h \
     ../include/XScene.h \
@@ -68,7 +70,9 @@ HEADERS += ../include/XDoodad.h \
     ../include/XAbstractDelegate.h \
     ../include/XAbstractCanvasController.h \
     ../include/X3DCanvas.h \
-    ../include/XCameraCanvasController.h
+    ../include/XCameraCanvasController.h \
+    ../include/XObjLoader.h
+
 DEFINES += GLEW_STATIC
 
 INCLUDEPATH += ../include/ \
