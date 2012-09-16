@@ -47,7 +47,7 @@ public:
 
     void drawSphere(float radius, int lats = 8, int longs = 12);
     void drawCube( XVector3D horizontal=XVector3D(1,0,0), XVector3D vertical=XVector3D(0,1,0), XVector3D depth=XVector3D(0,0,1), float tX=0.0, float tY=0.0 );
-    void drawQuad( XVector3D horizontal, XVector3D vertical );
+    void drawQuad( XVector3D horizontal=XVector3D(1,0,0), XVector3D vertical=XVector3D(0,1,0) );
     void drawLocator( XSize size=XSize(1,1,1), XVector3D center=XVector3D() );
 
     void drawCurve( const XAbstractCurve <XVector3D> &, xsize segments );

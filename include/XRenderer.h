@@ -6,6 +6,7 @@
 #include "XTransform.h"
 #include "XGeometry.h"
 #include "XProperty"
+#include "XFlags"
 
 class XShape;
 typedef XList<XShape> XShapeList;
@@ -81,7 +82,26 @@ protected:
     virtual void disableRenderFlag( RenderFlags ) = 0;
 
 private:
-    int _renderFlags;
+    XFlags<RenderFlags, int> _renderFlags;
     };
+
+class XRendererFlagBlock
+  {
+public:
+  XRendererFlagBlock(XRenderer *r, int flagsToSet) : _renderer(r)
+    {
+    _oldFlags = _renderer->renderFlags();
+    _renderer->setRenderFlags(_oldFlags | flagsToSet);
+    }
+
+  ~XRendererFlagBlock()
+    {
+    _renderer->setRenderFlags(_oldFlags);
+    }
+
+private:
+  XRenderer *_renderer;
+  int _oldFlags;
+  };
 
 #endif // XRENDERER_H

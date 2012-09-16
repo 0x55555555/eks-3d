@@ -39,21 +39,27 @@ void XRenderer::drawShapes( XShapeList &list )
 
 void XRenderer::setRenderFlags( int flags )
   {
-  _renderFlags = flags;
   for( unsigned int x=0; x<sizeof(int)*8; x++ )
     {
-    if( flags & (1 << x) )
+    int flag = 1 << x;
+    bool newHasFlag = (flags & flag) != 0;
+
+    if(newHasFlag != _renderFlags.hasAnyFlags(flag))
       {
-      enableRenderFlag( (RenderFlags)(1 << x) );
-      }
-    else
-      {
-      disableRenderFlag( (RenderFlags)(1 << x) );
+      if(newHasFlag)
+        {
+        enableRenderFlag( (RenderFlags)(1 << x) );
+        }
+      else
+        {
+        disableRenderFlag( (RenderFlags)(1 << x) );
+        }
       }
     }
+  _renderFlags = flags;
   }
 
 int XRenderer::renderFlags() const
   {
-  return _renderFlags;
+  return *_renderFlags;
   }

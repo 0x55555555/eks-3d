@@ -22,7 +22,7 @@ public:
     };
 
 XProperties:
-  XROProperty( QImage, texture );
+  XRORefProperty( QImage, texture );
   XROProperty( quint32, options );
 
 public:
