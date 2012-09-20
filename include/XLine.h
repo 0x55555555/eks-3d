@@ -17,7 +17,7 @@ public:
     PointAndDirection
     };
 
-  XLine( XVector3D, XVector3D, ConstructionMode=TwoPoints );
+  XLine( const XVector3D &, const XVector3D &, ConstructionMode=TwoPoints );
 
   void transform(const XTransform &);
 

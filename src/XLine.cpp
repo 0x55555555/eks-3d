@@ -2,11 +2,11 @@
 #include "XTransform.h"
 #include "XPlane.h"
 
-XLine::XLine( XVector3D p1, XVector3D p2, ConstructionMode mode ) : _position(p1)
+XLine::XLine( const XVector3D &p1, const XVector3D &p2, ConstructionMode mode ) : _position(p1)
   {
   if(mode == TwoPoints)
     {
-    _direction = p2-p1;
+    _direction = (p2-p1).normalized();
     }
   else
     {
