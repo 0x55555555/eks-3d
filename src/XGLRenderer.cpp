@@ -226,7 +226,7 @@ private:
         {
         QString name;
         int components;
-        int offset;
+        xsize offset;
         };
     XList <DrawCache> _cache;
     int _usedCacheSize;
