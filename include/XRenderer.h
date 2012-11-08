@@ -2,12 +2,11 @@
 #define XRENDERER_H
 
 #include "X3DGlobal.h"
-#include "XObject"
-#include "XTransform.h"
 #include "XGeometry.h"
 #include "XProperty"
 #include "XFlags"
 
+class XColour;
 class XShape;
 typedef XList<XShape> XShapeList;
 class XAbstractGeometry;
@@ -22,14 +21,15 @@ class XRendererType
   XRefProperty(QAtomicInt, refCount);
   };
 
-class EKS3D_EXPORT XRenderer : public XObject
+class EKS3D_EXPORT XRenderer
     {
-    X_OBJECT( XRenderer, XObject, 4 )
-
 public:
     XRenderer( );
     virtual ~XRenderer( );
-    virtual void pushTransform( const XTransform & ) = 0;
+
+    typedef Eigen::Affine3f Transform;
+
+    virtual void pushTransform( const Transform & ) = 0;
     virtual void popTransform( ) = 0;
 
     enum ClearMode
@@ -37,6 +37,7 @@ public:
       ClearColour = 1,
       ClearDepth = 2
       };
+    virtual void setClearColour(const XColour &col) = 0;
     virtual void clear(int=ClearColour|ClearDepth) = 0;
 
     // creation accessors for abstract types
@@ -62,7 +63,6 @@ public:
     void setRenderFlags( int );
     virtual int renderFlags() const;
 
-    virtual void setViewportSize( QSize ) = 0;
     virtual void setProjectionTransform( const XComplexTransform & ) = 0;
 
     // set the current shader

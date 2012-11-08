@@ -279,6 +279,11 @@ void XGLRenderer::popTransform( )
     glPopMatrix() GLE;
     }
 
+void XGLRenderer::setClearColour(const XColour &col)
+  {
+  glClearColor(col.x(), col.y(), col.z(), col.w());
+  }
+
 void XGLRenderer::clear( int c )
     {
     int realMode = ((c&ClearColour) != false) ? GL_COLOR_BUFFER_BIT : 0;

@@ -54,7 +54,9 @@ public:
     friend EKS3D_EXPORT QTextStream &operator>>(QTextStream &stream, XCuboid &itemRequest);
     };
 
+#if X_DECLARE_METATYPES
 Q_DECLARE_METATYPE(XCuboid)
+#endif
 
 inline XCuboid operator *( const XTransform &mat, const XCuboid &cub )
   {

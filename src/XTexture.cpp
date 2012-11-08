@@ -1,6 +1,5 @@
 #include "XTexture.h"
 #include "XRenderer.h"
-#include "QGLContext"
 #include "QImage"
 
 #include "QDebug"

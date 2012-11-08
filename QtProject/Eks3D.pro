@@ -9,6 +9,7 @@ include("../../EksCore/GeneralOptions.pri")
 
 QT += opengl \
     xml
+
 SOURCES += ../src/XDoodad.cpp \
     ../src/XScene.cpp \
     ../src/XCuboid.cpp \
@@ -20,8 +21,6 @@ SOURCES += ../src/XDoodad.cpp \
     ../src/XGeometry.cpp \
     ../src/XShader.cpp \
     ../src/XTexture.cpp \
-    ../src/XGLRenderer.cpp \
-    ../3rdParty/GL/glew.c \
     ../src/XModeller.cpp \
     ../src/XColladaFile.cpp \
     ../src/XShape.cpp \
@@ -37,9 +36,9 @@ SOURCES += ../src/XDoodad.cpp \
     ../src/XAbstractRenderModel.cpp \
     ../src/XAbstractDelegate.cpp \
     ../src/XAbstractCanvasController.cpp \
-    ../src/X3DCanvas.cpp \
     ../src/XCameraCanvasController.cpp \
-    ../src/XObjLoader.cpp
+    ../src/XObjLoader.cpp \
+    ../src/XD3DRendererImpl.cpp
 
 HEADERS += ../include/XDoodad.h \
     ../include/X3DGlobal.h \
@@ -53,7 +52,6 @@ HEADERS += ../include/XDoodad.h \
     ../include/XGeometry.h \
     ../include/XShader.h \
     ../include/XTexture.h \
-    ../include/XGLRenderer.h \
     ../include/XModeller.h \
     ../include/XColladaFile.h \
     ../include/XShape.h \
@@ -69,15 +67,31 @@ HEADERS += ../include/XDoodad.h \
     ../include/XAbstractRenderModel.h \
     ../include/XAbstractDelegate.h \
     ../include/XAbstractCanvasController.h \
-    ../include/X3DCanvas.h \
     ../include/XCameraCanvasController.h \
-    ../include/XObjLoader.h
+    ../include/XObjLoader.h \
+    ../include/XD3DRendererImpl.h
 
-DEFINES += GLEW_STATIC
 
 INCLUDEPATH += ../include/ \
-    $$ROOT/Eks/EksCore/ \
-    ../3rdParty
+    $$ROOT/Eks/EksCore/
+
+
+win32-arm-msvc2012 {
+  SOURCES += ../src/XD3DRenderer.cpp
+
+  HEADERS += ../include/XD3DRenderer.h
+
+  LIBS += -ld2d1 -ld3d11 -ldxgi -lwindowscodecs -ldwrite
+} else {
+  INCLUDEPATH += ../3rdParty
+  DEFINES += GLEW_STATIC
+  SOURCES += ../3rdParty/GL/glew.c \
+             ../src/XGLRenderer.cpp \
+             ../src/X3DCanvas.cpp
+
+  HEADERS += ../include/XGLRenderer.h \
+             ../include/X3DCanvas.h
+}
 
 LIBS += -lEksCore
 

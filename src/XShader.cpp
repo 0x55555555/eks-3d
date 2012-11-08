@@ -1,14 +1,16 @@
 #include "XShader.h"
 #include "XRenderer.h"
 #include "XTexture.h"
-#include "QGLShaderProgram"
 #include "XRenderer.h"
 #include "QVariant"
 #include "QVector2D"
 #include "QVector3D"
 #include "QVector4D"
+#include "QMatrix4x4"
 #include "QStringList"
 #include "QFile"
+
+#if 0
 
 template <typename T> XVector <T> toVector( const QVariantList &variantList )
   {
@@ -252,6 +254,7 @@ void XShaderVariable::setValueArray( const XVector<QMatrix4x4> &value )
   _internal ? _internal->setValueArray( value ) : xNoop();
   }
 
+#if 0
 void XShaderVariable::setVariantValue( const QVariant &value )
   {
   _value = value;
@@ -329,6 +332,7 @@ void XShaderVariable::setVariantValue( const QVariant &value )
       }
     }
   }
+#endif
 
 void XShaderVariable::prepareInternal( )
   {
@@ -493,3 +497,5 @@ XAbstractShader *XShader::internal( ) const
   {
   return _internal;
   }
+
+#endif

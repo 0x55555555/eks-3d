@@ -12,8 +12,10 @@
 typedef Eigen::Affine3f XTransform;
 typedef Eigen::Projective3f XComplexTransform;
 
+#if X_DECLARE_METATYPES
 Q_DECLARE_METATYPE(XTransform)
 Q_DECLARE_METATYPE(XComplexTransform)
+#endif
 
 namespace XTransformUtilities
 {

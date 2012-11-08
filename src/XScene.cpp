@@ -31,6 +31,8 @@ void XScene::renderScene( )
     {
     if( _root && renderer() && camera() )
         {
+      xAssertFail();
+#if 0
         renderer()->setViewportSize( _viewportSize );
         renderer()->clear();
 
@@ -47,6 +49,7 @@ void XScene::renderScene( )
         trigger( frameEvent( &ev2 ) );
 
         renderer()->popTransform();
+#endif
         }
     else
         {
@@ -58,6 +61,9 @@ void XScene::setViewportSize( QSize size )
     {
     _viewportSize = size;
 
+    xAssertFail();
+
+#if 0
     renderer()->setViewportSize( size );
 
     if( _camera )
@@ -65,6 +71,7 @@ void XScene::setViewportSize( QSize size )
         _camera->setViewportSize( size );
         }
     trigger( update() );
+#endif
     }
 
 void XScene::setCamera( XCamera *cam )

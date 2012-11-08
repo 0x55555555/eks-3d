@@ -20,6 +20,8 @@ public:
 
     void intialise();
 
+    void setViewportSize( QSize );
+
     virtual XAbstractShader *getShader( );
     virtual XAbstractGeometry *getGeometry( XGeometry::BufferType );
     virtual XAbstractTexture *getTexture();
@@ -35,12 +37,12 @@ public:
     virtual void pushTransform( const XTransform & );
     virtual void popTransform( );
 
+    virtual void setClearColour(const XColour &col);
     virtual void clear(int=ClearColour|ClearDepth);
 
     virtual void enableRenderFlag( RenderFlags );
     virtual void disableRenderFlag( RenderFlags );
 
-    virtual void setViewportSize( QSize );
     virtual void setProjectionTransform( const XComplexTransform & );
 
     virtual void setShader( const XShader * );
