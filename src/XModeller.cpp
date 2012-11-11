@@ -4,6 +4,8 @@
 #include "XSize"
 #include "XCuboid.h"
 
+#if 0
+
 XModeller::XModeller( XGeometry *g, xsize initialSize ) : _geo( g ), _transform(XTransform::Identity())
   {
   _vertex.reserve(initialSize);
@@ -559,3 +561,5 @@ void XModeller::drawCurve( const XAbstractCurve <XVector3D> &curve, xsize segmen
     _normals << XVector3D();
     }
   }
+
+#endif

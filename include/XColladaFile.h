@@ -1,6 +1,8 @@
 #ifndef XCOLLADAFILE_H
 #define XCOLLADAFILE_H
 
+#if 0
+
 #include "X3DGlobal.h"
 #include "QDomDocument"
 #include "XHash"
@@ -22,5 +24,7 @@ private:
     XHash <QString, QDomElement> _geometries;
     QDomDocument _document;
     };
+
+#endif
 
 #endif // XCOLLADA_H

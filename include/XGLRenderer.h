@@ -1,6 +1,10 @@
 #ifndef XGLRENDERER_H
 #define XGLRENDERER_H
 
+#include "XGlobal"
+
+#ifndef X_ARCH_ARM
+
 #include "XRenderer.h"
 #include "QSize"
 
@@ -59,5 +63,7 @@ public:
     XGLFramebuffer *_currentFramebuffer;
     XVector <int> m_ids;
     };
+
+#endif
 
 #endif // XGLRENDERER_H

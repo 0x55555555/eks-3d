@@ -10,6 +10,8 @@
 #include "XColour"
 #include "XTransform.h"
 
+#if 0
+
 template <typename T> class XAbstractCurve;
 
 class EKS3D_EXPORT XModeller
@@ -106,5 +108,7 @@ void XModeller::texture( xReal x, xReal y )
 
 void XModeller::colour( xReal x, xReal y, xReal z, xReal w )
     { colour( XVector4D(x,y,z,w) ); }
+
+#endif
 
 #endif // XMODELLER_H

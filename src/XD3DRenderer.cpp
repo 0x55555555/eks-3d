@@ -8,13 +8,12 @@
 
 using namespace DirectX;
 
-XD3DRenderer::XD3DRenderer(IUnknown *window, xuint32 w, xuint32 h, Rotation rotation)
+XD3DRenderer::XD3DRenderer(IUnknown *window)
   {
   _impl = new XD3DRendererImpl;
 
   _impl->_window = window;
   _impl->createResources();
-  resize(w, h, rotation);
   setClearColour(XColour(0.0f, 0.0f, 0.0f));
   }
 
@@ -24,12 +23,12 @@ XD3DRenderer::~XD3DRenderer()
   _impl = 0;
   }
 
-ID3D11Device *XD3DRenderer::getD3DDevice()
+ID3D11Device1 *XD3DRenderer::getD3DDevice()
   {
   return _impl->_d3dDevice;
   }
 
-ID3D11DeviceContext *XD3DRenderer::getD3DContext()
+ID3D11DeviceContext1 *XD3DRenderer::getD3DContext()
   {
   return _impl->_d3dContext;
   }
@@ -47,7 +46,7 @@ void XD3DRenderer::beginFrame()
 void XD3DRenderer::endFrame(bool *deviceListOptional)
   {
   XOptional<bool> deviceLost(deviceListOptional);
-  deviceLost = true;
+  deviceLost = false;
 
   // The application may optionally specify "dirty" or "scroll"
   // rects to improve efficiency in certain scenarios.
@@ -74,14 +73,11 @@ void XD3DRenderer::endFrame(bool *deviceListOptional)
   // must recreate all device resources.
   if (hr == DXGI_ERROR_DEVICE_REMOVED)
     {
-    deviceLost = false;
+    deviceLost = true;
     }
   else
     {
-    if(FAILED(hr))
-      {
-      xAssertFail();
-      }
+    failedCheck(hr);
     }
   }
 
@@ -100,9 +96,7 @@ void XD3DRenderer::popTransform( )
 
 void XD3DRenderer::setClearColour(const XColour &col)
   {
-  XColour col2;
-  Eigen::internal::lazyAssign(col2, col);
-  //_impl->_clearColour = col;
+  _impl->_clearColour = col;
   }
 
 void XD3DRenderer::clear(int clear)
@@ -132,7 +126,7 @@ XAbstractShader *XD3DRenderer::getShader()
   return 0;
   }
 
-XAbstractGeometry *XD3DRenderer::getGeometry( XGeometry::BufferType )
+XAbstractGeometry *XD3DRenderer::getGeometry( XBufferType )
   {
   return 0;
   }

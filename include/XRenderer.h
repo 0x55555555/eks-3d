@@ -2,19 +2,24 @@
 #define XRENDERER_H
 
 #include "X3DGlobal.h"
-#include "XGeometry.h"
 #include "XProperty"
 #include "XFlags"
+#include "XTransform.h"
 
 class XColour;
 class XShape;
-typedef XList<XShape> XShapeList;
 class XAbstractGeometry;
 class XShader;
 class XFramebuffer;
 class XAbstractShader;
 class XAbstractTexture;
 class XAbstractFramebuffer;
+class XGeometry;
+
+enum XBufferType
+  {
+  Thing
+  };
 
 class XRendererType
   {
@@ -27,6 +32,7 @@ public:
     XRenderer( );
     virtual ~XRenderer( );
 
+    typedef Eigen::Affine3f Transform;
     typedef Eigen::Affine3f Transform;
 
     virtual void pushTransform( const Transform & ) = 0;
@@ -42,7 +48,7 @@ public:
 
     // creation accessors for abstract types
     virtual XAbstractShader *getShader( ) = 0;
-    virtual XAbstractGeometry *getGeometry( XGeometry::BufferType ) = 0;
+    virtual XAbstractGeometry *getGeometry( XBufferType ) = 0;
     virtual XAbstractTexture *getTexture() = 0;
     virtual XAbstractFramebuffer *getFramebuffer( int options, int colourFormat, int depthFormat, int width, int height ) = 0;
 
@@ -73,9 +79,6 @@ public:
 
     // bind the given framebuffer for drawing
     virtual void setFramebuffer( const XFramebuffer * ) = 0;
-
-    void drawShape( XShape & );
-    void drawShapes( XShapeList & );
 
 protected:
     virtual void enableRenderFlag( RenderFlags ) = 0;

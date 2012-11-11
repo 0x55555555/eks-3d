@@ -6,6 +6,8 @@
 #include "XGeometry.h"
 #include "XRenderer.h"
 
+#if 0
+
 class XShader;
 class XShapeData;
 
@@ -37,5 +39,7 @@ private:
   };
 
 typedef XList<XShape> XShapeList;
+
+#endif
 
 #endif // XSHAPE_H

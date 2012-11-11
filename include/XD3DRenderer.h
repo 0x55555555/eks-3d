@@ -1,11 +1,12 @@
 #ifndef XD3DRENDERER_H
 #define XD3DRENDERER_H
 
+#include "XGlobal"
 #include "XRenderer.h"
 
 struct IUnknown;
-struct ID3D11Device;
-struct ID3D11DeviceContext;
+struct ID3D11Device1;
+struct ID3D11DeviceContext1;
 
 class XD3DRenderer;
 class XD3DRendererImpl;
@@ -33,15 +34,15 @@ public:
     Rotate270,
     };
 
-  XD3DRenderer(IUnknown *window, xuint32 w, xuint32 h, Rotation rotation);
+  XD3DRenderer(IUnknown *window);
   ~XD3DRenderer();
 
   typedef XD3DRendererRenderFrame RenderFrame;
 
   bool resize(xuint32 w, xuint32 h, Rotation rotation);
 
-  ID3D11Device *getD3DDevice();
-  ID3D11DeviceContext *getD3DContext();
+  ID3D11Device1 *getD3DDevice();
+  ID3D11DeviceContext1 *getD3DContext();
 
   void beginFrame();
   void endFrame(bool *deviceLost);
@@ -54,7 +55,7 @@ public:
 
   // creation accessors for abstract types
   XAbstractShader *getShader() X_OVERRIDE;
-  XAbstractGeometry *getGeometry( XGeometry::BufferType ) X_OVERRIDE;
+  XAbstractGeometry *getGeometry( XBufferType ) X_OVERRIDE;
   XAbstractTexture *getTexture() X_OVERRIDE;
   XAbstractFramebuffer *getFramebuffer( int options, int colourFormat, int depthFormat, int width, int height ) X_OVERRIDE;
 
@@ -93,6 +94,7 @@ inline XD3DRendererRenderFrame::XD3DRendererRenderFrame(XD3DRenderer &r, bool *d
 inline XD3DRendererRenderFrame::~XD3DRendererRenderFrame()
   {
   _renderer.endFrame(_deviceLost);
+
   }
 
 #endif // XD3DRENDERER_H

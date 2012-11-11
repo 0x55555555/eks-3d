@@ -1,4 +1,7 @@
 #include "XGLRenderer.h"
+
+#ifndef X_ARCH_ARM
+
 #include "GL/glew.h"
 #include "XFramebuffer.h"
 #include "XGeometry.h"
@@ -1234,3 +1237,5 @@ int XGLGeometryCache::getCacheOffset( const QString &name, int components, int a
 
     return c.offset;
     }
+
+#endif

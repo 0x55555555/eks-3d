@@ -2,6 +2,8 @@
 #include "QIODevice"
 #include "XGeometry.h"
 
+#if 0
+
 XObjLoader::XObjLoader()
   {
   }
@@ -227,3 +229,5 @@ void XObjLoader::load(QIODevice *dev, XGeometry *geo, bool fixUnusedNormals)
 
   geo->setTriangles(bakedTris);
   }
+
+#endif

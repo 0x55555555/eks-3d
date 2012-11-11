@@ -1,6 +1,7 @@
 #ifndef XGEOMETRY_H
 #define XGEOMETRY_H
 
+#if 0
 #include "X3DGlobal.h"
 #include "XMetaType"
 #include "XHash"
@@ -144,3 +145,4 @@ EKS3D_EXPORT bool intersect( QString semantic, const XLine &ray, const XGeometry
 };
 
 #endif // XGEOMETRY_H
+#endif

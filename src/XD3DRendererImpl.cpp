@@ -1,5 +1,31 @@
 #include "XD3DRendererImpl.h"
+#include <comdef.h>
 #include "XAssert"
+
+bool failedCheck(HRESULT res)
+  {
+  if(SUCCEEDED(res))
+    {
+    return false;
+    }
+
+  _com_error err(res, 0);
+  LPCTSTR errMsg = err.ErrorMessage();
+  (void)errMsg;
+
+  return true;
+  }
+
+XD3DRendererImpl::XD3DRendererImpl()
+  {
+  _featureLevel = D3D_FEATURE_LEVEL_9_1;
+  _d3dDevice = 0;
+  _d3dContext = 0;
+  _swapChain = 0;
+  _renderTargetView = 0;
+  _depthStencilView = 0;
+  _window = 0;
+  }
 
 bool XD3DRendererImpl::createResources()
   {
@@ -30,7 +56,8 @@ bool XD3DRendererImpl::createResources()
   ID3D11DeviceContext *context = 0;
 
   // Create the Direct3D 11 API device object and a corresponding context.
-  if(FAILED(
+  ID3D11Device *device = 0;
+  if(failedCheck(
        D3D11CreateDevice(
          nullptr, // Specify nullptr to use the default adapter.
          D3D_DRIVER_TYPE_HARDWARE,
@@ -39,19 +66,22 @@ bool XD3DRendererImpl::createResources()
          featureLevels, // List of feature levels this app can support.
          X_ARRAY_COUNT(featureLevels),
          D3D11_SDK_VERSION, // Always set this to D3D11_SDK_VERSION for Windows Store apps.
-         &_d3dDevice, // Returns the Direct3D device created.
+         &device, // Returns the Direct3D device created.
          &_featureLevel, // Returns feature level of device created.
          &context // Returns the device immediate context.
          )
        ))
     {
-    xAssertFail();
     return false;
     }
 
-  if(FAILED(context->QueryInterface(__uuidof(ID3D11DeviceContext1), (void**)&_d3dContext)))
+  if(failedCheck(device->QueryInterface(__uuidof(ID3D11Device1), (void **)&_d3dDevice)))
     {
-    xAssertFail();
+    return false;
+    }
+
+  if(failedCheck(context->QueryInterface(__uuidof(ID3D11DeviceContext1), (void**)&_d3dContext)))
+    {
     return false;
     }
 
@@ -63,7 +93,7 @@ bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
   if(_swapChain != nullptr)
     {
     // If the swap chain already exists, resize it.
-    if(FAILED(_swapChain->ResizeBuffers(
+    if(failedCheck(_swapChain->ResizeBuffers(
            2, // Double-buffered swap chain.
            w,
            h,
@@ -71,7 +101,6 @@ bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
            0
            )))
       {
-      xAssertFail();
       return false;
       }
     }
@@ -98,27 +127,24 @@ bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
     swapChainDesc.Flags = 0;
 
     IDXGIDevice1 *dxgiDevice = 0;
-    if(FAILED(_d3dDevice->QueryInterface(__uuidof(IDXGIDevice1), (void **)&dxgiDevice)))
+    if(failedCheck(_d3dDevice->QueryInterface(__uuidof(IDXGIDevice1), (void **)&dxgiDevice)))
       {
-      xAssertFail();
       return false;
       }
 
     IDXGIAdapter *dxgiAdapter = 0;
-    if(FAILED(dxgiDevice->GetAdapter(&dxgiAdapter)))
+    if(failedCheck(dxgiDevice->GetAdapter(&dxgiAdapter)))
       {
-      xAssertFail();
       return false;
       }
 
     IDXGIFactory2 *dxgiFactory = 0;
-    if(FAILED(dxgiAdapter->GetParent(__uuidof(IDXGIFactory2), (void **)&dxgiFactory)))
+    if(failedCheck(dxgiAdapter->GetParent(__uuidof(IDXGIFactory2), (void **)&dxgiFactory)))
       {
-      xAssertFail();
       return false;
       }
 
-    if(FAILED(dxgiFactory->CreateSwapChainForCoreWindow(
+    if(failedCheck(dxgiFactory->CreateSwapChainForCoreWindow(
                 _d3dDevice,
                 _window,
                 &swapChainDesc,
@@ -126,15 +152,13 @@ bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
                 &_swapChain
                 )))
       {
-      xAssertFail();
       return false;
       }
 
     // Ensure that DXGI does not queue more than one frame at a time. This both reduces latency and
     // ensures that the application will only render after each VSync, minimizing power consumption.
-    if(FAILED(dxgiDevice->SetMaximumFrameLatency(1)))
+    if(failedCheck(dxgiDevice->SetMaximumFrameLatency(1)))
       {
-      xAssertFail();
       return false;
       }
     }
@@ -142,33 +166,29 @@ bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
   DXGI_MODE_ROTATION rotationConv = (DXGI_MODE_ROTATION)(rotation + 1);
 
   IDXGISwapChain1 *swapChain = static_cast<IDXGISwapChain1 *>(_swapChain);
-  if(FAILED(swapChain->SetRotation(rotationConv)))
+  if(failedCheck(swapChain->SetRotation(rotationConv)))
     {
-    xAssertFail();
     return false;
     }
 
   // Create a render target view of the swap chain back buffer.
   ID3D11Texture2D *backBuffer = 0;
-  if(FAILED(_swapChain->GetBuffer(
+  if(failedCheck(_swapChain->GetBuffer(
           0,
           __uuidof(ID3D11Texture2D),
           (void**)&backBuffer
           )))
     {
-    xAssertFail();
     return false;
     }
 
-  if(FAILED(_d3dDevice->CreateRenderTargetView(
+  if(failedCheck(_d3dDevice->CreateRenderTargetView(
           backBuffer,
           nullptr,
           &_renderTargetView
           )))
-  {
-  xAssertFail();
-  return false;
-  }
+    {
+    }
 
   // Create a depth stencil view.
   CD3D11_TEXTURE2D_DESC depthStencilDesc(
@@ -181,24 +201,22 @@ bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
         );
 
   ID3D11Texture2D *depthStencil = 0;
-  if(FAILED(_d3dDevice->CreateTexture2D(
+  if(failedCheck(_d3dDevice->CreateTexture2D(
           &depthStencilDesc,
           nullptr,
           &depthStencil
           )))
     {
-    xAssertFail();
     return false;
     }
 
   CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
-  if(FAILED(_d3dDevice->CreateDepthStencilView(
+  if(failedCheck(_d3dDevice->CreateDepthStencilView(
           depthStencil,
           &depthStencilViewDesc,
           &_depthStencilView
           )))
     {
-    xAssertFail();
     return false;
     }
 

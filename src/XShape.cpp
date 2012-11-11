@@ -1,3 +1,5 @@
+#if 0
+
 #include "XShape.h"
 #include "XShader.h"
 
@@ -131,3 +133,4 @@ QDataStream &operator>>(QDataStream &stream, XShape &child)
     }
   return stream;
   }
+#endif

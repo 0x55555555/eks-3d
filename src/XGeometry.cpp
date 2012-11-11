@@ -3,6 +3,7 @@
 #include "XTriangle.h"
 #include "XCuboid.h"
 
+#if 0
 XAbstractGeometry::~XAbstractGeometry()
   {
   }
@@ -521,3 +522,5 @@ bool intersect( QString semantic,
   return posOut ? posOut->size() > 0 : false;
   }
 }
+
+#endif

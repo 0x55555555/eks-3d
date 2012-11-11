@@ -9,7 +9,7 @@ XRenderer::~XRenderer( )
   {
   }
 
-void XRenderer::drawShape( XShape &shape )
+/*void XRenderer::drawShape( XShape &shape )
   {
   int prevRenderFlags( renderFlags() );
   setRenderFlags( shape.renderFlags() );
@@ -35,7 +35,7 @@ void XRenderer::drawShapes( XShapeList &list )
     drawGeometry( it->geometry( ) );
     }
   //setRenderFlags( prevRenderFlags );
-  }
+  }*/
 
 void XRenderer::setRenderFlags( int flags )
   {

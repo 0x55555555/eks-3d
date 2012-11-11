@@ -37,8 +37,7 @@ SOURCES += ../src/XDoodad.cpp \
     ../src/XAbstractDelegate.cpp \
     ../src/XAbstractCanvasController.cpp \
     ../src/XCameraCanvasController.cpp \
-    ../src/XObjLoader.cpp \
-    ../src/XD3DRendererImpl.cpp
+    ../src/XObjLoader.cpp
 
 HEADERS += ../include/XDoodad.h \
     ../include/X3DGlobal.h \
@@ -68,8 +67,7 @@ HEADERS += ../include/XDoodad.h \
     ../include/XAbstractDelegate.h \
     ../include/XAbstractCanvasController.h \
     ../include/XCameraCanvasController.h \
-    ../include/XObjLoader.h \
-    ../include/XD3DRendererImpl.h
+    ../include/XObjLoader.h
 
 
 INCLUDEPATH += ../include/ \
@@ -77,9 +75,12 @@ INCLUDEPATH += ../include/ \
 
 
 win32-arm-msvc2012 {
-  SOURCES += ../src/XD3DRenderer.cpp
+  SOURCES += ../src/XD3DRenderer.cpp \
+    ../src/XD3DRendererImpl.cpp
 
-  HEADERS += ../include/XD3DRenderer.h
+
+  HEADERS += ../include/XD3DRenderer.h \
+    ../include/XD3DRendererImpl.h
 
   LIBS += -ld2d1 -ld3d11 -ldxgi -lwindowscodecs -ldwrite
 } else {

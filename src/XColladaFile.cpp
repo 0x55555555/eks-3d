@@ -3,6 +3,8 @@
 #include "QFile"
 #include "QDebug"
 
+#if 0
+
 XList<int> getListInt( QString data )
     {
     QTextStream stream( &data, QIODevice::ReadOnly );
@@ -404,3 +406,5 @@ XGeometry XColladaFile::geometry( QString name ) const
 
     return ret;
     }
+
+#endif
