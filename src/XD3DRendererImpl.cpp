@@ -19,12 +19,11 @@ bool failedCheck(HRESULT res)
 XD3DRendererImpl::XD3DRendererImpl()
   {
   _featureLevel = D3D_FEATURE_LEVEL_9_1;
-  _d3dDevice = 0;
-  _d3dContext = 0;
-  _swapChain = 0;
-  _renderTargetView = 0;
-  _depthStencilView = 0;
   _window = 0;
+  }
+
+XD3DRendererImpl::~XD3DRendererImpl()
+  {
   }
 
 bool XD3DRendererImpl::createResources()
@@ -53,10 +52,9 @@ bool XD3DRendererImpl::createResources()
     D3D_FEATURE_LEVEL_9_1
   };
 
-  ID3D11DeviceContext *context = 0;
-
   // Create the Direct3D 11 API device object and a corresponding context.
-  ID3D11Device *device = 0;
+  ComPtr<ID3D11Device> device;
+  ComPtr<ID3D11DeviceContext> context;
   if(failedCheck(
        D3D11CreateDevice(
          nullptr, // Specify nullptr to use the default adapter.
@@ -75,12 +73,12 @@ bool XD3DRendererImpl::createResources()
     return false;
     }
 
-  if(failedCheck(device->QueryInterface(__uuidof(ID3D11Device1), (void **)&_d3dDevice)))
+  if(failedCheck(device.As(&_d3dDevice)))
     {
     return false;
     }
 
-  if(failedCheck(context->QueryInterface(__uuidof(ID3D11DeviceContext1), (void**)&_d3dContext)))
+  if(failedCheck(context.As(&_d3dContext)))
     {
     return false;
     }
@@ -90,6 +88,16 @@ bool XD3DRendererImpl::createResources()
 
 bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
   {
+  ID3D11RenderTargetView* nullViews[] = {nullptr};
+  _d3dContext->OMSetRenderTargets(X_ARRAY_COUNT(nullViews), nullViews, nullptr);
+  _renderTargetView = nullptr;
+  _depthStencilView = nullptr;
+
+  // clear the state.
+  _d3dContext->ClearState();
+  _d3dContext->Flush();
+
+
   if(_swapChain != nullptr)
     {
     // If the swap chain already exists, resize it.
@@ -106,46 +114,42 @@ bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
     }
   else
     {
-    ID3D11RenderTargetView* nullViews[] = { nullptr };
-    _d3dContext->OMSetRenderTargets(X_ARRAY_COUNT(nullViews), nullViews, nullptr);
-    _renderTargetView = nullptr;
-    _depthStencilView = nullptr;
-    _d3dContext->Flush();
-
     // Otherwise, create a new one using the same adapter as the existing Direct3D device.
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {0};
     swapChainDesc.Width = w; // Match the size of the window.
     swapChainDesc.Height = h;
     swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // This is the most common swap chain format.
-    swapChainDesc.Stereo = false;
-    swapChainDesc.SampleDesc.Count = 1; // Don't use multi-sampling.
-    swapChainDesc.SampleDesc.Quality = 0;
-    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    swapChainDesc.BufferCount = 2; // Use double-buffering to minimize latency.
-    swapChainDesc.Scaling = DXGI_SCALING_NONE;
-    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // All Windows Store apps must use this SwapEffect.
-    swapChainDesc.Flags = 0;
+		swapChainDesc.Stereo = false;
+		swapChainDesc.SampleDesc.Count = 1; // Don't use multi-sampling.
+		swapChainDesc.SampleDesc.Quality = 0;
+		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		swapChainDesc.BufferCount = 2; // Use double-buffering to minimize latency.
+		swapChainDesc.Scaling = DXGI_SCALING_NONE;
+		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // All Windows Store apps must use this SwapEffect.
+		swapChainDesc.Flags = 0;
 
-    IDXGIDevice1 *dxgiDevice = 0;
-    if(failedCheck(_d3dDevice->QueryInterface(__uuidof(IDXGIDevice1), (void **)&dxgiDevice)))
+
+    ComPtr<IDXGIDevice1>  dxgiDevice;
+    if(failedCheck(_d3dDevice.As(&dxgiDevice)))
       {
       return false;
       }
 
-    IDXGIAdapter *dxgiAdapter = 0;
+
+    ComPtr<IDXGIAdapter> dxgiAdapter;
     if(failedCheck(dxgiDevice->GetAdapter(&dxgiAdapter)))
       {
       return false;
       }
 
-    IDXGIFactory2 *dxgiFactory = 0;
+    ComPtr<IDXGIFactory2> dxgiFactory;
     if(failedCheck(dxgiAdapter->GetParent(__uuidof(IDXGIFactory2), (void **)&dxgiFactory)))
       {
       return false;
       }
 
     if(failedCheck(dxgiFactory->CreateSwapChainForCoreWindow(
-                _d3dDevice,
+                _d3dDevice.Get(),
                 _window,
                 &swapChainDesc,
                 nullptr, // Allow on all displays.
@@ -165,42 +169,43 @@ bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
 
   DXGI_MODE_ROTATION rotationConv = (DXGI_MODE_ROTATION)(rotation + 1);
 
-  IDXGISwapChain1 *swapChain = static_cast<IDXGISwapChain1 *>(_swapChain);
-  if(failedCheck(swapChain->SetRotation(rotationConv)))
+  if(failedCheck(_swapChain->SetRotation(rotationConv)))
     {
     return false;
     }
 
   // Create a render target view of the swap chain back buffer.
-  ID3D11Texture2D *backBuffer = 0;
+  ComPtr<ID3D11Texture2D> backBuffer;
   if(failedCheck(_swapChain->GetBuffer(
           0,
           __uuidof(ID3D11Texture2D),
-          (void**)&backBuffer
+          &backBuffer
           )))
     {
     return false;
     }
 
   if(failedCheck(_d3dDevice->CreateRenderTargetView(
-          backBuffer,
+          backBuffer.Get(),
           nullptr,
           &_renderTargetView
           )))
     {
+    return false;
     }
+  xAssert(_renderTargetView);
 
   // Create a depth stencil view.
   CD3D11_TEXTURE2D_DESC depthStencilDesc(
         DXGI_FORMAT_D24_UNORM_S8_UINT,
-        static_cast<UINT>(w),
-        static_cast<UINT>(h),
+        w,
+        h,
         1,
         1,
         D3D11_BIND_DEPTH_STENCIL
         );
 
-  ID3D11Texture2D *depthStencil = 0;
+  ComPtr<ID3D11Texture2D> depthStencil;
   if(failedCheck(_d3dDevice->CreateTexture2D(
           &depthStencilDesc,
           nullptr,
@@ -212,13 +217,14 @@ bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
 
   CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
   if(failedCheck(_d3dDevice->CreateDepthStencilView(
-          depthStencil,
+          depthStencil.Get(),
           &depthStencilViewDesc,
           &_depthStencilView
           )))
     {
     return false;
     }
+  xAssert(_depthStencilView);
 
   // Set the rendering viewport to target the entire window.
   CD3D11_VIEWPORT viewport(

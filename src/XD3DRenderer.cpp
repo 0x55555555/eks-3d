@@ -101,6 +101,8 @@ void XD3DRenderer::setClearColour(const XColour &col)
 
 void XD3DRenderer::clear(int clear)
   {
+  xAssert(_impl->_renderTargetView);
+  xAssert(_impl->_depthStencilView);
   if((clear&ClearColour) != 0)
     {
     _impl->_d3dContext->ClearRenderTargetView(
