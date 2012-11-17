@@ -1,6 +1,7 @@
 #include "XD3DRendererImpl.h"
 #include <comdef.h>
 #include "XAssert"
+#include "XOptional"
 
 bool failedCheck(HRESULT res)
   {
@@ -24,6 +25,18 @@ XD3DRendererImpl::XD3DRendererImpl()
 
 XD3DRendererImpl::~XD3DRendererImpl()
   {
+  }
+
+void XD3DRendererImpl::setRenderTarget(XD3DRenderTargetImpl *target)
+  {
+  ID3D11RenderTargetView* views[] = { target->renderTargetView.Get() };
+  _d3dContext->OMSetRenderTargets(1, views, target->depthStencilView.Get());
+  }
+
+void XD3DRendererImpl::clearRenderTarget()
+  {
+  ID3D11RenderTargetView* views[] = { nullptr };
+  _d3dContext->OMSetRenderTargets(X_ARRAY_COUNT(views), views, 0);
   }
 
 bool XD3DRendererImpl::createResources()
@@ -86,22 +99,165 @@ bool XD3DRendererImpl::createResources()
   return true;
   }
 
-bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
+void XD3DFrameBufferImpl::discard()
   {
-  ID3D11RenderTargetView* nullViews[] = {nullptr};
-  _d3dContext->OMSetRenderTargets(X_ARRAY_COUNT(nullViews), nullViews, nullptr);
-  _renderTargetView = nullptr;
-  _depthStencilView = nullptr;
+  colour = nullptr;
+  depthStencil = nullptr;
+  }
 
-  // clear the state.
-  _d3dContext->ClearState();
-  _d3dContext->Flush();
+bool XD3DFrameBufferImpl::create(ID3D11Device1 *dev, IDXGISwapChain1 *swapChain)
+  {
+  xAssert(swapChain);
 
 
-  if(_swapChain != nullptr)
+  // Create a render target view of the swap chain back buffer.
+  if(failedCheck(swapChain->GetBuffer(
+          0,
+          __uuidof(ID3D11Texture2D),
+          &colour
+          )))
+    {
+    return false;
+    }
+
+  DXGI_SWAP_CHAIN_DESC1 swapDesc;
+  swapChain->GetDesc1(&swapDesc);
+
+  // Create a depth stencil view.
+  CD3D11_TEXTURE2D_DESC depthStencilDesc(
+        DXGI_FORMAT_D24_UNORM_S8_UINT,
+        swapDesc.Width,
+        swapDesc.Height,
+        1,
+        1,
+        D3D11_BIND_DEPTH_STENCIL
+        );
+
+  if(failedCheck(dev->CreateTexture2D(
+          &depthStencilDesc,
+          nullptr,
+          &depthStencil
+          )))
+    {
+    return false;
+    }
+
+  return true;
+  }
+
+bool XD3DRenderTargetImpl::create(ID3D11Device1 *dev, XD3DFrameBufferImpl *fb)
+  {
+  if(failedCheck(dev->CreateRenderTargetView(
+          fb->colour.Get(),
+          nullptr,
+          &renderTargetView
+          )))
+    {
+    return false;
+    }
+  xAssert(renderTargetView);
+
+
+  CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
+  if(failedCheck(dev->CreateDepthStencilView(
+          fb->depthStencil.Get(),
+          &depthStencilViewDesc,
+          &depthStencilView
+          )))
+    {
+    return false;
+    }
+  xAssert(depthStencilView);
+
+  return true;
+  }
+
+void XD3DRenderTargetImpl::discard()
+  {
+  renderTargetView = nullptr;
+  depthStencilView = nullptr;
+  }
+
+void XD3DRenderTargetImpl::clear(
+    ID3D11DeviceContext1 *context,
+    bool clearColour,
+    bool clearDepth,
+    const float *col,
+    float depthVal,
+    xuint8 stencilVal)
+  {
+  xAssert(renderTargetView);
+  xAssert(depthStencilView);
+
+  if(clearColour)
+    {
+    context->ClearRenderTargetView(
+      renderTargetView.Get(),
+      col
+      );
+    }
+
+  if(clearDepth)
+    {
+    context->ClearDepthStencilView(
+      depthStencilView.Get(),
+      D3D11_CLEAR_DEPTH,
+      depthVal,
+      stencilVal
+      );
+    }
+  }
+
+void XD3DSwapChainImpl::present(ID3D11DeviceContext1 *context, bool *deviceListOptional)
+  {
+  XOptional<bool> deviceLost(deviceListOptional);
+  deviceLost = false;
+
+  // The application may optionally specify "dirty" or "scroll"
+  // rects to improve efficiency in certain scenarios.
+  DXGI_PRESENT_PARAMETERS parameters = {0};
+  parameters.DirtyRectsCount = 0;
+  parameters.pDirtyRects = nullptr;
+  parameters.pScrollRect = nullptr;
+  parameters.pScrollOffset = nullptr;
+
+  // The first argument instructs DXGI to block until VSync, putting the application
+  // to sleep until the next VSync. This ensures we don't waste any cycles rendering
+  // frames that will never be displayed to the screen.
+  HRESULT hr = swapChain->Present1(1, 0, &parameters);
+
+  // Discard the contents of the render target.
+  // This is a valid operation only when the existing contents will be entirely
+  // overwritten. If dirty or scroll rects are used, this call should be removed.
+  context->DiscardView(renderTargetView.Get());
+
+  // Discard the contents of the depth stencil.
+  context->DiscardView(depthStencilView.Get());
+
+  // If the device was removed either by a disconnect or a driver upgrade, we
+  // must recreate all device resources.
+  if (hr == DXGI_ERROR_DEVICE_REMOVED)
+    {
+    deviceLost = true;
+    }
+  else
+    {
+    failedCheck(hr);
+    }
+  }
+
+bool XD3DSwapChainImpl::resize(
+    ID3D11Device1 *dev,
+    IUnknown *window,
+    xuint32 w,
+    xuint32 h,
+    int rotation)
+  {
+  discard();
+  if(swapChain != nullptr)
     {
     // If the swap chain already exists, resize it.
-    if(failedCheck(_swapChain->ResizeBuffers(
+    if(failedCheck(swapChain->ResizeBuffers(
            2, // Double-buffered swap chain.
            w,
            h,
@@ -114,23 +270,9 @@ bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
     }
   else
     {
-    // Otherwise, create a new one using the same adapter as the existing Direct3D device.
-    DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {0};
-    swapChainDesc.Width = w; // Match the size of the window.
-    swapChainDesc.Height = h;
-    swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // This is the most common swap chain format.
-		swapChainDesc.Stereo = false;
-		swapChainDesc.SampleDesc.Count = 1; // Don't use multi-sampling.
-		swapChainDesc.SampleDesc.Quality = 0;
-		swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		swapChainDesc.BufferCount = 2; // Use double-buffering to minimize latency.
-		swapChainDesc.Scaling = DXGI_SCALING_NONE;
-		swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // All Windows Store apps must use this SwapEffect.
-		swapChainDesc.Flags = 0;
-
-
-    ComPtr<IDXGIDevice1>  dxgiDevice;
-    if(failedCheck(_d3dDevice.As(&dxgiDevice)))
+    ComPtr<ID3D11Device1> device = dev;
+    ComPtr<IDXGIDevice1> dxgiDevice;
+    if(failedCheck(device.As(&dxgiDevice)))
       {
       return false;
       }
@@ -148,12 +290,26 @@ bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
       return false;
       }
 
+    // Otherwise, create a new one using the same adapter as the existing Direct3D device.
+    DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {0};
+    swapChainDesc.Width = w; // Match the size of the window.
+    swapChainDesc.Height = h;
+    swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // This is the most common swap chain format.
+    swapChainDesc.Stereo = false;
+    swapChainDesc.SampleDesc.Count = 1; // Don't use multi-sampling.
+    swapChainDesc.SampleDesc.Quality = 0;
+    swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.BufferCount = 2; // Use double-buffering to minimize latency.
+    swapChainDesc.Scaling = DXGI_SCALING_NONE;
+    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // All Windows Store apps must use this SwapEffect.
+    swapChainDesc.Flags = 0;
+
     if(failedCheck(dxgiFactory->CreateSwapChainForCoreWindow(
-                _d3dDevice.Get(),
-                _window,
+                dev,
+                window,
                 &swapChainDesc,
                 nullptr, // Allow on all displays.
-                &_swapChain
+                &swapChain
                 )))
       {
       return false;
@@ -168,63 +324,38 @@ bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
     }
 
   DXGI_MODE_ROTATION rotationConv = (DXGI_MODE_ROTATION)(rotation + 1);
-
-  if(failedCheck(_swapChain->SetRotation(rotationConv)))
+  if(failedCheck(swapChain->SetRotation(rotationConv)))
     {
     return false;
     }
 
-  // Create a render target view of the swap chain back buffer.
-  ComPtr<ID3D11Texture2D> backBuffer;
-  if(failedCheck(_swapChain->GetBuffer(
-          0,
-          __uuidof(ID3D11Texture2D),
-          &backBuffer
-          )))
+  if(!framebuffer.create(dev, swapChain.Get()))
     {
     return false;
     }
 
-  if(failedCheck(_d3dDevice->CreateRenderTargetView(
-          backBuffer.Get(),
-          nullptr,
-          &_renderTargetView
-          )))
-    {
-    return false;
-    }
-  xAssert(_renderTargetView);
-
-  // Create a depth stencil view.
-  CD3D11_TEXTURE2D_DESC depthStencilDesc(
-        DXGI_FORMAT_D24_UNORM_S8_UINT,
-        w,
-        h,
-        1,
-        1,
-        D3D11_BIND_DEPTH_STENCIL
-        );
-
-  ComPtr<ID3D11Texture2D> depthStencil;
-  if(failedCheck(_d3dDevice->CreateTexture2D(
-          &depthStencilDesc,
-          nullptr,
-          &depthStencil
-          )))
+  if(!create(dev, &framebuffer))
     {
     return false;
     }
 
-  CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
-  if(failedCheck(_d3dDevice->CreateDepthStencilView(
-          depthStencil.Get(),
-          &depthStencilViewDesc,
-          &_depthStencilView
-          )))
-    {
-    return false;
-    }
-  xAssert(_depthStencilView);
+  return true;
+  }
+
+void XD3DSwapChainImpl::discard()
+  {
+  XD3DRenderTargetImpl::discard();
+  framebuffer.discard();
+  }
+
+bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
+  {
+  // clear the state.
+  clearRenderTarget();
+  _d3dContext->ClearState();
+  _d3dContext->Flush();
+
+  _renderTarget.resize(_d3dDevice.Get(), _window, w, h, rotation);
 
   // Set the rendering viewport to target the entire window.
   CD3D11_VIEWPORT viewport(

@@ -25,60 +25,23 @@ XD3DRenderer::~XD3DRenderer()
 
 ID3D11Device1 *XD3DRenderer::getD3DDevice()
   {
-  return _impl->_d3dDevice;
+  return _impl->_d3dDevice.Get();
   }
 
 ID3D11DeviceContext1 *XD3DRenderer::getD3DContext()
   {
-  return _impl->_d3dContext;
+  return _impl->_d3dContext.Get();
   }
 
 void XD3DRenderer::beginFrame()
   {
   clear();
-  _impl->_d3dContext->OMSetRenderTargets(
-    1,
-    &_impl->_renderTargetView,
-    _impl->_depthStencilView
-    );
+  _impl->setRenderTarget(&_impl->_renderTarget);
   }
 
 void XD3DRenderer::endFrame(bool *deviceListOptional)
   {
-  XOptional<bool> deviceLost(deviceListOptional);
-  deviceLost = false;
-
-  // The application may optionally specify "dirty" or "scroll"
-  // rects to improve efficiency in certain scenarios.
-  DXGI_PRESENT_PARAMETERS parameters = {0};
-  parameters.DirtyRectsCount = 0;
-  parameters.pDirtyRects = nullptr;
-  parameters.pScrollRect = nullptr;
-  parameters.pScrollOffset = nullptr;
-
-  // The first argument instructs DXGI to block until VSync, putting the application
-  // to sleep until the next VSync. This ensures we don't waste any cycles rendering
-  // frames that will never be displayed to the screen.
-  HRESULT hr = _impl->_swapChain->Present1(1, 0, &parameters);
-
-  // Discard the contents of the render target.
-  // This is a valid operation only when the existing contents will be entirely
-  // overwritten. If dirty or scroll rects are used, this call should be removed.
-  _impl->_d3dContext->DiscardView(_impl->_renderTargetView);
-
-  // Discard the contents of the depth stencil.
-  _impl->_d3dContext->DiscardView(_impl->_depthStencilView);
-
-  // If the device was removed either by a disconnect or a driver upgrade, we
-  // must recreate all device resources.
-  if (hr == DXGI_ERROR_DEVICE_REMOVED)
-    {
-    deviceLost = true;
-    }
-  else
-    {
-    failedCheck(hr);
-    }
+  _impl->_renderTarget.present(_impl->_d3dContext.Get(), deviceListOptional);
   }
 
 bool XD3DRenderer::resize(xuint32 w, xuint32 h, Rotation rotation)
@@ -101,25 +64,13 @@ void XD3DRenderer::setClearColour(const XColour &col)
 
 void XD3DRenderer::clear(int clear)
   {
-  xAssert(_impl->_renderTargetView);
-  xAssert(_impl->_depthStencilView);
-  if((clear&ClearColour) != 0)
-    {
-    _impl->_d3dContext->ClearRenderTargetView(
-      _impl->_renderTargetView,
-      _impl->_clearColour.data()
-      );
-    }
-
-  if((clear&ClearDepth) != 0)
-    {
-    _impl->_d3dContext->ClearDepthStencilView(
-      _impl->_depthStencilView,
-      D3D11_CLEAR_DEPTH,
-      1.0f,
-      0
-      );
-    }
+  _impl->_renderTarget.clear(
+        _impl->_d3dContext.Get(),
+        (clear&XRenderer::ClearColour) != 0,
+        (clear&XRenderer::ClearDepth) != 0,
+        _impl->_clearColour.data(),
+        1.0f,
+        0);
   }
 
 
