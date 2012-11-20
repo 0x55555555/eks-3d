@@ -8,7 +8,7 @@ XTransform lookAt(const XVector3D &eye, const XVector3D &aim, const XVector3D &u
   XVector3D side = forward.cross(up).normalized();
   XVector3D upVector = side.cross(forward);
 
-  XTransform m;
+  XTransform m = XTransform::Identity();
 
   m.matrix().row(0).head<3>() = side;
   m.matrix().row(1).head<3>() = upVector;

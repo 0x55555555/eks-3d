@@ -21,6 +21,9 @@ XD3DRendererImpl::XD3DRendererImpl()
   {
   _featureLevel = D3D_FEATURE_LEVEL_9_1;
   _window = 0;
+
+  _currentTransform = _transformStack;
+  *_currentTransform = XMatrix4x4::Identity();
   }
 
 XD3DRendererImpl::~XD3DRendererImpl()
@@ -95,6 +98,11 @@ bool XD3DRendererImpl::createResources()
     {
     return false;
     }
+
+  _worldTransformData.create(_d3dDevice.Get(), D3D11_BIND_CONSTANT_BUFFER);
+  _modelTransformData.create(_d3dDevice.Get(),
+                             sizeof(XD3DRendererImpl::_transformStack[0]),
+                             D3D11_BIND_CONSTANT_BUFFER);
 
   return true;
   }
@@ -206,6 +214,34 @@ void XD3DRenderTargetImpl::clear(
       stencilVal
       );
     }
+  }
+
+bool XD3DBufferImpl::create(ID3D11Device1 *dev, xsize size, D3D11_BIND_FLAG type)
+  {
+  CD3D11_BUFFER_DESC constantBufferDesc(size, type);
+  if(failedCheck(
+    dev->CreateBuffer(
+      &constantBufferDesc,
+      nullptr,
+      &buffer
+      )
+    ))
+    {
+    return false;
+    }
+  return true;
+  }
+
+void XD3DBufferImpl::update(ID3D11DeviceContext1 *context, void *data)
+  {
+  context->UpdateSubresource(
+    buffer.Get(),
+    0,
+    NULL,
+    data,
+    0,
+    0
+    );
   }
 
 void XD3DSwapChainImpl::present(ID3D11DeviceContext1 *context, bool *deviceListOptional)

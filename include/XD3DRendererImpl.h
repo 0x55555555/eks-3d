@@ -1,6 +1,7 @@
 #ifndef XD3DRENDERERIMPL_H
 #define XD3DRENDERERIMPL_H
 
+#include "XMatrix4x4"
 #include "XColour"
 #include <d3d11_1.h>
 #include <DXGI1_2.h>
@@ -34,6 +35,29 @@ public:
   ComPtr<ID3D11DepthStencilView> depthStencilView;
   };
 
+class XD3DBufferImpl
+  {
+public:
+  bool create(ID3D11Device1 *dev, xsize size, D3D11_BIND_FLAG type);
+  void update(ID3D11DeviceContext1 *context, void *data);
+  Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
+  };
+
+template <typename T> class XD3DTypedBufferImpl : public XD3DBufferImpl
+  {
+public:
+  void create(ID3D11Device1 *dev, D3D11_BIND_FLAG type)
+    {
+    XD3DBufferImpl::create(dev, sizeof(T), type);
+    }
+  void update(ID3D11DeviceContext1 *context)
+    {
+    XD3DBufferImpl::update(context, &data);
+    }
+
+  T data;
+  };
+
 class XD3DSwapChainImpl : public XD3DRenderTargetImpl
   {
 public:
@@ -61,6 +85,24 @@ public:
   XD3DSwapChainImpl _renderTarget;
 
   XColour _clearColour;
+
+  struct WorldTransformData
+    {
+    XMatrix4x4 view;
+    XMatrix4x4 projection;
+    };
+  bool _updateWorldTransformData;
+  XD3DTypedBufferImpl<WorldTransformData> _worldTransformData;
+  XD3DBufferImpl _modelTransformData;
+
+  enum
+    {
+    TransformStackSize = 16,
+    UserConstantBufferStartOffset = 2
+    };
+
+  XMatrix4x4 _transformStack[TransformStackSize];
+  XMatrix4x4 *_currentTransform;
 
   void setRenderTarget(XD3DRenderTargetImpl *target);
   void clearRenderTarget();

@@ -47,6 +47,8 @@ public:
   void beginFrame();
   void endFrame(bool *deviceLost);
 
+  void shaderThing();
+
   void pushTransform( const XTransform & ) X_OVERRIDE;
   void popTransform( ) X_OVERRIDE;
 
@@ -67,6 +69,7 @@ public:
   void destroyTexture( XAbstractTexture * ) X_OVERRIDE;
   void destroyFramebuffer( XAbstractFramebuffer * ) X_OVERRIDE;
 
+  void setViewTransform( const XTransform & ) X_OVERRIDE;
   void setProjectionTransform( const XComplexTransform & ) X_OVERRIDE;
 
   // set the current shader

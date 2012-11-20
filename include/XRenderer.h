@@ -69,6 +69,7 @@ public:
     void setRenderFlags( int );
     virtual int renderFlags() const;
 
+    virtual void setViewTransform( const XTransform & ) = 0;
     virtual void setProjectionTransform( const XComplexTransform & ) = 0;
 
     // set the current shader

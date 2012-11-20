@@ -35,6 +35,11 @@ ID3D11DeviceContext1 *XD3DRenderer::getD3DContext()
 
 void XD3DRenderer::beginFrame()
   {
+  if(_impl->_updateWorldTransformData)
+    {
+    _impl->_worldTransformData.update(_impl->_d3dContext.Get());
+    }
+
   clear();
   _impl->setRenderTarget(&_impl->_renderTarget);
   }
@@ -49,12 +54,36 @@ bool XD3DRenderer::resize(xuint32 w, xuint32 h, Rotation rotation)
   return _impl->resize(w, h, rotation);
   }
 
-void XD3DRenderer::pushTransform(const Transform & )
+void XD3DRenderer::shaderThing()
   {
+  ID3D11Buffer *buffers[] =
+  {
+    _impl->_worldTransformData.buffer.Get(),
+    _impl->_modelTransformData.buffer.Get()
+  };
+
+  _impl->_d3dContext->VSSetConstantBuffers(
+    0,
+    X_ARRAY_COUNT(buffers),
+    buffers
+    );
+  }
+void XD3DRenderer::pushTransform(const Transform &tr)
+  {
+  xAssert((_impl->_currentTransform - _impl->_transformStack) <
+            XD3DRendererImpl::TransformStackSize);
+
+  XMatrix4x4& oldTransform = *_impl->_currentTransform;
+  XMatrix4x4& newTransform = *(++_impl->_currentTransform);
+
+  newTransform = (oldTransform * tr).matrix();
+  _impl->_modelTransformData.update(_impl->_d3dContext.Get(), newTransform.transpose().data());
   }
 
 void XD3DRenderer::popTransform( )
   {
+  _impl->_currentTransform--;
+  xAssert(_impl->_currentTransform >= _impl->_transformStack);
   }
 
 void XD3DRenderer::setClearColour(const XColour &col)
@@ -103,7 +132,6 @@ void XD3DRenderer::debugRenderLocator(DebugLocatorMode)
   {
   }
 
-
 void XD3DRenderer::destroyShader( XAbstractShader * )
   {
   }
@@ -120,8 +148,16 @@ void XD3DRenderer::destroyFramebuffer( XAbstractFramebuffer * )
   {
   }
 
-void XD3DRenderer::setProjectionTransform( const XComplexTransform & )
+void XD3DRenderer::setViewTransform(const XTransform &v)
   {
+  _impl->_worldTransformData.data.view = v.matrix().transpose();
+  _impl->_updateWorldTransformData = true;
+  }
+
+void XD3DRenderer::setProjectionTransform(const XComplexTransform &p)
+  {
+  _impl->_worldTransformData.data.projection = p.matrix().transpose();
+  _impl->_updateWorldTransformData = true;
   }
 
 void XD3DRenderer::setShader( const XShader * )
