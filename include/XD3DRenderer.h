@@ -47,8 +47,6 @@ public:
   void beginFrame();
   void endFrame(bool *deviceLost);
 
-  void shaderThing();
-
   void pushTransform( const XTransform & ) X_OVERRIDE;
   void popTransform( ) X_OVERRIDE;
 
@@ -56,7 +54,10 @@ public:
   void clear(int=ClearColour|ClearDepth) X_OVERRIDE;
 
   // creation accessors for abstract types
-  XAbstractShader *getShader() X_OVERRIDE;
+  bool createShader(XShader *s, XShaderVertexComponent *v, XShaderFragmentComponent *f) X_OVERRIDE;
+  bool createVertexShaderComponent(XShaderVertexComponent *v, const char *s, xsize l) X_OVERRIDE;
+  bool createFragmentShaderComponent(XShaderFragmentComponent *f, const char *s, xsize l) X_OVERRIDE;
+
   XAbstractGeometry *getGeometry( XBufferType ) X_OVERRIDE;
   XAbstractTexture *getTexture() X_OVERRIDE;
   XAbstractFramebuffer *getFramebuffer( int options, int colourFormat, int depthFormat, int width, int height ) X_OVERRIDE;
@@ -64,7 +65,9 @@ public:
   void debugRenderLocator(DebugLocatorMode) X_OVERRIDE;
 
   // destroy abstract types
-  void destroyShader( XAbstractShader * ) X_OVERRIDE;
+  void destroyShader(XShader* s) X_OVERRIDE;
+  void destroyVertexShaderComponent(XShaderVertexComponent* s) X_OVERRIDE;
+  void destroyFragmentShaderComponent(XShaderFragmentComponent* s) X_OVERRIDE;
   void destroyGeometry( XAbstractGeometry * ) X_OVERRIDE;
   void destroyTexture( XAbstractTexture * ) X_OVERRIDE;
   void destroyFramebuffer( XAbstractFramebuffer * ) X_OVERRIDE;

@@ -5,6 +5,7 @@
 #include "XD3DRendererImpl.h"
 #include "XColour"
 #include "XOptional"
+#include "XShader.h"
 
 using namespace DirectX;
 
@@ -54,20 +55,6 @@ bool XD3DRenderer::resize(xuint32 w, xuint32 h, Rotation rotation)
   return _impl->resize(w, h, rotation);
   }
 
-void XD3DRenderer::shaderThing()
-  {
-  ID3D11Buffer *buffers[] =
-  {
-    _impl->_worldTransformData.buffer.Get(),
-    _impl->_modelTransformData.buffer.Get()
-  };
-
-  _impl->_d3dContext->VSSetConstantBuffers(
-    0,
-    X_ARRAY_COUNT(buffers),
-    buffers
-    );
-  }
 void XD3DRenderer::pushTransform(const Transform &tr)
   {
   xAssert((_impl->_currentTransform - _impl->_transformStack) <
@@ -102,11 +89,34 @@ void XD3DRenderer::clear(int clear)
         0);
   }
 
-
-XAbstractShader *XD3DRenderer::getShader()
+bool XD3DRenderer::createShader(XShader *s, XShaderVertexComponent *v, XShaderFragmentComponent *f)
   {
-  return 0;
+  XD3DFragmentShaderImpl *frag = f->data<XD3DFragmentShaderImpl>();
+  XD3DVertexShaderImpl *vert = v->data<XD3DVertexShaderImpl>();
+
+  XD3DSurfaceShaderImpl* shd = s->data<XD3DSurfaceShaderImpl>();
+  new(shd) XD3DSurfaceShaderImpl();
+
+  shd->_pixelShader = frag->_pixelShader;
+  shd->_vertexShader = vert->_vertexShader;
+
+  return shd->_pixelShader && shd->_vertexShader;
   }
+
+bool XD3DRenderer::createVertexShaderComponent(XShaderVertexComponent *v, const char *s, xsize l)
+  {
+  XD3DVertexShaderImpl *vert = v->data<XD3DVertexShaderImpl>();
+  new(vert) XD3DVertexShaderImpl();
+  return vert->create(_impl->_d3dDevice.Get(), s, l);
+  }
+
+bool XD3DRenderer::createFragmentShaderComponent(XShaderFragmentComponent *f, const char *s, xsize l)
+  {
+  XD3DFragmentShaderImpl *frag = f->data<XD3DFragmentShaderImpl>();
+  new(frag) XD3DFragmentShaderImpl();
+  return frag->create(_impl->_d3dDevice.Get(), s, l);
+  }
+
 
 XAbstractGeometry *XD3DRenderer::getGeometry( XBufferType )
   {
@@ -132,8 +142,23 @@ void XD3DRenderer::debugRenderLocator(DebugLocatorMode)
   {
   }
 
-void XD3DRenderer::destroyShader( XAbstractShader * )
+void XD3DRenderer::destroyShader(XShader* s)
   {
+  XD3DSurfaceShaderImpl* shd = s->data<XD3DSurfaceShaderImpl>();
+  shd->_pixelShader = nullptr;
+  shd->_vertexShader = nullptr;
+  }
+
+void XD3DRenderer::destroyVertexShaderComponent(XShaderVertexComponent* s)
+  {
+  XD3DVertexShaderImpl *vert = s->data<XD3DVertexShaderImpl>();
+  vert->_vertexShader = nullptr;
+  }
+
+void XD3DRenderer::destroyFragmentShaderComponent(XShaderFragmentComponent* s)
+  {
+  XD3DFragmentShaderImpl *vert = s->data<XD3DFragmentShaderImpl>();
+  vert->_pixelShader = nullptr;
   }
 
 void XD3DRenderer::destroyGeometry( XAbstractGeometry * )
@@ -160,8 +185,22 @@ void XD3DRenderer::setProjectionTransform(const XComplexTransform &p)
   _impl->_updateWorldTransformData = true;
   }
 
-void XD3DRenderer::setShader( const XShader * )
+void XD3DRenderer::setShader( const XShader *s )
   {
+  const XD3DSurfaceShaderImpl* shd = s->data<XD3DSurfaceShaderImpl>();
+  shd->bind(_impl->_d3dContext.Get());
+
+  ID3D11Buffer *buffers[] =
+  {
+    _impl->_worldTransformData.buffer.Get(),
+    _impl->_modelTransformData.buffer.Get()
+  };
+
+  _impl->_d3dContext->VSSetConstantBuffers(
+    0,
+    X_ARRAY_COUNT(buffers),
+    buffers
+    );
   }
 
 void XD3DRenderer::drawGeometry( const XGeometry & )

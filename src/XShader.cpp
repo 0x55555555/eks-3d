@@ -2,13 +2,89 @@
 #include "XRenderer.h"
 #include "XTexture.h"
 #include "XRenderer.h"
-#include "QVariant"
-#include "QVector2D"
-#include "QVector3D"
-#include "QVector4D"
-#include "QMatrix4x4"
-#include "QStringList"
-#include "QFile"
+
+XShaderVertexComponent::XShaderVertexComponent(XRenderer *r, const char *source, xsize length)
+  {
+  _renderer = 0;
+  if(r)
+    {
+    delayedCreate(*this, r, source, length);
+    }
+  }
+
+XShaderVertexComponent::~XShaderVertexComponent()
+  {
+  if(isValid())
+    {
+    _renderer->destroyVertexShaderComponent(this);
+    }
+  }
+
+bool XShaderVertexComponent::delayedCreate(XShaderVertexComponent &ths,
+                                           XRenderer *r,
+                                           const char *source,
+                                           xsize length)
+  {
+  xAssert(!ths.isValid());
+  xAssert(r && source && length);
+  ths._renderer = r;
+  return r->createVertexShaderComponent(&ths, source, length);
+  }
+
+XShaderFragmentComponent::XShaderFragmentComponent(XRenderer *r, const char *source, xsize length)
+  {
+  _renderer = 0;
+  if(r)
+    {
+    delayedCreate(*this, r, source, length);
+    }
+  }
+
+XShaderFragmentComponent::~XShaderFragmentComponent()
+  {
+  if(isValid())
+    {
+    _renderer->destroyFragmentShaderComponent(this);
+    }
+  }
+
+bool XShaderFragmentComponent::delayedCreate(XShaderFragmentComponent &ths,
+                                           XRenderer *r,
+                                           const char *source,
+                                           xsize length)
+  {
+  xAssert(!ths.isValid());
+  xAssert(r && source && length);
+  ths._renderer = r;
+  return r->createFragmentShaderComponent(&ths, source, length);
+  }
+
+XShader::XShader(XRenderer *r,
+        XShaderVertexComponent *v,
+        XShaderFragmentComponent *f)
+  {
+  _renderer = 0;
+  if(r)
+    {
+    delayedCreate(*this, r, v, f);
+    }
+  }
+
+XShader::~XShader()
+  {
+  if(isValid())
+    {
+    _renderer->destroyShader(this);
+    }
+  }
+
+bool XShader::delayedCreate(XShader &ths, XRenderer *r, XShaderVertexComponent *v, XShaderFragmentComponent *f)
+  {
+  xAssert(!ths.isValid());
+  xAssert(r);
+  ths._renderer = r;
+  return r->createShader(&ths, v, f);
+  }
 
 #if 0
 

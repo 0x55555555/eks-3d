@@ -10,6 +10,31 @@
 
 using Microsoft::WRL::ComPtr;
 
+class XD3DVertexShaderImpl
+  {
+public:
+  bool create(ID3D11Device1 *device, const char *source, xsize length);
+
+  ComPtr<ID3D11VertexShader> _vertexShader;
+  };
+
+class XD3DFragmentShaderImpl
+  {
+public:
+  bool create(ID3D11Device1 *device, const char *source, xsize length);
+
+  ComPtr<ID3D11PixelShader> _pixelShader;
+  };
+
+class XD3DSurfaceShaderImpl
+  {
+public:
+  void bind(ID3D11DeviceContext1 *context) const;
+
+  ComPtr<ID3D11VertexShader> _vertexShader;
+  ComPtr<ID3D11PixelShader> _pixelShader;
+  };
+
 class XD3DFrameBufferImpl
   {
 public:

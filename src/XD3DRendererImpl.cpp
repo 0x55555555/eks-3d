@@ -107,6 +107,49 @@ bool XD3DRendererImpl::createResources()
   return true;
   }
 
+bool XD3DVertexShaderImpl::create(ID3D11Device1 *device, const char *source, xsize length)
+  {
+  if(failedCheck(device->CreateVertexShader(
+      source,
+      length,
+      nullptr,
+      &_vertexShader
+      )))
+    {
+    return false;
+    }
+  return true;
+  }
+
+bool XD3DFragmentShaderImpl::create(ID3D11Device1 *device, const char *source, xsize length)
+  {
+  if(failedCheck(device->CreatePixelShader(
+      source,
+      length,
+      nullptr,
+      &_pixelShader
+      )))
+    {
+    return false;
+    }
+  return true;
+  }
+
+void XD3DSurfaceShaderImpl::bind(ID3D11DeviceContext1 *context) const
+  {
+  context->VSSetShader(
+    _vertexShader.Get(),
+    nullptr,
+    0
+    );
+
+  context->PSSetShader(
+    _pixelShader.Get(),
+    nullptr,
+    0
+    );
+  }
+
 void XD3DFrameBufferImpl::discard()
   {
   colour = nullptr;
