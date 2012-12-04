@@ -103,11 +103,70 @@ bool XD3DRenderer::createShader(XShader *s, XShaderVertexComponent *v, XShaderFr
   return shd->_pixelShader && shd->_vertexShader;
   }
 
-bool XD3DRenderer::createVertexShaderComponent(XShaderVertexComponent *v, const char *s, xsize l)
+bool XD3DRenderer::createVertexShaderComponent(XShaderVertexComponent *v,
+                                               const char *s,
+                                               xsize l,
+                                               const XShaderVertexLayoutDescription *vertexDescriptions,
+                                               xsize vertexItemCount,
+                                               XShaderVertexLayout *layout)
   {
   XD3DVertexShaderImpl *vert = v->data<XD3DVertexShaderImpl>();
   new(vert) XD3DVertexShaderImpl();
-  return vert->create(_impl->_d3dDevice.Get(), s, l);
+
+  if(!vert->create(_impl->_d3dDevice.Get(), s, l))
+    {
+    return false;
+    }
+
+  if(vertexDescriptions)
+    {
+    xAssert(layout);
+    xAssert(vertexItemCount);
+
+    xCompileTimeAssert(D3D11_APPEND_ALIGNED_ELEMENT == X_SIZE_SENTINEL);
+    xCompileTimeAssert(D3D11_INPUT_PER_VERTEX_DATA == XShaderVertexLayoutDescription::Slot::PerVertex);
+    xCompileTimeAssert(D3D11_INPUT_PER_INSTANCE_DATA == XShaderVertexLayoutDescription::Slot::PerInstance);
+
+    const DXGI_FORMAT formatMap[] =
+    {
+      DXGI_FORMAT_R32_FLOAT,
+      DXGI_FORMAT_R32G32_FLOAT,
+      DXGI_FORMAT_R32G32B32_FLOAT,
+      DXGI_FORMAT_R32G32B32A32_FLOAT
+    };
+    xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == XShaderVertexLayoutDescription::FormatCount);
+
+    D3D11_INPUT_ELEMENT_DESC *vertexDesc =
+        (D3D11_INPUT_ELEMENT_DESC*)alloca(sizeof(D3D11_INPUT_ELEMENT_DESC)*vertexItemCount);
+    D3D11_INPUT_ELEMENT_DESC *currentVertexDesc = vertexDesc;
+    for(xsize i = 0; i < vertexItemCount; ++i, ++currentVertexDesc, ++vertexDescriptions)
+      {
+      currentVertexDesc->SemanticName = vertexDescriptions->name;
+      currentVertexDesc->SemanticIndex = 0; // increase for matrices...
+      currentVertexDesc->Format = formatMap[vertexDescriptions->format]; // increase for matrices...
+      currentVertexDesc->AlignedByteOffset = vertexDescriptions->offset;
+
+      currentVertexDesc->InputSlot = vertexDescriptions->slot.index;
+      currentVertexDesc->InputSlotClass = (D3D11_INPUT_CLASSIFICATION)vertexDescriptions->slot.type;
+      currentVertexDesc->InstanceDataStepRate = vertexDescriptions->slot.instanceDataStepRate;
+      }
+
+    xAssert(!layout->isValid());
+    XD3DShaderInputLayout *lay = layout->data<XD3DShaderInputLayout>();
+    if(failedCheck(
+      _impl->_d3dDevice->CreateInputLayout(
+        vertexDesc,
+        vertexItemCount,
+        s,
+        l,
+        &lay->_inputLayout
+        )))
+      {
+      return false;
+      }
+    }
+
+  return true;
   }
 
 bool XD3DRenderer::createFragmentShaderComponent(XShaderFragmentComponent *f, const char *s, xsize l)
@@ -147,6 +206,12 @@ void XD3DRenderer::destroyShader(XShader* s)
   XD3DSurfaceShaderImpl* shd = s->data<XD3DSurfaceShaderImpl>();
   shd->_pixelShader = nullptr;
   shd->_vertexShader = nullptr;
+  }
+
+void XD3DRenderer::destroyShaderVertexLayout(XShaderVertexLayout *d)
+  {
+  XD3DShaderInputLayout* shd = d->data<XD3DShaderInputLayout>();
+  shd->_inputLayout = nullptr;
   }
 
 void XD3DRenderer::destroyVertexShaderComponent(XShaderVertexComponent* s)

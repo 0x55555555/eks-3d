@@ -55,7 +55,12 @@ public:
 
   // creation accessors for abstract types
   bool createShader(XShader *s, XShaderVertexComponent *v, XShaderFragmentComponent *f) X_OVERRIDE;
-  bool createVertexShaderComponent(XShaderVertexComponent *v, const char *s, xsize l) X_OVERRIDE;
+  bool createVertexShaderComponent(XShaderVertexComponent *v,
+                                   const char *s,
+                                   xsize l,
+                                   const XShaderVertexLayoutDescription *vertexDescriptions,
+                                   xsize vertexItemCount,
+                                   XShaderVertexLayout *layout) X_OVERRIDE;
   bool createFragmentShaderComponent(XShaderFragmentComponent *f, const char *s, xsize l) X_OVERRIDE;
 
   XAbstractGeometry *getGeometry( XBufferType ) X_OVERRIDE;
@@ -66,6 +71,7 @@ public:
 
   // destroy abstract types
   void destroyShader(XShader* s) X_OVERRIDE;
+  void destroyShaderVertexLayout(XShaderVertexLayout *d) X_OVERRIDE;
   void destroyVertexShaderComponent(XShaderVertexComponent* s) X_OVERRIDE;
   void destroyFragmentShaderComponent(XShaderFragmentComponent* s) X_OVERRIDE;
   void destroyGeometry( XAbstractGeometry * ) X_OVERRIDE;

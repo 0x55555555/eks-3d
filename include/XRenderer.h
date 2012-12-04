@@ -10,6 +10,8 @@ class XColour;
 class XShape;
 class XAbstractGeometry;
 class XShader;
+class XShaderVertexLayout;
+class XShaderVertexLayoutDescription;
 class XFramebuffer;
 class XShaderVertexComponent;
 class XShaderFragmentComponent;
@@ -49,7 +51,12 @@ public:
 
     // creation accessors for abstract types
     virtual bool createShader(XShader *s, XShaderVertexComponent *v, XShaderFragmentComponent *f) = 0;
-    virtual bool createVertexShaderComponent(XShaderVertexComponent *v, const char *s, xsize l) = 0;
+    virtual bool createVertexShaderComponent(XShaderVertexComponent *v,
+                                             const char *s,
+                                             xsize l,
+                                             const XShaderVertexLayoutDescription *vertexDescriptions,
+                                             xsize vertexItemCount,
+                                             XShaderVertexLayout *layout) = 0;
     virtual bool createFragmentShaderComponent(XShaderFragmentComponent *f, const char *s, xsize l) = 0;
 
     virtual XAbstractGeometry *getGeometry( XBufferType ) = 0;
@@ -65,6 +72,7 @@ public:
 
     // destroy abstract types
     virtual void destroyShader(XShader* s) = 0;
+    virtual void destroyShaderVertexLayout(XShaderVertexLayout *d) = 0;
     virtual void destroyVertexShaderComponent(XShaderVertexComponent* s) = 0;
     virtual void destroyFragmentShaderComponent(XShaderFragmentComponent* s) = 0;
     virtual void destroyGeometry( XAbstractGeometry * ) = 0;

@@ -10,6 +10,12 @@
 
 using Microsoft::WRL::ComPtr;
 
+class XD3DShaderInputLayout
+  {
+public:
+  ComPtr<ID3D11InputLayout> _inputLayout;
+  };
+
 class XD3DVertexShaderImpl
   {
 public:

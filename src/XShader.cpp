@@ -3,12 +3,25 @@
 #include "XTexture.h"
 #include "XRenderer.h"
 
-XShaderVertexComponent::XShaderVertexComponent(XRenderer *r, const char *source, xsize length)
+XShaderVertexLayout::~XShaderVertexLayout()
+  {
+  if(isValid())
+    {
+    _renderer->destroyShaderVertexLayout(this);
+    }
+  }
+
+XShaderVertexComponent::XShaderVertexComponent(XRenderer *r,
+                                               const char *source,
+                                               xsize length,
+                                               const VertexLayout::VertexDescription *vertexDescription,
+                                               xsize vertexItemCount,
+                                               VertexLayout *layout)
   {
   _renderer = 0;
   if(r)
     {
-    delayedCreate(*this, r, source, length);
+    delayedCreate(*this, r, source, length, vertexDescription, vertexItemCount, layout);
     }
   }
 
@@ -23,12 +36,28 @@ XShaderVertexComponent::~XShaderVertexComponent()
 bool XShaderVertexComponent::delayedCreate(XShaderVertexComponent &ths,
                                            XRenderer *r,
                                            const char *source,
-                                           xsize length)
+                                           xsize length,
+                                           const VertexLayout::VertexDescription *vertexDescription,
+                                           xsize vertexItemCount,
+                                           VertexLayout *layout)
   {
   xAssert(!ths.isValid());
   xAssert(r && source && length);
+  xAssert(!vertexDescription || (layout && vertexItemCount));
   ths._renderer = r;
-  return r->createVertexShaderComponent(&ths, source, length);
+  bool result = r->createVertexShaderComponent(&ths,
+                                               source,
+                                               length,
+                                               vertexDescription,
+                                               vertexItemCount,
+                                               layout);
+
+  if(result && vertexDescription && layout)
+    {
+    layout->_renderer = r;
+    }
+
+  return result;
   }
 
 XShaderFragmentComponent::XShaderFragmentComponent(XRenderer *r, const char *source, xsize length)
