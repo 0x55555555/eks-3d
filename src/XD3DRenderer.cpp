@@ -250,7 +250,7 @@ void XD3DRenderer::setProjectionTransform(const XComplexTransform &p)
   _impl->_updateWorldTransformData = true;
   }
 
-void XD3DRenderer::setShader( const XShader *s )
+void XD3DRenderer::setShader(const XShader *s, const XShaderVertexLayout *layout)
   {
   const XD3DSurfaceShaderImpl* shd = s->data<XD3DSurfaceShaderImpl>();
   shd->bind(_impl->_d3dContext.Get());
@@ -266,6 +266,10 @@ void XD3DRenderer::setShader( const XShader *s )
     X_ARRAY_COUNT(buffers),
     buffers
     );
+
+
+  const XD3DShaderInputLayout* lay = layout->data<XD3DShaderInputLayout>();
+  _impl->_d3dContext->IASetInputLayout(lay->_inputLayout.Get());
   }
 
 void XD3DRenderer::drawGeometry( const XGeometry & )

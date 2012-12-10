@@ -87,7 +87,7 @@ public:
     virtual void setProjectionTransform( const XComplexTransform & ) = 0;
 
     // set the current shader
-    virtual void setShader( const XShader * ) = 0;
+    virtual void setShader( const XShader *, const XShaderVertexLayout *layout ) = 0;
 
     // draw the given geometry
     virtual void drawGeometry( const XGeometry & ) = 0;

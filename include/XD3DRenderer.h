@@ -82,7 +82,7 @@ public:
   void setProjectionTransform( const XComplexTransform & ) X_OVERRIDE;
 
   // set the current shader
-  void setShader( const XShader * ) X_OVERRIDE;
+  void setShader( const XShader *, const XShaderVertexLayout *layout ) X_OVERRIDE;
 
   // draw the given geometry
   void drawGeometry( const XGeometry & ) X_OVERRIDE;
