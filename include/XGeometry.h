@@ -3,8 +3,6 @@
 
 #include "XVector3D"
 
-typedef Eigen::Matrix<xReal, 3, 1, Eigen::DontAlign> XVector3DTight;
-
 #if 0
 #include "X3DGlobal.h"
 #include "XMetaType"
