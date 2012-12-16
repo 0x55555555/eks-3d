@@ -153,6 +153,7 @@ bool XD3DRenderer::createVertexShaderComponent(XShaderVertexComponent *v,
 
     xAssert(!layout->isValid());
     XD3DShaderInputLayout *lay = layout->data<XD3DShaderInputLayout>();
+    new(lay) XD3DShaderInputLayout();
     if(failedCheck(
       _impl->_d3dDevice->CreateInputLayout(
         vertexDesc,
@@ -204,26 +205,25 @@ void XD3DRenderer::debugRenderLocator(DebugLocatorMode)
 void XD3DRenderer::destroyShader(XShader* s)
   {
   XD3DSurfaceShaderImpl* shd = s->data<XD3DSurfaceShaderImpl>();
-  shd->_pixelShader = nullptr;
-  shd->_vertexShader = nullptr;
+  shd->~XD3DSurfaceShaderImpl();
   }
 
 void XD3DRenderer::destroyShaderVertexLayout(XShaderVertexLayout *d)
   {
-  XD3DShaderInputLayout* shd = d->data<XD3DShaderInputLayout>();
-  shd->_inputLayout = nullptr;
+  XD3DShaderInputLayout* lay = d->data<XD3DShaderInputLayout>();
+  lay->~XD3DShaderInputLayout();
   }
 
 void XD3DRenderer::destroyVertexShaderComponent(XShaderVertexComponent* s)
   {
   XD3DVertexShaderImpl *vert = s->data<XD3DVertexShaderImpl>();
-  vert->_vertexShader = nullptr;
+  vert->~XD3DVertexShaderImpl();
   }
 
 void XD3DRenderer::destroyFragmentShaderComponent(XShaderFragmentComponent* s)
   {
-  XD3DFragmentShaderImpl *vert = s->data<XD3DFragmentShaderImpl>();
-  vert->_pixelShader = nullptr;
+  XD3DFragmentShaderImpl *frag = s->data<XD3DFragmentShaderImpl>();
+  frag->~XD3DFragmentShaderImpl();
   }
 
 void XD3DRenderer::destroyGeometry( XAbstractGeometry * )
