@@ -2,6 +2,45 @@
 #define XGEOMETRY_H
 
 #include "XVector3D"
+#include "XPrivateImpl"
+
+class XRenderer;
+
+class XGeometry: public XPrivateImpl<sizeof(void*)>
+  {
+public:
+  XGeometry(XRenderer *r=0, const void *data=0, xsize elementSize=0, xsize elementCount=0);
+  ~XGeometry();
+
+  static bool delayedCreate(XGeometry &ths, XRenderer *r, const void *data, xsize size, xsize count);
+
+private:
+  XRenderer *_renderer;
+  };
+
+class XIndexGeometry: public XPrivateImpl<sizeof(void*)>
+  {
+public:
+  enum Type
+    {
+    Unsigned16,
+
+    TypeCount
+    };
+
+  XIndexGeometry(XRenderer *r=0, Type type=Unsigned16, const void *data=0, xsize dataSize=0);
+  ~XIndexGeometry();
+
+  static bool delayedCreate(
+    XIndexGeometry &ths,
+    XRenderer *r,
+    Type type,
+    const void *indexData,
+    xsize indexCount);
+
+private:
+  XRenderer *_renderer;
+  };
 
 #if 0
 #include "X3DGlobal.h"

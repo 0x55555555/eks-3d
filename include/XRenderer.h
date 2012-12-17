@@ -8,8 +8,9 @@
 
 class XColour;
 class XShape;
-class XAbstractGeometry;
 class XShader;
+class XGeometry;
+class XIndexGeometry;
 class XShaderVertexLayout;
 class XShaderVertexLayoutDescription;
 class XFramebuffer;
@@ -50,16 +51,36 @@ public:
     virtual void clear(int=ClearColour|ClearDepth) = 0;
 
     // creation accessors for abstract types
-    virtual bool createShader(XShader *s, XShaderVertexComponent *v, XShaderFragmentComponent *f) = 0;
-    virtual bool createVertexShaderComponent(XShaderVertexComponent *v,
-                                             const char *s,
-                                             xsize l,
-                                             const XShaderVertexLayoutDescription *vertexDescriptions,
-                                             xsize vertexItemCount,
-                                             XShaderVertexLayout *layout) = 0;
-    virtual bool createFragmentShaderComponent(XShaderFragmentComponent *f, const char *s, xsize l) = 0;
+    virtual bool createGeometry(
+      XGeometry *g,
+      const void *data,
+      xsize elementSize,
+      xsize elementCount) = 0;
 
-    virtual XAbstractGeometry *getGeometry( XBufferType ) = 0;
+    virtual bool createIndexGeometry(
+      XIndexGeometry *g,
+      int type,
+      const void *index,
+      xsize indexCount) = 0;
+
+    virtual bool createShader(
+      XShader *s,
+      XShaderVertexComponent *v,
+      XShaderFragmentComponent *f) = 0;
+
+    virtual bool createVertexShaderComponent(
+      XShaderVertexComponent *v,
+      const char *s,
+      xsize l,
+      const XShaderVertexLayoutDescription *vertexDescriptions,
+      xsize vertexItemCount,
+      XShaderVertexLayout *layout) = 0;
+
+    virtual bool createFragmentShaderComponent(
+      XShaderFragmentComponent *f,
+      const char *s,
+      xsize l) = 0;
+
     virtual XAbstractTexture *getTexture() = 0;
     virtual XAbstractFramebuffer *getFramebuffer( int options, int colourFormat, int depthFormat, int width, int height ) = 0;
 
@@ -75,7 +96,8 @@ public:
     virtual void destroyShaderVertexLayout(XShaderVertexLayout *d) = 0;
     virtual void destroyVertexShaderComponent(XShaderVertexComponent* s) = 0;
     virtual void destroyFragmentShaderComponent(XShaderFragmentComponent* s) = 0;
-    virtual void destroyGeometry( XAbstractGeometry * ) = 0;
+    virtual void destroyGeometry( XGeometry * ) = 0;
+    virtual void destroyIndexGeometry( XIndexGeometry * ) = 0;
     virtual void destroyTexture( XAbstractTexture * ) = 0;
     virtual void destroyFramebuffer( XAbstractFramebuffer * ) = 0;
 
@@ -90,7 +112,7 @@ public:
     virtual void setShader( const XShader *, const XShaderVertexLayout *layout ) = 0;
 
     // draw the given geometry
-    virtual void drawGeometry( const XGeometry & ) = 0;
+    virtual void drawTriangles(const XIndexGeometry *indices, const XGeometry *vert) = 0;
 
     // bind the given framebuffer for drawing
     virtual void setFramebuffer( const XFramebuffer * ) = 0;

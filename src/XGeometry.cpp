@@ -3,6 +3,64 @@
 #include "XTriangle.h"
 #include "XCuboid.h"
 
+XGeometry::XGeometry(XRenderer *r, const void *data, xsize elementSize, xsize elementCount)
+    : _renderer(0)
+  {
+  if(data)
+    {
+    xAssert(elementSize && elementCount);
+    delayedCreate(*this, r, data, elementSize, elementCount);
+    }
+  }
+
+XGeometry::~XGeometry()
+  {
+  if(_renderer)
+    {
+    _renderer->destroyGeometry(this);
+    }
+  }
+
+bool XGeometry::delayedCreate(
+    XGeometry &ths,
+    XRenderer *r,
+    const void *data,
+    xsize elementSize,
+    xsize elementCount)
+  {
+  ths._renderer = r;
+  return r->createGeometry(&ths, data, elementSize, elementCount);
+  }
+
+XIndexGeometry::XIndexGeometry(XRenderer *r, Type type, const void *data, xsize dataSize)
+    : _renderer(0)
+  {
+  if(data)
+    {
+    xAssert(dataSize);
+    delayedCreate(*this, r, type, data, dataSize);
+    }
+  }
+
+XIndexGeometry::~XIndexGeometry()
+  {
+  if(_renderer)
+    {
+    _renderer->destroyIndexGeometry(this);
+    }
+  }
+
+bool XIndexGeometry::delayedCreate(
+    XIndexGeometry &ths,
+    XRenderer *r,
+    Type type,
+    const void *index,
+    xsize indexCount)
+  {
+  ths._renderer = r;
+  return r->createIndexGeometry(&ths, type, index, indexCount);
+  }
+
 #if 0
 XAbstractGeometry::~XAbstractGeometry()
   {

@@ -54,16 +54,36 @@ public:
   void clear(int=ClearColour|ClearDepth) X_OVERRIDE;
 
   // creation accessors for abstract types
-  bool createShader(XShader *s, XShaderVertexComponent *v, XShaderFragmentComponent *f) X_OVERRIDE;
-  bool createVertexShaderComponent(XShaderVertexComponent *v,
-                                   const char *s,
-                                   xsize l,
-                                   const XShaderVertexLayoutDescription *vertexDescriptions,
-                                   xsize vertexItemCount,
-                                   XShaderVertexLayout *layout) X_OVERRIDE;
-  bool createFragmentShaderComponent(XShaderFragmentComponent *f, const char *s, xsize l) X_OVERRIDE;
+  bool createShader(
+    XShader *s,
+    XShaderVertexComponent *v,
+    XShaderFragmentComponent *f) X_OVERRIDE;
 
-  XAbstractGeometry *getGeometry( XBufferType ) X_OVERRIDE;
+  bool createVertexShaderComponent(
+    XShaderVertexComponent *v,
+    const char *s,
+    xsize l,
+    const XShaderVertexLayoutDescription *vertexDescriptions,
+    xsize vertexItemCount,
+    XShaderVertexLayout *layout) X_OVERRIDE;
+
+  bool createFragmentShaderComponent(
+    XShaderFragmentComponent *f,
+    const char *s,
+    xsize l) X_OVERRIDE;
+
+  bool createGeometry(
+    XGeometry *g,
+    const void *data,
+    xsize elementSize,
+    xsize elementCount) X_OVERRIDE;
+
+  bool createIndexGeometry(
+    XIndexGeometry *g,
+    int type,
+    const void *index,
+    xsize indexCount) X_OVERRIDE;
+
   XAbstractTexture *getTexture() X_OVERRIDE;
   XAbstractFramebuffer *getFramebuffer( int options, int colourFormat, int depthFormat, int width, int height ) X_OVERRIDE;
 
@@ -74,7 +94,8 @@ public:
   void destroyShaderVertexLayout(XShaderVertexLayout *d) X_OVERRIDE;
   void destroyVertexShaderComponent(XShaderVertexComponent* s) X_OVERRIDE;
   void destroyFragmentShaderComponent(XShaderFragmentComponent* s) X_OVERRIDE;
-  void destroyGeometry( XAbstractGeometry * ) X_OVERRIDE;
+  void destroyGeometry( XGeometry * ) X_OVERRIDE;
+  void destroyIndexGeometry( XIndexGeometry * ) X_OVERRIDE;
   void destroyTexture( XAbstractTexture * ) X_OVERRIDE;
   void destroyFramebuffer( XAbstractFramebuffer * ) X_OVERRIDE;
 
@@ -85,7 +106,7 @@ public:
   void setShader( const XShader *, const XShaderVertexLayout *layout ) X_OVERRIDE;
 
   // draw the given geometry
-  void drawGeometry( const XGeometry & ) X_OVERRIDE;
+  void drawTriangles(const XIndexGeometry *indices, const XGeometry *vert) X_OVERRIDE;
 
   // bind the given framebuffer for drawing
   void setFramebuffer( const XFramebuffer * ) X_OVERRIDE;

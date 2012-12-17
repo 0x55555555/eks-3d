@@ -69,9 +69,22 @@ public:
 class XD3DBufferImpl
   {
 public:
-  bool create(ID3D11Device1 *dev, xsize size, D3D11_BIND_FLAG type);
-  void update(ID3D11DeviceContext1 *context, void *data);
+  bool create(ID3D11Device1 *dev, const void *data, xsize size, D3D11_BIND_FLAG type);
+  void update(ID3D11DeviceContext1 *context, const void *data);
   Microsoft::WRL::ComPtr<ID3D11Buffer> buffer;
+  };
+
+class XD3DIndexBufferImpl : public XD3DBufferImpl
+  {
+public:
+  DXGI_FORMAT format;
+  xsize count;
+  };
+
+class XD3DVertexBufferImpl : public XD3DBufferImpl
+  {
+public:
+  xsize elementSize;
   };
 
 template <typename T> class XD3DTypedBufferImpl : public XD3DBufferImpl
@@ -79,7 +92,7 @@ template <typename T> class XD3DTypedBufferImpl : public XD3DBufferImpl
 public:
   void create(ID3D11Device1 *dev, D3D11_BIND_FLAG type)
     {
-    XD3DBufferImpl::create(dev, sizeof(T), type);
+    XD3DBufferImpl::create(dev, 0, sizeof(T), type);
     }
   void update(ID3D11DeviceContext1 *context)
     {

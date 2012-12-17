@@ -101,6 +101,7 @@ bool XD3DRendererImpl::createResources()
 
   _worldTransformData.create(_d3dDevice.Get(), D3D11_BIND_CONSTANT_BUFFER);
   _modelTransformData.create(_d3dDevice.Get(),
+                             0,
                              sizeof(XD3DRendererImpl::_transformStack[0]),
                              D3D11_BIND_CONSTANT_BUFFER);
 
@@ -259,13 +260,18 @@ void XD3DRenderTargetImpl::clear(
     }
   }
 
-bool XD3DBufferImpl::create(ID3D11Device1 *dev, xsize size, D3D11_BIND_FLAG type)
+bool XD3DBufferImpl::create(ID3D11Device1 *dev, const void *data, xsize size, D3D11_BIND_FLAG type)
   {
+  D3D11_SUBRESOURCE_DATA bufferData = {0};
+  bufferData.pSysMem = data;
+  bufferData.SysMemPitch = 0;
+  bufferData.SysMemSlicePitch = 0;
+
   CD3D11_BUFFER_DESC constantBufferDesc(size, type);
   if(failedCheck(
     dev->CreateBuffer(
       &constantBufferDesc,
-      nullptr,
+      data ? &bufferData : 0,
       &buffer
       )
     ))
@@ -275,7 +281,7 @@ bool XD3DBufferImpl::create(ID3D11Device1 *dev, xsize size, D3D11_BIND_FLAG type
   return true;
   }
 
-void XD3DBufferImpl::update(ID3D11DeviceContext1 *context, void *data)
+void XD3DBufferImpl::update(ID3D11DeviceContext1 *context, const void *data)
   {
   context->UpdateSubresource(
     buffer.Get(),
