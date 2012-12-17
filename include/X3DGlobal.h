@@ -5,9 +5,9 @@
 
 #ifndef EKS3D_STATIC_BUILD
 # if defined(EKS3D_BUILD)
-#  define EKS3D_EXPORT Q_DECL_IMPORT
-# else
 #  define EKS3D_EXPORT Q_DECL_EXPORT
+# else
+#  define EKS3D_EXPORT Q_DECL_IMPORT
 # endif
 #else
 # define EKS3D_EXPORT

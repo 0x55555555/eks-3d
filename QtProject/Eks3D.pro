@@ -10,27 +10,21 @@ include("../../EksCore/GeneralOptions.pri")
 QT += opengl \
     xml
 
-SOURCES += ../src/XDoodad.cpp \
-    ../src/XScene.cpp \
+SOURCES += \
     ../src/XCuboid.cpp \
     ../src/XTransform.cpp \
     ../src/XRenderer.cpp \
-    ../src/XFrameEvent.cpp \
-    ../src/XTransformEvent.cpp \
     ../src/XCamera.cpp \
     ../src/XGeometry.cpp \
     ../src/XShader.cpp \
     ../src/XTexture.cpp \
     ../src/XModeller.cpp \
     ../src/XColladaFile.cpp \
-    ../src/XShape.cpp \
     ../src/XFrustum.cpp \
     ../src/XPlane.cpp \
     ../src/XLine.cpp \
     ../src/XTriangle.cpp \
     ../src/XFramebuffer.cpp \
-    ../src/XLightManager.cpp \
-    ../src/XLightRig.cpp \
     ../src/XAbstractCanvas.cpp \
     ../src/X2DCanvas.cpp \
     ../src/XAbstractRenderModel.cpp \
@@ -45,22 +39,17 @@ HEADERS += ../include/XDoodad.h \
     ../include/XCuboid.h \
     ../include/XTransform.h \
     ../include/XRenderer.h \
-    ../include/XFrameEvent.h \
-    ../include/XTransformEvent.h \
     ../include/XCamera.h \
     ../include/XGeometry.h \
     ../include/XShader.h \
     ../include/XTexture.h \
     ../include/XModeller.h \
     ../include/XColladaFile.h \
-    ../include/XShape.h \
     ../include/XFrustum.h \
     ../include/XPlane.h \
     ../include/XLine.h \
     ../include/XTriangle.h \
     ../include/XFramebuffer.h \
-    ../include/XLightManager.h \
-    ../include/XLightRig.h \
     ../include/XAbstractCanvas.h \
     ../include/X2DCanvas.h \
     ../include/XAbstractRenderModel.h \

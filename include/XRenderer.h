@@ -37,7 +37,6 @@ public:
     virtual ~XRenderer( );
 
     typedef Eigen::Affine3f Transform;
-    typedef Eigen::Affine3f Transform;
 
     virtual void pushTransform( const Transform & ) = 0;
     virtual void popTransform( ) = 0;

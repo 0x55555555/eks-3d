@@ -26,39 +26,47 @@ public:
 
     void setViewportSize( QSize );
 
-    virtual XAbstractShader *getShader( );
-    virtual XAbstractGeometry *getGeometry( XGeometry::BufferType );
-    virtual XAbstractTexture *getTexture();
-    virtual XAbstractFramebuffer *getFramebuffer( int options, int cf, int df, int width, int heightg );
+    bool createGeometry(
+      XGeometry *g,
+      const void *data,
+      xsize elementSize,
+        xsize elementCount) X_OVERRIDE;
 
-    virtual void debugRenderLocator(DebugLocatorMode m);
+    bool createShader(
+      XShader *s,
+      XShaderVertexComponent *v,
+      XShaderFragmentComponent *f) X_OVERRIDE;
 
-    virtual void destroyShader( XAbstractShader * );
-    virtual void destroyGeometry( XAbstractGeometry * );
-    virtual void destroyTexture( XAbstractTexture * );
-    virtual void destroyFramebuffer( XAbstractFramebuffer * );
+    XAbstractTexture *getTexture() X_OVERRIDE;
+    XAbstractFramebuffer *getFramebuffer( int options, int cf, int df, int width, int heightg ) X_OVERRIDE;
 
-    virtual void pushTransform( const XTransform & );
-    virtual void popTransform( );
+    void debugRenderLocator(DebugLocatorMode m) X_OVERRIDE;
 
-    virtual void setClearColour(const XColour &col);
-    virtual void clear(int=ClearColour|ClearDepth);
+    void destroyTexture( XAbstractTexture * ) X_OVERRIDE;
+    void destroyFramebuffer( XAbstractFramebuffer * ) X_OVERRIDE;
 
-    virtual void enableRenderFlag( RenderFlags );
-    virtual void disableRenderFlag( RenderFlags );
+    void pushTransform( const XTransform & ) X_OVERRIDE;
+    void popTransform( ) X_OVERRIDE;
 
-    virtual void setProjectionTransform( const XComplexTransform & );
+    void setClearColour(const XColour &col) X_OVERRIDE;
+    void clear(int=ClearColour|ClearDepth) X_OVERRIDE;
 
-    virtual void setShader( const XShader * );
+    void enableRenderFlag( RenderFlags ) X_OVERRIDE;
+    void disableRenderFlag( RenderFlags ) X_OVERRIDE;
 
-    virtual void drawGeometry( const XGeometry & );
+    void setProjectionTransform( const XComplexTransform & ) X_OVERRIDE;
 
-    virtual void setFramebuffer( const XFramebuffer * );
+    void setShader( const XShader * ) X_OVERRIDE;
 
-    QSize viewportSize();
+    void drawTriangles(const XIndexGeometry *indices, const XGeometry *vert) X_OVERRIDE;
+
+    void setFramebuffer( const XFramebuffer * ) X_OVERRIDE;
+
+    QSize viewportSize() X_OVERRIDE;
 
     QGLContext *_context;
-    XGLShader *_currentShader;
+    XShader *_currentShader;
+    XShaderVertexLayout *_vertexLayout;
     QSize _size;
     XGLFramebuffer *_currentFramebuffer;
     XVector <int> m_ids;

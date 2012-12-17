@@ -7,40 +7,41 @@
 #include "XGeometry.h"
 #include "XShader.h"
 #include "XTexture.h"
-#include "QVariant"
+#include "XColour"
 #include "QGLShaderProgram"
+#include "QVarLengthArray"
 #include "QDebug"
 #include "XShader.h"
 #include "QFile"
 
 const char *glErrorString( int err )
+  {
+  if( err == GL_INVALID_ENUM )
     {
-    if( err == GL_INVALID_ENUM )
-        {
-        return "GL Error: Invalid Enum";
-        }
-    else if( err == GL_INVALID_VALUE )
-        {
-        return "GL Error: Invalid Value";
-        }
-    else if( err == GL_INVALID_OPERATION )
-        {
-        return "GL Error: Invalid Operation";
-        }
-    else if( err == GL_STACK_OVERFLOW )
-        {
-        return "GL Error: Stack Overflow";
-        }
-    else if( err == GL_STACK_UNDERFLOW )
-        {
-        return "GL Error: Stack Underflow";
-        }
-    else if( err == GL_OUT_OF_MEMORY )
-        {
-        return "GL Error: Out Of Memory";
-        }
-    return "GL Error: No Error";
+    return "GL Error: Invalid Enum";
     }
+  else if( err == GL_INVALID_VALUE )
+    {
+    return "GL Error: Invalid Value";
+    }
+  else if( err == GL_INVALID_OPERATION )
+    {
+    return "GL Error: Invalid Operation";
+    }
+  else if( err == GL_STACK_OVERFLOW )
+    {
+    return "GL Error: Stack Overflow";
+    }
+  else if( err == GL_STACK_UNDERFLOW )
+    {
+    return "GL Error: Stack Underflow";
+    }
+  else if( err == GL_OUT_OF_MEMORY )
+    {
+    return "GL Error: Out Of Memory";
+    }
+  return "GL Error: No Error";
+  }
 
 #ifdef X_DEBUG
 # define GLE ; { int _GL = glGetError(); xAssertMessage(!_GL, "GL Error", _GL, glErrorString( _GL )); }
@@ -79,164 +80,104 @@ private:
 //----------------------------------------------------------------------------------------------------------------------
 
 class XGLFramebuffer : public XAbstractFramebuffer
-    {
+  {
 public:
-    XGLFramebuffer( XGLRenderer *, int options, int colourFormat, int depthFormat, int width, int height );
-    ~XGLFramebuffer( );
+  XGLFramebuffer( XGLRenderer *, int options, int colourFormat, int depthFormat, int width, int height );
+  ~XGLFramebuffer( );
 
-    void bind();
-    void unbind();
+  void bind();
+  void unbind();
 
-    virtual bool isValid() const;
+  virtual bool isValid() const;
 
-    virtual const XAbstractTexture *colour() const;
-    virtual const XAbstractTexture *depth() const;
+  virtual const XAbstractTexture *colour() const;
+  virtual const XAbstractTexture *depth() const;
 
 private:
-    XGLRenderer *_renderer;
-    XGLTexture *_colour;
-    XGLTexture *_depth;
-    unsigned int _buffer;
-    friend class XGLShaderVariable;
-    friend class XGLRenderer;
+  XGLRenderer *_renderer;
+  XGLTexture *_colour;
+  XGLTexture *_depth;
+  unsigned int _buffer;
+  friend class XGLShaderVariable;
+  friend class XGLRenderer;
+  };
+
+//----------------------------------------------------------------------------------------------------------------------
+// VERTEX LAYOUT
+//----------------------------------------------------------------------------------------------------------------------
+
+class XGLVertexLayout
+  {
+public:
+  XGLVertexLayout( XGLRenderer * );
+  ~XGLVertexLayout();
+
+  struct Attribute
+    {
+    QString name;
+    xsize stride;
+    xsize offset;
+    xuint8 components;
+    // type is currently always float.
     };
+
+  enum
+    {
+    AttributeCount = 3
+    };
+  QVarLengthArray<Attribute, AttributeCount> attributes;
+
+
+  };
 
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER
 //----------------------------------------------------------------------------------------------------------------------
 
-class XGLShader : public XAbstractShader
-    {
+class XGLShader
+  {
 public:
-    XGLShader( XGLRenderer * );
-    ~XGLShader();
+  XGLShader( XGLRenderer * );
+  ~XGLShader();
 
 private:
-    virtual bool addComponent(ComponentType c, const QString &source, QStringList &log);
-    virtual bool build(QStringList &log);
-    virtual bool isValid();
+  bool build(QStringList &log);
+  bool isValid();
 
-    virtual XAbstractShaderVariable *createVariable( QString, XAbstractShader * );
-    virtual void destroyVariable( XAbstractShaderVariable * );
 
-    QGLShaderProgram shader;
-    friend class XGLRenderer;
-    friend class XGLShaderVariable;
-    };
+  QGLShaderProgram shader;
+  friend class XGLRenderer;
+  friend class XGLShaderVariable;
+  };
 
 //----------------------------------------------------------------------------------------------------------------------
-// SHADER VARIABLE
+// INDEX GEOMETRY CACHE
 //----------------------------------------------------------------------------------------------------------------------
 
-#define GL_SHADER_VARIABLE_PARENT static_cast<XGLShader*>(abstractShader())
-
-class XGLShaderVariable : public XAbstractShaderVariable
-    {
+class XGLIndexGeometryCache
+  {
 public:
-    XGLShaderVariable( XAbstractShader *, QString );
-    ~XGLShaderVariable( );
+  XGLIndexGeometryCache( XGLRenderer *, const void *data, XIndexGeometry::Type type, xsize elementCount );
+  ~XGLIndexGeometryCache( );
 
-    void setValue( int value );
-    void setValue( xReal value );
-    void setValue( unsigned int value );
-    void setValue( const XColour &value );
-    void setValue( const XVector2D &value );
-    void setValue( const XVector3D &value );
-    void setValue( const XVector4D &value );
-    void setValue( const QMatrix2x2 &value );
-    void setValue( const QMatrix2x3 &value );
-    void setValue( const QMatrix2x4 &value );
-    void setValue( const QMatrix3x2 &value );
-    void setValue( const QMatrix3x3 &value );
-    void setValue( const QMatrix3x4 &value );
-    void setValue( const QMatrix4x2 &value );
-    void setValue( const QMatrix4x3 &value );
-    void setValue( const QMatrix4x4 &value );
-    void setValue( const XTexture *value );
-    void setValueArray( const XVector<int> &values );
-    void setValueArray( const XVector<xReal> &values );
-    void setValueArray( const XVector<unsigned int> &values );
-    void setValueArray( const XVector<XColour> &values );
-    void setValueArray( const XVector<XVector2D> &values );
-    void setValueArray( const XVector<XVector3D> &values );
-    void setValueArray( const XVector<XVector4D> &values );
-    void setValueArray( const XVector<QMatrix2x2> &values );
-    void setValueArray( const XVector<QMatrix2x3> &values );
-    void setValueArray( const XVector<QMatrix2x4> &values );
-    void setValueArray( const XVector<QMatrix3x2> &values );
-    void setValueArray( const XVector<QMatrix3x3> &values );
-    void setValueArray( const XVector<QMatrix3x4> &values );
-    void setValueArray( const XVector<QMatrix4x2> &values );
-    void setValueArray( const XVector<QMatrix4x3> &values );
-    void setValueArray( const XVector<QMatrix4x4> &values );
-
-    virtual void rebind();
-
-    inline void bindShader()
-      {
-      XRenderer *r = GL_SHADER_VARIABLE_PARENT->renderer();
-      if(static_cast<XGLRenderer*>(r)->_currentShader != GL_SHADER_VARIABLE_PARENT)
-        {
-        static_cast<XGLRenderer*>(r)->_currentShader = 0;
-        GL_SHADER_VARIABLE_PARENT->shader.bind();
-        }
-      }
-
-private:
-    void clear();
-    QString _name;
-    int _location;
-    const XTexture *_texture;
-    QVariant _value;
-    friend class XGLRenderer;
-    };
+  unsigned int _indexArray;
+  unsigned int _indexCount;
+  unsigned int _indexType;
+  };
 
 //----------------------------------------------------------------------------------------------------------------------
 // GEOMETRY CACHE
 //----------------------------------------------------------------------------------------------------------------------
 
-class XGLGeometryCache : public XAbstractGeometry
-    {
+
+class XGLGeometryCache
+  {
 public:
-    XGLGeometryCache( XGLRenderer *, XGeometry::BufferType );
-    ~XGLGeometryCache( );
+  XGLGeometryCache( XGLRenderer *, const void *data, xsize elementSize, xsize elementCount );
+  ~XGLGeometryCache( );
 
-    virtual void setPoints( const XVector<unsigned int> & );
-    virtual void setLines( const XVector<unsigned int> & );
-    virtual void setTriangles( const XVector<unsigned int> & );
-
-    virtual void setAttributesSize( int, int, int, int, int );
-
-    virtual void setAttribute( QString, const XVector<xReal> & );
-    virtual void setAttribute( QString, const XVector<XVector2D> & );
-    virtual void setAttribute( QString, const XVector<XVector3D> & );
-    virtual void setAttribute( QString, const XVector<XVector4D> & );
-
-private:
-    unsigned int _vertexArray;
-
-    unsigned int _pointArray;
-    unsigned int _lineArray;
-    unsigned int _triangleArray;
-    unsigned int _pointSize;
-    unsigned int _lineSize;
-    unsigned int _triangleSize;
-
-    int _type;
-
-    int getCacheOffset( const QString &name, int components, int attrSize );
-    struct DrawCache
-        {
-        QString name;
-        int components;
-        xsize offset;
-        };
-    XList <DrawCache> _cache;
-    int _usedCacheSize;
-
-    XGLRenderer *_renderer;
-    friend class XGLRenderer;
-    };
+  unsigned int _vertexArray;
+  };
 
 //----------------------------------------------------------------------------------------------------------------------
 // RENDERER
@@ -254,33 +195,33 @@ void XGLRenderer::setContext(QGLContext *ctx)
   }
 
 QGLContext *XGLRenderer::context()
-    {
-    return _context;
-    }
+  {
+  return _context;
+  }
 
 const QGLContext *XGLRenderer::context() const
-    {
-    return _context;
-    }
+  {
+  return _context;
+  }
 
 void XGLRenderer::intialise()
-    {
-    glewInit() GLE;
-    glEnable( GL_DEPTH_TEST ) GLE;
-    }
+  {
+  glewInit() GLE;
+  glEnable( GL_DEPTH_TEST ) GLE;
+  }
 
 void XGLRenderer::pushTransform( const XTransform &trans )
-    {
-    glMatrixMode( GL_MODELVIEW ) GLE;
-    glPushMatrix() GLE;
-    glMultMatrixf( trans.data() ) GLE;
-    }
+  {
+  glMatrixMode( GL_MODELVIEW ) GLE;
+  glPushMatrix() GLE;
+  glMultMatrixf( trans.data() ) GLE;
+  }
 
 void XGLRenderer::popTransform( )
-    {
-    glMatrixMode( GL_MODELVIEW ) GLE;
-    glPopMatrix() GLE;
-    }
+  {
+  glMatrixMode( GL_MODELVIEW ) GLE;
+  glPopMatrix() GLE;
+  }
 
 void XGLRenderer::setClearColour(const XColour &col)
   {
@@ -288,11 +229,11 @@ void XGLRenderer::setClearColour(const XColour &col)
   }
 
 void XGLRenderer::clear( int c )
-    {
-    int realMode = ((c&ClearColour) != false) ? GL_COLOR_BUFFER_BIT : 0;
-    realMode |= ((c&ClearDepth) != false) ? GL_DEPTH_BUFFER_BIT : 0;
-    glClear( realMode ) GLE;
-    }
+  {
+  int realMode = ((c&ClearColour) != false) ? GL_COLOR_BUFFER_BIT : 0;
+  realMode |= ((c&ClearDepth) != false) ? GL_DEPTH_BUFFER_BIT : 0;
+  glClear( realMode ) GLE;
+  }
 
 void XGLRenderer::debugRenderLocator(DebugLocatorMode m)
   {
@@ -304,182 +245,176 @@ void XGLRenderer::debugRenderLocator(DebugLocatorMode m)
     }
 
   glBegin(GL_LINES);
-    glVertex3f(-0.5, 0, 0);
-    glVertex3f(0.5, 0, 0);
-    glVertex3f(0, -0.5, 0);
-    glVertex3f(0, 0.5, 0);
-    glVertex3f(0, 0, -0.5);
-    glVertex3f(0, 0, 0.5);
+  glVertex3f(-0.5, 0, 0);
+  glVertex3f(0.5, 0, 0);
+  glVertex3f(0, -0.5, 0);
+  glVertex3f(0, 0.5, 0);
+  glVertex3f(0, 0, -0.5);
+  glVertex3f(0, 0, 0.5);
   glEnd();
 
 
   glBegin(GL_TRIANGLES);
-    glVertex3f(-0.5, 0, 0);
-    glVertex3f(0, 0, 0);
-    glVertex3f(0, -0.5, 0);
+  glVertex3f(-0.5, 0, 0);
+  glVertex3f(0, 0, 0);
+  glVertex3f(0, -0.5, 0);
 
-    glVertex3f(0, 0, 0);
-    glVertex3f(-0.5, 0, 0);
-    glVertex3f(0, -0.5, 0);
+  glVertex3f(0, 0, 0);
+  glVertex3f(-0.5, 0, 0);
+  glVertex3f(0, -0.5, 0);
   glEnd();
   }
 
 void XGLRenderer::enableRenderFlag( RenderFlags f )
-    {
-    if( f == AlphaBlending )
-        {
-        glEnable( GL_BLEND ) GLE;
-        glBlendFunc(GL_SRC_ALPHA,GL_ONE) GLE;
-        }
-    else if( f == DepthTest )
-        {
-        glEnable( GL_DEPTH_TEST ) GLE;
-        }
-    else if( f == BackfaceCulling )
-        {
-        glEnable( GL_CULL_FACE ) GLE;
-        }
-    }
-
-void XGLRenderer::disableRenderFlag( RenderFlags f )
-    {
-    if( f == AlphaBlending )
-        {
-        glDisable( GL_BLEND ) GLE;
-        }
-    else if( f == DepthTest )
-        {
-        glDisable( GL_DEPTH_TEST ) GLE;
-        }
-    else if( f == BackfaceCulling )
-        {
-        glDisable( GL_CULL_FACE ) GLE;
-        }
-    }
-
-void XGLRenderer::setViewportSize( QSize size )
-    {
-    _size = size;
-    glViewport( 0, 0, size.width(), size.height() ) GLE;
-    }
-
-void XGLRenderer::setProjectionTransform( const XComplexTransform &trans )
-    {
-    glMatrixMode( GL_PROJECTION ) GLE;
-    glLoadIdentity() GLE;
-    glMultMatrixf( trans.data() ) GLE;
-    glMatrixMode( GL_MODELVIEW ) GLE;
-    }
-
-QDebug operator<<( QDebug dbg, XVector2D v )
-    {
-    return dbg << "Vertex2D(" << v.x() << "," << v.y() << ")";
-    }
-
-QDebug operator<<( QDebug dbg, XVector3D v )
-    {
-    return dbg << "Vertex2D(" <<v.x() << "," << v.y() << "," << v.z() << ")";
-    }
-
-void XGLRenderer::drawGeometry( const XGeometry &cache )
   {
-  if( _currentShader )
+  if( f == AlphaBlending )
     {
-    cache.prepareInternal( this );
-    XGLGeometryCache *gC = static_cast<XGLGeometryCache*>((&cache)->internal());
-
-    glBindBuffer( GL_ARRAY_BUFFER, gC->_vertexArray ) GLE;
-
-    m_ids.clear();
-    Q_FOREACH( const XGLGeometryCache::DrawCache &ref, gC->_cache )
-      {
-      int location( _currentShader->shader.attributeLocation(ref.name) );
-      if( location >= 0 )
-        {
-        m_ids << location;
-        glEnableVertexAttribArray( location ) GLE;
-        glVertexAttribPointer( location, ref.components, GL_FLOAT, GL_FALSE, 0, (GLvoid*)ref.offset ) GLE;
-        }
-      }
-
-    if( gC->_pointArray )
-      {
-      glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, gC->_pointArray ) GLE;
-      glDrawElements( GL_POINTS, gC->_pointSize, GL_UNSIGNED_INT, (GLvoid*)((char*)NULL)) GLE;
-      glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
-      }
-
-    if( gC->_lineArray )
-      {
-      glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, gC->_lineArray ) GLE;
-      glDrawElements( GL_LINES, gC->_lineSize, GL_UNSIGNED_INT, (GLvoid*)((char*)NULL)) GLE;
-      glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
-      }
-
-    if( gC->_triangleArray )
-      {
-      glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, gC->_triangleArray ) GLE;
-      glDrawElements( GL_TRIANGLES, gC->_triangleSize, GL_UNSIGNED_INT, (GLvoid*)((char*)NULL)) GLE;
-      glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
-      }
-
-    Q_FOREACH( int id, m_ids )
-      {
-      glDisableVertexAttribArray( id ) GLE;
-      }
-
-    glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
+    glEnable( GL_BLEND ) GLE;
+    glBlendFunc(GL_SRC_ALPHA,GL_ONE) GLE;
+    }
+  else if( f == DepthTest )
+    {
+    glEnable( GL_DEPTH_TEST ) GLE;
+    }
+  else if( f == BackfaceCulling )
+    {
+    glEnable( GL_CULL_FACE ) GLE;
     }
   }
 
-XAbstractGeometry *XGLRenderer::getGeometry( XGeometry::BufferType t )
+void XGLRenderer::disableRenderFlag( RenderFlags f )
+  {
+  if( f == AlphaBlending )
     {
-    return new XGLGeometryCache( this, t );
+    glDisable( GL_BLEND ) GLE;
     }
+  else if( f == DepthTest )
+    {
+    glDisable( GL_DEPTH_TEST ) GLE;
+    }
+  else if( f == BackfaceCulling )
+    {
+    glDisable( GL_CULL_FACE ) GLE;
+    }
+  }
+
+void XGLRenderer::setViewportSize( QSize size )
+  {
+  _size = size;
+  glViewport( 0, 0, size.width(), size.height() ) GLE;
+  }
+
+void XGLRenderer::setProjectionTransform( const XComplexTransform &trans )
+  {
+  glMatrixMode( GL_PROJECTION ) GLE;
+  glLoadIdentity() GLE;
+  glMultMatrixf( trans.data() ) GLE;
+  glMatrixMode( GL_MODELVIEW ) GLE;
+  }
+
+QDebug operator<<( QDebug dbg, XVector2D v )
+  {
+  return dbg << "Vertex2D(" << v.x() << "," << v.y() << ")";
+  }
+
+QDebug operator<<( QDebug dbg, XVector3D v )
+  {
+  return dbg << "Vertex2D(" <<v.x() << "," << v.y() << "," << v.z() << ")";
+  }
+
+void XGLRenderer::drawTriangles(const XIndexGeometry *indices, const XGeometry *vert)
+  {
+  xAssert(_currentShader);
+  xAssert(_vertexLayout);
+  xAssert(indices);
+  xAssert(vert);
+
+  const XGLIndexGeometryCache *idx = indices->data<XGLIndexGeometryCache>();
+  const XGLGeometryCache *gC = vert->data<XGLGeometryCache>();
+  const XGLShader *shader = _currentShader->data<XGLShader>();
+  const XGLVertexLayout *layout = _vertexLayout->data<XGLVertexLayout>();
+
+  glBindBuffer( GL_ARRAY_BUFFER, gC->_vertexArray ) GLE;
+
+  m_ids.clear();
+  Q_FOREACH( const XGLVertexLayout::Attribute &ref, layout->attributes )
+    {
+    int location( shader->shader.attributeLocation(ref.name) );
+    if( location >= 0 )
+      {
+      m_ids << location;
+      glEnableVertexAttribArray( location ) GLE;
+      glVertexAttribPointer( location, ref.components, GL_FLOAT, GL_FALSE, ref.stride, (GLvoid*)ref.offset ) GLE;
+      }
+    }
+
+  glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, idx->_indexArray ) GLE;
+  glDrawElements( GL_TRIANGLES, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
+  glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
+
+  Q_FOREACH( int id, m_ids )
+    {
+    glDisableVertexAttribArray( id ) GLE;
+    }
+
+  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
+  }
+
+bool XGLRenderer::createGeometry(
+    XGeometry *g,
+    const void *data,
+    xsize elementSize,
+    xsize elementCount)
+  {
+  XGLGeometryCache *cache = g->data<XGLGeometryCache>();
+  new(cache) XGLGeometryCache( this, data, elementSize, elementCount );
+  return true;
+  }
 
 void XGLRenderer::setShader( const XShader *shader )
   {
-  if( shader && ( _currentShader == 0 || _currentShader != shader->internal() ) )
+  if( shader && ( _currentShader == 0 || _currentShader != shader ) )
     {
-    shader->prepareInternal( this );
-    _currentShader = static_cast<XGLShader*>(shader->internal());
+    _currentShader = const_cast<XShader *>(shader);
+    XGLShader* shaderInt = _currentShader->data<XGLShader>();
 
-    if(_currentShader->shader.isLinked())
+    xAssert(shaderInt->shader.isLinked());
+
+    shaderInt->shader.bind() GLE;
+
+    /*
+    int x=0;
+    Q_FOREACH( XShaderVariable *var, shader->variables() )
       {
-      _currentShader->shader.bind() GLE;
-
-      int x=0;
-      Q_FOREACH( XShaderVariable *var, shader->variables() )
+      XGLShaderVariable *glVar( static_cast<XGLShaderVariable*>(var->internal()) );
+      if( glVar->_texture )
         {
-        XGLShaderVariable *glVar( static_cast<XGLShaderVariable*>(var->internal()) );
-        if( glVar->_texture )
-          {
-          const XTexture *tex( glVar->_texture );
-          tex->prepareInternal( this );
-          const XGLTexture *glTex( static_cast<const XGLTexture*>(tex->internal()) );
-          xAssert( glTex );
-          glActiveTexture( GL_TEXTURE0 + x ) GLE;
-          glBindTexture( GL_TEXTURE_2D, glTex->_id ) GLE;
-          _currentShader->shader.setUniformValue( glVar->_location, x );
-          }
-        x++;
+        const XTexture *tex( glVar->_texture );
+        tex->prepareInternal( this );
+        const XGLTexture *glTex( static_cast<const XGLTexture*>(tex->internal()) );
+        xAssert( glTex );
+        glActiveTexture( GL_TEXTURE0 + x ) GLE;
+        glBindTexture( GL_TEXTURE_2D, glTex->_id ) GLE;
+        shaderInt->shader.setUniformValue( glVar->_location, x );
         }
-      }
-    else
-      {
-      _currentShader = 0;
-      }
+      x++;
+      }*/
     }
   else if( shader == 0 && _currentShader != 0 )
     {
-    _currentShader->shader.release() GLE;
+    XGLShader* shaderInt = _currentShader->data<XGLShader>();
+    shaderInt->shader.release() GLE;
     _currentShader = 0;
     }
   }
 
-XAbstractShader *XGLRenderer::getShader( )
+bool XGLRenderer::createShader(
+    XShader *s,
+    XShaderVertexComponent *v,
+    XShaderFragmentComponent *f)
   {
-  return new XGLShader( this );
+  XGLShader *glS = s->data<XGLShader>();
+  new(glS) XGLShader( this, v, f );
   }
 
 void XGLRenderer::setFramebuffer( const XFramebuffer *fb )
@@ -565,23 +500,23 @@ int getInternalFormat( int format )
   {
   switch( format )
     {
-  case RGBA|Byte:
-    return GL_RGBA8;
-  case RGBA|Half:
-    return GL_RGBA16F_ARB;
-  case RGBA|Float:
-    return GL_RGBA32F_ARB;
-  case RGB|Byte:
-    return GL_RGB8;
-  case RGB|Half:
-    return GL_RGBA16F_ARB;
-  case RGB|Float:
-    return GL_RGB32F_ARB;
-  case Short:
-    return GL_DEPTH_COMPONENT16;
-  case Float:
-    return GL_DEPTH_COMPONENT32F_NV;
-  default:
+    case RGBA|Byte:
+      return GL_RGBA8;
+    case RGBA|Half:
+      return GL_RGBA16F_ARB;
+    case RGBA|Float:
+      return GL_RGBA32F_ARB;
+    case RGB|Byte:
+      return GL_RGB8;
+    case RGB|Half:
+      return GL_RGBA16F_ARB;
+    case RGB|Float:
+      return GL_RGB32F_ARB;
+    case Short:
+      return GL_DEPTH_COMPONENT16;
+    case Float:
+      return GL_DEPTH_COMPONENT32F_NV;
+    default:
       qDebug() << "Invalid format option" << format;
     }
   return GL_RGBA8;
@@ -645,7 +580,7 @@ void XGLTexture::clear()
 //----------------------------------------------------------------------------------------------------------------------
 
 XGLFramebuffer::XGLFramebuffer( XGLRenderer *r, int options, int cF, int dF, int width, int height )
-    : _renderer( r ), _colour( 0 ), _depth( 0 )
+  : _renderer( r ), _colour( 0 ), _depth( 0 )
   {
   glGenFramebuffersEXT( 1, &_buffer ) GLE;
   glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, _buffer ) GLE;
@@ -819,7 +754,7 @@ void XGLShader::destroyVariable( XAbstractShaderVariable *var )
 
 
 XGLShaderVariable::XGLShaderVariable( XAbstractShader *s, QString name )
-    : XAbstractShaderVariable( s ), _name( name ), _texture( 0 )
+  : XAbstractShaderVariable( s ), _name( name ), _texture( 0 )
   {
   rebind();
   }
@@ -1059,10 +994,25 @@ void XGLShaderVariable::clear()
 #undef GL_SHADER_VARIABLE_PARENT
 
 //----------------------------------------------------------------------------------------------------------------------
+// INDEX GEOMETRY CACHE
+//----------------------------------------------------------------------------------------------------------------------
+XGLIndexGeometryCache::XGLIndexGeometryCache( XGLRenderer *, const void *data, XIndexGeometry::Type type, xsize elementCount )
+  {
+  unsigned int typeMap[] =
+    {
+    GL_UNSIGNED_SHORT
+    };
+  xCompileTimeAssert(XIndexGeometry::TypeCount == X_ARRAY_COUNT(typeMap));
+
+  _indexType = typeMap[type];
+  _indexCount = elementCount;
+  }
+
+//----------------------------------------------------------------------------------------------------------------------
 // GEOMETRY CACHE
 //----------------------------------------------------------------------------------------------------------------------
 
-XGLGeometryCache::XGLGeometryCache( XGLRenderer *r, XGeometry::BufferType type ) : _renderer( r )
+XGLGeometryCache::XGLGeometryCache( XGLRenderer *r, const void *data, xsize elementSize, xsize elementCount ) : _renderer( r )
   {
   _pointArray = 0;
   _lineArray = 0;
@@ -1089,153 +1039,153 @@ XGLGeometryCache::XGLGeometryCache( XGLRenderer *r, XGeometry::BufferType type )
   }
 
 XGLGeometryCache::~XGLGeometryCache( )
-    {
-    glDeleteBuffers( 1, &_vertexArray ) GLE;
+  {
+  glDeleteBuffers( 1, &_vertexArray ) GLE;
 
-    if( _pointArray )
-        {
-        glDeleteBuffers( 1, &_pointArray ) GLE;
-        }
-    if( _lineArray )
-        {
-        glDeleteBuffers( 1, &_lineArray ) GLE;
-        }
-    if( _triangleArray )
-        {
-        glDeleteBuffers( 1, &_triangleArray ) GLE;
-        }
+  if( _pointArray )
+    {
+    glDeleteBuffers( 1, &_pointArray ) GLE;
     }
+  if( _lineArray )
+    {
+    glDeleteBuffers( 1, &_lineArray ) GLE;
+    }
+  if( _triangleArray )
+    {
+    glDeleteBuffers( 1, &_triangleArray ) GLE;
+    }
+  }
 
 void XGLGeometryCache::setPoints( const XVector<unsigned int> &poi )
+  {
+  if( poi.size() )
     {
-    if( poi.size() )
-        {
-        _pointSize = poi.size();
-        if( !_pointArray )
-            {
-            glGenBuffers( 1, &_pointArray );
-            }
+    _pointSize = poi.size();
+    if( !_pointArray )
+      {
+      glGenBuffers( 1, &_pointArray );
+      }
 
-        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, _pointArray ) GLE;
-        glBufferData( GL_ELEMENT_ARRAY_BUFFER, poi.size()*sizeof(unsigned int), &(poi.front()), _type ) GLE;
-        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
-        }
-    else if( _pointArray )
-        {
-        glDeleteBuffers( 1, &_pointArray ) GLE;
-        }
+    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, _pointArray ) GLE;
+    glBufferData( GL_ELEMENT_ARRAY_BUFFER, poi.size()*sizeof(unsigned int), &(poi.front()), _type ) GLE;
+    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
     }
+  else if( _pointArray )
+    {
+    glDeleteBuffers( 1, &_pointArray ) GLE;
+    }
+  }
 
 void XGLGeometryCache::setLines( const XVector<unsigned int> &lin )
+  {
+  if( lin.size() )
     {
-    if( lin.size() )
-        {
-        _lineSize = lin.size();
-        if( !_lineArray )
-            {
-            glGenBuffers( 1, &_lineArray ) GLE;
-            }
+    _lineSize = lin.size();
+    if( !_lineArray )
+      {
+      glGenBuffers( 1, &_lineArray ) GLE;
+      }
 
-        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, _lineArray ) GLE;
-        glBufferData( GL_ELEMENT_ARRAY_BUFFER, lin.size()*sizeof(unsigned int), &(lin.front()), _type ) GLE;
-        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
-        }
-    else if( _lineArray )
-        {
-        glDeleteBuffers( 1, &_lineArray ) GLE;
-        }
+    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, _lineArray ) GLE;
+    glBufferData( GL_ELEMENT_ARRAY_BUFFER, lin.size()*sizeof(unsigned int), &(lin.front()), _type ) GLE;
+    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
     }
+  else if( _lineArray )
+    {
+    glDeleteBuffers( 1, &_lineArray ) GLE;
+    }
+  }
 
 void XGLGeometryCache::setTriangles( const XVector<unsigned int> &tri )
+  {
+  if( tri.size() )
     {
-    if( tri.size() )
-        {
-        _triangleSize = tri.size();
-        if( !_triangleArray )
-            {
-            glGenBuffers( 1, &_triangleArray ) GLE;
-            }
+    _triangleSize = tri.size();
+    if( !_triangleArray )
+      {
+      glGenBuffers( 1, &_triangleArray ) GLE;
+      }
 
-        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, _triangleArray ) GLE;
-        glBufferData( GL_ELEMENT_ARRAY_BUFFER, tri.size()*sizeof(unsigned int), &(tri.front()), _type ) GLE;
-        glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
-        }
-    else if( _triangleArray )
-        {
-        glDeleteBuffers( 1, &_triangleArray );
-        }
+    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, _triangleArray ) GLE;
+    glBufferData( GL_ELEMENT_ARRAY_BUFFER, tri.size()*sizeof(unsigned int), &(tri.front()), _type ) GLE;
+    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
     }
+  else if( _triangleArray )
+    {
+    glDeleteBuffers( 1, &_triangleArray );
+    }
+  }
 
 void XGLGeometryCache::setAttributesSize( int s, int num1D, int num2D, int num3D, int num4D )
-    {
-    _usedCacheSize = 0;
-    _cache.clear();
-    glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
-    glBufferData( GL_ARRAY_BUFFER, (sizeof(float)*s*num1D)
-                                   + (sizeof(float)*2*s*num2D)
-                                   + (sizeof(float)*3*s*num3D)
-                                   + (sizeof(float)*4*s*num4D), 0, _type ) GLE;
-    glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
-    }
+  {
+  _usedCacheSize = 0;
+  _cache.clear();
+  glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
+  glBufferData( GL_ARRAY_BUFFER, (sizeof(float)*s*num1D)
+                + (sizeof(float)*2*s*num2D)
+                + (sizeof(float)*3*s*num3D)
+                + (sizeof(float)*4*s*num4D), 0, _type ) GLE;
+  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
+  }
 
 void XGLGeometryCache::setAttribute( QString name, const XVector<xReal> &attr )
-    {
-    int offset( getCacheOffset( name, 1, attr.size() ) );
+  {
+  int offset( getCacheOffset( name, 1, attr.size() ) );
 
-    //insert data
-    glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
-    glBufferSubData( GL_ARRAY_BUFFER, offset, attr.size()*1*sizeof(float), &attr.front() ) GLE;
-    glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
-    }
+  //insert data
+  glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
+  glBufferSubData( GL_ARRAY_BUFFER, offset, attr.size()*1*sizeof(float), &attr.front() ) GLE;
+  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
+  }
 
 void XGLGeometryCache::setAttribute( QString name, const XVector<XVector2D> &attr )
-    {
-    int offset( getCacheOffset( name, 2, attr.size() ) );
+  {
+  int offset( getCacheOffset( name, 2, attr.size() ) );
 
-    //insert data
-    glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
-    glBufferSubData( GL_ARRAY_BUFFER, offset, attr.size()*2*sizeof(float), &attr.front() ) GLE;
-    glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
-    }
+  //insert data
+  glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
+  glBufferSubData( GL_ARRAY_BUFFER, offset, attr.size()*2*sizeof(float), &attr.front() ) GLE;
+  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
+  }
 
 void XGLGeometryCache::setAttribute( QString name, const XVector<XVector3D> &attr )
-    {
-    int offset( getCacheOffset( name, 3, attr.size() ) );
+  {
+  int offset( getCacheOffset( name, 3, attr.size() ) );
 
-    //insert data
-    glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
-    glBufferSubData( GL_ARRAY_BUFFER, offset, attr.size()*3*sizeof(float), &attr.front() ) GLE;
-    glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
-    }
+  //insert data
+  glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
+  glBufferSubData( GL_ARRAY_BUFFER, offset, attr.size()*3*sizeof(float), &attr.front() ) GLE;
+  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
+  }
 
 void XGLGeometryCache::setAttribute( QString name, const XVector<XVector4D> &attr )
-    {
-    int offset( getCacheOffset( name, 4, attr.size() ) );
+  {
+  int offset( getCacheOffset( name, 4, attr.size() ) );
 
-    //insert data
-    glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
-    glBufferSubData( GL_ARRAY_BUFFER, offset, attr.size()*4*sizeof(float), &attr.front() ) GLE;
-    glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
-    }
+  //insert data
+  glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
+  glBufferSubData( GL_ARRAY_BUFFER, offset, attr.size()*4*sizeof(float), &attr.front() ) GLE;
+  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
+  }
 
 int XGLGeometryCache::getCacheOffset( const QString &name, int components, int attrSize )
+  {
+  Q_FOREACH( const DrawCache &ref, _cache )
     {
-    Q_FOREACH( const DrawCache &ref, _cache )
-        {
-        if( ref.name == name )
-            {
-            return ref.offset;
-            }
-        }
-
-    DrawCache c;
-    c.components = components;
-    c.name = name;
-    c.offset = _usedCacheSize;
-    _cache << c;
-    _usedCacheSize += sizeof(float) * components * attrSize;
-
-    return c.offset;
+    if( ref.name == name )
+      {
+      return ref.offset;
+      }
     }
+
+  DrawCache c;
+  c.components = components;
+  c.name = name;
+  c.offset = _usedCacheSize;
+  _cache << c;
+  _usedCacheSize += sizeof(float) * components * attrSize;
+
+  return c.offset;
+  }
 
 #endif
