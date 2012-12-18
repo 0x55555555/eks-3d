@@ -25,15 +25,6 @@ private:
 class EKS3D_EXPORT XD3DRenderer : public XRenderer
   {
 public:
-
-  typedef enum Rotation
-    {
-    RotateNone,
-    Rotate90,
-    Rotate180,
-    Rotate270,
-    };
-
   XD3DRenderer(IUnknown *window);
   ~XD3DRenderer();
 

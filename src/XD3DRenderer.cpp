@@ -206,14 +206,22 @@ bool XD3DRenderer::createIndexGeometry(
   XD3DIndexBufferImpl *geo = g->data<XD3DIndexBufferImpl>();
   new(geo) XD3DIndexBufferImpl();
 
-  bool result = geo->create(_impl->_d3dDevice.Get(), index, indexCount, D3D11_BIND_INDEX_BUFFER);
+  struct Format
+    {
+    DXGI_FORMAT format;
+    xsize elementSize;
+    };
 
-  const DXGI_FORMAT typeMap[] =
+  const Format typeMap[] =
   {
-    DXGI_FORMAT_R16_UINT
+    { DXGI_FORMAT_R16_UINT, sizeof(xuint16) }
   };
   xCompileTimeAssert(X_ARRAY_COUNT(typeMap) == XIndexGeometry::TypeCount);
-  geo->format = typeMap[type];
+  const Format &typeData = typeMap[type];
+  geo->format = typeData.format;
+
+  xsize dataSize = indexCount * typeData.elementSize;
+  bool result = geo->create(_impl->_d3dDevice.Get(), index, dataSize, D3D11_BIND_INDEX_BUFFER);
 
   geo->count = indexCount;
 

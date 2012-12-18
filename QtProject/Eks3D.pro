@@ -67,6 +67,7 @@ win32-arm-msvc2012 {
   SOURCES += ../src/XD3DRenderer.cpp \
     ../src/XD3DRendererImpl.cpp
 
+  DEFINES += EKSCORE_STATIC
 
   HEADERS += ../include/XD3DRenderer.h \
     ../include/XD3DRendererImpl.h
