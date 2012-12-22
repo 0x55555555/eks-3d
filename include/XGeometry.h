@@ -6,7 +6,7 @@
 
 class XRenderer;
 
-class XGeometry: public XPrivateImpl<sizeof(void*)>
+class XGeometry : public XPrivateImpl<sizeof(void*)>
   {
 public:
   XGeometry(XRenderer *r=0, const void *data=0, xsize elementSize=0, xsize elementCount=0);

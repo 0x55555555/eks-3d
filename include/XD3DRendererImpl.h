@@ -85,6 +85,7 @@ class XD3DVertexBufferImpl : public XD3DBufferImpl
   {
 public:
   xsize elementSize;
+  xsize elementCount;
   };
 
 template <typename T> class XD3DTypedBufferImpl : public XD3DBufferImpl

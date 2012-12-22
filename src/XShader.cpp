@@ -11,12 +11,13 @@ XShaderVertexLayout::~XShaderVertexLayout()
     }
   }
 
-XShaderVertexComponent::XShaderVertexComponent(XRenderer *r,
-                                               const char *source,
-                                               xsize length,
-                                               const VertexLayout::VertexDescription *vertexDescription,
-                                               xsize vertexItemCount,
-                                               VertexLayout *layout)
+XShaderVertexComponent::XShaderVertexComponent(
+    XRenderer *r,
+    const char *source,
+    xsize length,
+    const VertexLayout::Description *vertexDescription,
+    xsize vertexItemCount,
+    VertexLayout *layout)
   {
   _renderer = 0;
   if(r)
@@ -33,13 +34,14 @@ XShaderVertexComponent::~XShaderVertexComponent()
     }
   }
 
-bool XShaderVertexComponent::delayedCreate(XShaderVertexComponent &ths,
-                                           XRenderer *r,
-                                           const char *source,
-                                           xsize length,
-                                           const VertexLayout::VertexDescription *vertexDescription,
-                                           xsize vertexItemCount,
-                                           VertexLayout *layout)
+bool XShaderVertexComponent::delayedCreate(
+    XShaderVertexComponent &ths,
+    XRenderer *r,
+    const char *source,
+    xsize length,
+    const VertexLayout::Description *vertexDescription,
+    xsize vertexItemCount,
+    VertexLayout *layout)
   {
   xAssert(!ths.isValid());
   xAssert(r && source && length);

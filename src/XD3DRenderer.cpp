@@ -128,6 +128,16 @@ bool XD3DRenderer::createVertexShaderComponent(XShaderVertexComponent *v,
     xCompileTimeAssert(D3D11_INPUT_PER_VERTEX_DATA == XShaderVertexLayoutDescription::Slot::PerVertex);
     xCompileTimeAssert(D3D11_INPUT_PER_INSTANCE_DATA == XShaderVertexLayoutDescription::Slot::PerInstance);
 
+    const char* semanticMap[] =
+    {
+      "POSITION",
+      "COLOUR",
+      "TEXCOORD",
+      "NORMAL"
+    };
+    xCompileTimeAssert(X_ARRAY_COUNT(semanticMap) == XShaderVertexLayoutDescription::SemanticCount);
+
+
     const DXGI_FORMAT formatMap[] =
     {
       DXGI_FORMAT_R32_FLOAT,
@@ -142,7 +152,7 @@ bool XD3DRenderer::createVertexShaderComponent(XShaderVertexComponent *v,
     D3D11_INPUT_ELEMENT_DESC *currentVertexDesc = vertexDesc;
     for(xsize i = 0; i < vertexItemCount; ++i, ++currentVertexDesc, ++vertexDescriptions)
       {
-      currentVertexDesc->SemanticName = vertexDescriptions->name;
+      currentVertexDesc->SemanticName = semanticMap[vertexDescriptions->semantic];
       currentVertexDesc->SemanticIndex = 0; // increase for matrices...
       currentVertexDesc->Format = formatMap[vertexDescriptions->format]; // increase for matrices...
       currentVertexDesc->AlignedByteOffset = vertexDescriptions->offset;
@@ -192,6 +202,7 @@ bool XD3DRenderer::createGeometry(
   bool result = geo->create(_impl->_d3dDevice.Get(), data, dataSize, D3D11_BIND_VERTEX_BUFFER);
 
   geo->elementSize = elementSize;
+  geo->elementCount = elementCount;
 
   return result;
   }
@@ -245,6 +256,28 @@ XAbstractFramebuffer *XD3DRenderer::getFramebuffer(int,
 
 void XD3DRenderer::debugRenderLocator(DebugLocatorMode)
   {
+  }
+
+void XD3DRenderer::drawTriangles(const XGeometry *vert)
+  {
+  const XD3DVertexBufferImpl *geo = vert->data<XD3DVertexBufferImpl>();
+
+  UINT stride = geo->elementSize;
+  UINT offset = 0;
+  _impl->_d3dContext->IASetVertexBuffers(
+    0,
+    1,
+    geo->buffer.GetAddressOf(),
+    &stride,
+    &offset
+    );
+
+  _impl->_d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+  _impl->_d3dContext->Draw(
+    geo->elementCount,
+    0
+    );
   }
 
 void XD3DRenderer::drawTriangles(const XIndexGeometry *indices, const XGeometry *vert)

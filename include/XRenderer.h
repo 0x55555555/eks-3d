@@ -121,6 +121,7 @@ public:
 
   // draw the given geometry
   virtual void drawTriangles(const XIndexGeometry *indices, const XGeometry *vert) = 0;
+  virtual void drawTriangles(const XGeometry *vert) = 0;
 
   // bind the given framebuffer for drawing
   virtual void setFramebuffer( const XFramebuffer * ) = 0;

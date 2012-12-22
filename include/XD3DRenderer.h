@@ -98,6 +98,7 @@ public:
 
   // draw the given geometry
   void drawTriangles(const XIndexGeometry *indices, const XGeometry *vert) X_OVERRIDE;
+  void drawTriangles(const XGeometry *vert) X_OVERRIDE;
 
   // bind the given framebuffer for drawing
   void setFramebuffer( const XFramebuffer * ) X_OVERRIDE;

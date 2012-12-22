@@ -3,7 +3,6 @@
 
 #include "XRenderer.h"
 #include "X3DGlobal.h"
-#include "XObject"
 #include "XProperty"
 #include "QImage"
 #include "QMetaType"

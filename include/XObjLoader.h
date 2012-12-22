@@ -2,32 +2,60 @@
 #define XOBJLOADER_H
 
 #include "X3DGlobal.h"
-#include "QByteArray"
 #include "XVector3D"
+#include "XSimpleString"
+#include "XShader.h"
 
-class QIODevice;
 class XGeometry;
+class XRenderer;
+class XIndexGeometry;
 
 class EKS3D_EXPORT XObjLoader
   {
 public:
-  XObjLoader();
+  enum
+    {
+    ExpectedVertices = 1024,
+    ExpectedLineLength = 1024,
+    MaxComponent = 3,
+    MaxElements = 2
+    };
 
-  void load(QIODevice *, XGeometry*, bool fixUnusedNormals);
+  struct ObjElement;
+  typedef Eigen::Matrix<xReal, MaxComponent, 1> ElementVector;
+  struct ElementData
+    {
+    XVector<ElementVector> data;
+    const XObjLoader::ObjElement *desc;
+    };
+
+  XObjLoader(XAllocatorBase *allocator=XGlobalAllocator::instance());
+
+  void load(const char *data,
+    xsize dataSize,
+    const XShaderVertexLayoutDescription::Semantic *items,
+    xsize itemCount,
+    XVector<XVectorI3D> *triangles, xsize *vertexSize,
+    ElementData *elements);
+
+  void bake(const XVector<XVectorI3D> &triangles,
+    const ElementData *elementData,
+    xsize elementCount,
+    XVector<xuint8> *dataOut);
+
+  const ObjElement *findObjectDescriptionForSemantic(XShaderVertexLayoutDescription::Semantic s);
 
 private:
-  XVector3D readVector3D(const QByteArray &arr, int start);
-  int readIndices(const QByteArray &, int start, XVectorI3D &indices);
+  bool findElementType(
+    const XVector<char> &line,
+    const XShaderVertexLayoutDescription::Semantic *items,
+    xsize itemCount,
+    xsize *foundItem);
 
-  int skipSpaces(const QByteArray &line, int from, int &firstSpace);
+  bool readIndices(const XVector<char> &, xsize start, xsize *end, XVectorI3D &indices);
 
-  void bakeTriangles(const QVector<XVectorI3D>& unbakedTriangles,
-                     QVector<xuint32> &baked,
-                     QVector<XVector3D> &vtx,
-                     QVector<XVector3D> &nor,
-                     QVector<XVector2D> &tex);
-
-  QByteArray _scratchString;
+  XAllocatorBase *_allocator;
+  XString _scratchString;
   };
 
 #endif // XOBJLOADER_H

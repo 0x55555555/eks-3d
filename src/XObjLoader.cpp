@@ -1,113 +1,17 @@
 #include "XObjLoader.h"
-#include "QIODevice"
 #include "XGeometry.h"
 
-#if 0
+const char space = ' ';
+const char separator = '/';
 
-XObjLoader::XObjLoader()
-  {
-  }
+namespace
+{
 
-XVector3D XObjLoader::readVector3D(const QByteArray &arr, int start)
-  {
-  XVector3D ret = XVector3D::Zero();
-
-  xsize count = 0;
-  int pos = start;
-  int end = start-1;
-  int firstSpace = 0;
-  while((end = arr.indexOf(" ", pos + 1)) != -1 && count < 3)
-    {
-    _scratchString = arr.mid(pos, end - pos);
-
-    ret(count++) = _scratchString.toFloat();
-
-    pos = skipSpaces(arr, pos, firstSpace);
-    }
-
-  return ret;
-  }
-
-void XObjLoader::bakeTriangles(const QVector<XVectorI3D>& unbakedTriangles,
-                               QVector<xuint32> &baked,
-                               QVector<XVector3D> &vtx,
-                               QVector<XVector3D> &nor,
-                               QVector<XVector2D> &tex)
-  {
-  QVector<XVector3D> vtxO;
-  QVector<XVector3D> norO;
-  QVector<XVector2D> texO;
-
-  for(int i = 0, s = unbakedTriangles.size(); i < s; ++i)
-    {
-    const XVectorI3D idx = unbakedTriangles[i];
-
-    baked << i;
-    if(vtx.size())
-      {
-      vtxO << vtx[idx(0)];
-      }
-    
-    if(tex.size())
-      {
-      texO << tex[idx(1)];
-      }
-
-    if(nor.size())
-      {
-      norO << nor[idx(2)];
-      }
-    }
-
-  vtx = vtxO;
-  nor = norO;
-  tex = texO;
-  }
-
-int XObjLoader::readIndices(const QByteArray &arr, int start, XVectorI3D &indices)
-  {
-  indices = XVectorI3D::Zero();
-
-  int firstSpace = start;
-  int nextSpace = skipSpaces(arr, start, firstSpace);
-  if(nextSpace == -1)
-    {
-    nextSpace = arr.length();
-    }
-
-  xsize count = 0;
-  int pos = start;
-  int end = start;
-  while((end = arr.indexOf("/", end+1)) != -1 && count < 3 && end < nextSpace)
-    {
-    _scratchString = arr.mid(pos, end - pos);
-
-    bool ok = true;
-    int val = _scratchString.toInt(&ok);
-    indices(count++) = ok ? (val - 1) : 0;
-
-    pos = end + 1;
-    }
-  
-  if(count == 0 && pos >= firstSpace)
-    {
-    return -1;
-    }
-
-  _scratchString = arr.mid(pos, firstSpace - pos);
-  
-  bool ok = true;
-  int val = _scratchString.toInt(&ok);
-  indices(count++) = ok ? (val - 1) : 0;
-
-  return nextSpace;
-  }
-
-int XObjLoader::skipSpaces(const QByteArray &line, int from, int &firstSpace)
+int skipSpaces(const XVector<char> &line, xsize from, xsize &firstSpace)
   {
   firstSpace = from;
 
-  bool seenSpace = false;
+  bool seenSpace = line[0] == ' ';
   while(!seenSpace || line[from] == ' ')
     {
     if(!seenSpace)
@@ -123,111 +27,302 @@ int XObjLoader::skipSpaces(const QByteArray &line, int from, int &firstSpace)
     from++;
     if(from >= line.size())
       {
-      return -1;
+      return X_SIZE_SENTINEL;
       }
     }
 
   return from;
   }
 
-void XObjLoader::load(QIODevice *dev, XGeometry *geo, bool fixUnusedNormals)
+template <xsize MaxCount> void writeVector(
+    const XObjLoader::ElementVector &elem,
+    XVector<xuint8> *data)
   {
-  QByteArray line;
-  line.resize(1024);
+  const xsize oldEnd = data->size();
+  const xsize expandSize = sizeof(XObjLoader::ElementVector::Scalar) * MaxCount;
 
-  XVector<XVector3D> vtx;
-  XVector<XVector3D> nor;
-  XVector<XVector2D> tex;
+  const xuint8* elemData = (const xuint8*)elem.data();
+
+  data->resizeAndCopy(oldEnd + expandSize, elemData);
+  }
+
+template <xsize MaxCount>
+void readVector(
+    XString &scratch,
+    const XVector<char> &arr,
+    xsize start,
+    XVector<XObjLoader::ElementVector>* data)
+  {
+  XVector3D ret = XVector3D::Zero();
+
+  xsize count = 0;
+  xsize pos = start;
+  xsize end = start-1;
+  xsize firstSpace = 0;
+  while((end = arr.indexOf(space, pos + 1)) != X_SIZE_SENTINEL && count < MaxCount)
+    {
+    scratch.fromUtf8(arr, pos, end - pos);
+
+    ret(count++) = scratch.toType<xReal>();
+
+    pos = skipSpaces(arr, pos, firstSpace);
+    }
+
+  (*data) << ret;
+  }
+}
+
+struct XObjLoader::ObjElement
+  {
+  const char* name;
+  xsize components;
+  void (*read)(XString &scratch, const XVector<char> &line, xsize index, XVector<ElementVector>* data);
+  void (*write)(const ElementVector &elem, XVector<xuint8> *data);
+  };
+
+const XObjLoader::ObjElement elementDescriptionsImpl[] =
+  {
+    { "v", 3, readVector<3>, writeVector<3>  },
+    { "n", 3, readVector<3>, writeVector<3> },
+    { "vt", 2, readVector<2>, writeVector<2>  },
+  };
+
+const XObjLoader::ObjElement *elementDescriptions[] =
+  {
+  &elementDescriptionsImpl[0], // pos
+  0,                          // colour
+  &elementDescriptionsImpl[2], // tex
+  &elementDescriptionsImpl[1], // normal
+  };
+
+xCompileTimeAssert(X_ARRAY_COUNT(elementDescriptions) == XShaderVertexLayoutDescription::SemanticCount);
+
+XObjLoader::XObjLoader(XAllocatorBase *allocator)
+    : _allocator(allocator),
+      _scratchString(_allocator)
+  {
+  }
+
+const XObjLoader::ObjElement *XObjLoader::findObjectDescriptionForSemantic(XShaderVertexLayoutDescription::Semantic s)
+  {
+  return elementDescriptions[s];
+  }
+
+void XObjLoader::bake(
+    const XVector<XVectorI3D>& unbakedTriangles,
+    const ElementData *elements,
+    xsize elementCount,
+    XVector<xuint8> *bakedData)
+  {
+  for(int i = 0, s = unbakedTriangles.size(); i < s; ++i)
+    {
+    const XVectorI3D idx = unbakedTriangles[i];
+
+    for(xsize elIdx = 0; elIdx < elementCount; ++elIdx)
+      {
+      const ElementData &element(elements[elIdx]);
+      element.desc->write(element.data[idx(0)], bakedData);
+      }
+    }
+  }
+
+bool XObjLoader::readIndices(const XVector<char> &arr, xsize start, xsize *end, XVectorI3D &indices)
+  {
+  indices = XVectorI3D::Zero();
+
+  xsize firstSpace = start;
+  xsize nextSpace = skipSpaces(arr, start, firstSpace);
+  if(nextSpace == X_SIZE_SENTINEL)
+    {
+    nextSpace = arr.length();
+    }
+
+  xsize count = 0;
+  xsize pos = start;
+  xsize sepEnd = start;
+  while((sepEnd = arr.indexOf(separator, sepEnd+1)) != X_SIZE_SENTINEL && count < 3 && sepEnd < nextSpace)
+    {
+    _scratchString.fromUtf8(arr, pos, sepEnd - pos);
+
+    bool ok = true;
+    int val = _scratchString.toType<int>(&ok);
+    indices(count++) = ok ? (val - 1) : 0;
+
+    pos = sepEnd + 1;
+    }
+  
+  if(count == 0 && pos >= firstSpace)
+    {
+    return false;
+    }
+
+  _scratchString.fromUtf8(arr, pos, firstSpace - pos);
+  
+  bool ok = true;
+  int val = _scratchString.toType<int>(&ok);
+  indices(count++) = ok ? (val - 1) : 0;
+
+  *end = nextSpace;
+  return true;
+  }
+
+bool XObjLoader::findElementType(
+    const XVector<char> &line,
+    const XShaderVertexLayoutDescription::Semantic *items,
+    xsize itemCount,
+    xsize *foundItem)
+  {
+  *foundItem = X_SIZE_SENTINEL;
+  for(xsize i = 0; i < itemCount; ++i)
+    {
+    const XShaderVertexLayoutDescription::Semantic item = items[i];
+    const ObjElement* element = elementDescriptions[item];
+    xsize len = strlen(element->name);
+
+    if(line.compare(element->name, len) && line[len] == space)
+      {
+      *foundItem = i;
+      return true;
+      }
+    }
+  return false;
+  }
+
+void XObjLoader::load(
+    const char *data,
+    xsize dataSize,
+    const XShaderVertexLayoutDescription::Semantic *items,
+    xsize itemCount,
+    XVector<XVectorI3D> *tris,
+    xsize *vertexSize,
+    ElementData *elementData)
+  {
+  xAssert(tris);
+  xAssert(vertexSize);
+  xAssert(elementData);
+  xAssert(itemCount <= MaxElements);
+
+  XVector<char> line(ExpectedLineLength, ' ', _allocator);
+
+  *vertexSize = 0;
+  for(xsize i = 0; i < itemCount; ++i)
+    {
+    XShaderVertexLayoutDescription::Semantic semantic = items[i];
+    const ObjElement *el = elementDescriptions[semantic];
+
+    if(el != 0)
+      {
+      elementData[i].desc = el;
+      elementData[i].data.setAllocator(_allocator);
+      elementData[i].data.reserve(ExpectedVertices);
+      }
+    }
+
+
+  for(xsize i = 0; i < itemCount; ++i)
+    {
+    const ObjElement *el = elementData[i].desc;
+    if(!el)
+      {
+      xAssertFail();
+      return;
+      }
+
+    *vertexSize += sizeof(float) * el->components;
+    }
 
   XVectorI3D indices;
 
-  XVector<XVectorI3D> tempPoly;
+  XVector<XVectorI3D> tempPoly(_allocator);
 
-  XVector<XVectorI3D> tris;
-
-  while(dev->bytesAvailable())
+  const char *pos = data;
+  while(pos < (data + dataSize))
     {
-    line.resize(1024);
-    qint64 read = dev->readLine(line.data(), line.size());
+    line.clear();
 
-    int firstSpace = 1;
-    int nonSpace = skipSpaces(line, 1, firstSpace);
+    while(*pos != '\n' && pos < (data + dataSize))
+      {
+      line << *pos;
+      ++pos;
+      }
+    ++pos; // skip \n
+    
+    // remove the carriage return from win files.
+    if(line.back() == '\r')
+      {
+      line.popBack();
+      }
 
-    // CR into space
-    line[(int)read-2] = ' ';
-    line.resize(read);
+    // add a space to then end
+    line << space;
 
-    if(line.startsWith("v "))
+    xsize firstSpace = 1;
+    xsize nonSpace = 1;
+    if(line.length() > 1)
       {
-      // vertex
-      vtx << readVector3D(line, nonSpace);
+      nonSpace = skipSpaces(line, 1, firstSpace);
       }
-    else if(line.startsWith("vt "))
+
+    xsize foundItem = 0;
+    if(findElementType(line, items, itemCount, &foundItem))
       {
-      // texture
-      tex << readVector3D(line, nonSpace).head<2>();
+      xAssert(foundItem < XShaderVertexLayoutDescription::SemanticCount);
+
+      ElementData &data = elementData[foundItem];
+      const ObjElement *element(data.desc);
+      xAssert(element);
+
+      element->read(_scratchString, line, nonSpace, &(data.data));
       }
-    else if(line.startsWith("vn "))
-      {
-      // normal
-      nor << readVector3D(line, nonSpace);
-      }
-    else if(line.startsWith("f "))
+    else if(line.compare("f ", 2))
       {
       tempPoly.clear();
       // face
-      int pos = nonSpace;
-      while((pos = readIndices(line, pos, indices)) != -1)
+      xsize pos = nonSpace;
+      bool valid = false;
+      while(
+          pos < line.length() &&
+          (valid = readIndices(line, pos, &pos, indices)) == true &&
+          valid)
         {
         tempPoly << indices;
         }
 
-      for(int i=0; i < tempPoly.size() - 2; ++i)
+      for(xsize i=0; i < tempPoly.size() - 2; ++i)
         {
-        tris << tempPoly[0] << tempPoly[i+1] << tempPoly[i+2];
+        (*tris) << tempPoly[0] << tempPoly[i+1] << tempPoly[i+2];
         }
       }
     }
-
-  XVector<xuint32> bakedTris;
-
-  bakeTriangles(tris, bakedTris, vtx, nor, tex);
-
-  if(vtx.size())
-    {
-    geo->setAttribute("vertex", vtx);
-    }
-
-  if(fixUnusedNormals && nor.size() == 0)
-    {
-    nor.resize(vtx.size());
-    for(xsize i = 0; i < ((xsize)bakedTris.size()-2); i+=3)
-      {
-      XVector3D pts[3];
-      for(xsize j = 0; j < 3; ++j)
-        {
-        xsize idx = i + j;
-        xsize vtxIdx = bakedTris[idx];
-        pts[j] = vtx[vtxIdx];
-        }
-
-      XVector3D normal = (pts[1] - pts[0]).cross(pts[2] - pts[0]).normalized();
-
-      nor[i] = nor[i+1] = nor[i+2] = normal;
-      }
-    }
-
-  if(nor.size())
-    {
-    geo->setAttribute("normalData", nor);
-    }
-
-  if(tex.size())
-    {
-    geo->setAttribute("textureData", tex);
-    }
-
-  geo->setTriangles(bakedTris);
   }
 
-#endif
+/*
+  if(computeUnusedEntries)
+    {
+    for(xsize i = 0; i < itemCount; ++i)
+      {
+      ElementData &element = elementData[i];
+      if(element.data.size() == 0)
+        {
+        if(strcmp(element.desc->name, "n") == 0)
+          {
+          xAssertFail();
+          }
+        }
+      }
+//    nor.resize(vtx.size());
+//    for(xsize i = 0; i < ((xsize)bakedTris.size()-2); i+=3)
+//      {
+//      XVector3D pts[3];
+//      for(xsize j = 0; j < 3; ++j)
+//        {
+//        xsize idx = i + j;
+//        xsize vtxIdx = bakedTris[idx];
+//        pts[j] = vtx[vtxIdx];
+//        }
+
+//      XVector3D normal = (pts[1] - pts[0]).cross(pts[2] - pts[0]).normalized();
+
+//      nor[i] = nor[i+1] = nor[i+2] = normal;
+//      }
+    }*/

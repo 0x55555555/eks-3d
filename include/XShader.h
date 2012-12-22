@@ -43,12 +43,22 @@ public:
     OffsetPackTight = X_SIZE_SENTINEL
     };
 
-  XShaderVertexLayoutDescription(const char *n, Format fmt, xsize off=OffsetPackTight, Slot sl=Slot())
-    : name(n), format(fmt), offset(off), slot(sl)
+  enum Semantic
+    {
+    Position,
+    Colour,
+    TextureCoordinate,
+    Normal,
+
+    SemanticCount
+    };
+
+  XShaderVertexLayoutDescription(Semantic s, Format fmt, xsize off=OffsetPackTight, Slot sl=Slot())
+    : semantic(s), format(fmt), offset(off), slot(sl)
     {
     }
 
-  const char *name;
+  Semantic semantic;
   Format format;
   xsize offset;
   Slot slot;
@@ -57,7 +67,7 @@ public:
 class XShaderVertexLayout : public XPrivateImpl<sizeof(void*)>
   {
 public:
-  typedef XShaderVertexLayoutDescription VertexDescription;
+  typedef XShaderVertexLayoutDescription Description;
   XShaderVertexLayout() : _renderer(0) { }
   ~XShaderVertexLayout();
 
@@ -76,7 +86,7 @@ public:
   XShaderVertexComponent(XRenderer *r=0,
                          const char *source=0,
                          xsize length=0,
-                         const VertexLayout::VertexDescription *vertexDescriptions=0,
+                         const VertexLayout::Description *vertexDescriptions=0,
                          xsize vertexItemCount=0,
                          VertexLayout *layout=0);
   ~XShaderVertexComponent();
@@ -85,7 +95,7 @@ public:
                             XRenderer *r,
                             const char *source,
                             xsize length,
-                            const VertexLayout::VertexDescription *vertexDescription=0,
+                            const VertexLayout::Description *vertexDescription=0,
                             xsize vertexItemCount=0,
                             VertexLayout *layout=0);
 

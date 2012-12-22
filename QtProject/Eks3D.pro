@@ -14,7 +14,6 @@ SOURCES += \
     ../src/XCuboid.cpp \
     ../src/XTransform.cpp \
     ../src/XRenderer.cpp \
-    ../src/XCamera.cpp \
     ../src/XGeometry.cpp \
     ../src/XShader.cpp \
     ../src/XTexture.cpp \
@@ -33,13 +32,11 @@ SOURCES += \
     ../src/XCameraCanvasController.cpp \
     ../src/XObjLoader.cpp
 
-HEADERS += ../include/XDoodad.h \
+HEADERS += \
     ../include/X3DGlobal.h \
-    ../include/XScene.h \
     ../include/XCuboid.h \
     ../include/XTransform.h \
     ../include/XRenderer.h \
-    ../include/XCamera.h \
     ../include/XGeometry.h \
     ../include/XShader.h \
     ../include/XTexture.h \
