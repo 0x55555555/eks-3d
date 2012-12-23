@@ -1,5 +1,8 @@
 #include "XObjLoader.h"
-#include "XGeometry.h"
+#include "XStringBuffer"
+
+namespace Eks
+{
 
 const char space = ' ';
 const char separator = '/';
@@ -7,7 +10,7 @@ const char separator = '/';
 namespace
 {
 
-int skipSpaces(const XVector<char> &line, xsize from, xsize &firstSpace)
+int skipSpaces(const ObjLoader::LineCache &line, xsize from, xsize &firstSpace)
   {
   firstSpace = from;
 
@@ -35,11 +38,11 @@ int skipSpaces(const XVector<char> &line, xsize from, xsize &firstSpace)
   }
 
 template <xsize MaxCount> void writeVector(
-    const XObjLoader::ElementVector &elem,
-    XVector<xuint8> *data)
+    const ObjLoader::ElementVector &elem,
+    Vector<xuint8> *data)
   {
   const xsize oldEnd = data->size();
-  const xsize expandSize = sizeof(XObjLoader::ElementVector::Scalar) * MaxCount;
+  const xsize expandSize = sizeof(ObjLoader::ElementVector::Scalar) * MaxCount;
 
   const xuint8* elemData = (const xuint8*)elem.data();
 
@@ -48,12 +51,12 @@ template <xsize MaxCount> void writeVector(
 
 template <xsize MaxCount>
 void readVector(
-    XString &scratch,
-    const XVector<char> &arr,
+    Eks::String &scratch,
+    const ObjLoader::LineCache &arr,
     xsize start,
-    XVector<XObjLoader::ElementVector>* data)
+    Vector<ObjLoader::ElementVector>* data)
   {
-  XVector3D ret = XVector3D::Zero();
+  Eks::Vector3D ret = Eks::Vector3D::Zero();
 
   xsize count = 0;
   xsize pos = start;
@@ -61,9 +64,9 @@ void readVector(
   xsize firstSpace = 0;
   while((end = arr.indexOf(space, pos + 1)) != X_SIZE_SENTINEL && count < MaxCount)
     {
-    scratch.fromUtf8(arr, pos, end - pos);
+    scratch.mid(arr, pos, end - pos);
 
-    ret(count++) = scratch.toType<xReal>();
+    ret(count++) = scratch.toType<Real>();
 
     pos = skipSpaces(arr, pos, firstSpace);
     }
@@ -72,22 +75,22 @@ void readVector(
   }
 }
 
-struct XObjLoader::ObjElement
+struct ObjLoader::ObjElement
   {
   const char* name;
   xsize components;
-  void (*read)(XString &scratch, const XVector<char> &line, xsize index, XVector<ElementVector>* data);
-  void (*write)(const ElementVector &elem, XVector<xuint8> *data);
+  void (*read)(Eks::String &scratch, const ObjLoader::LineCache &line, xsize index, Vector<ElementVector>* data);
+  void (*write)(const ElementVector &elem, Vector<xuint8> *data);
   };
 
-const XObjLoader::ObjElement elementDescriptionsImpl[] =
+const ObjLoader::ObjElement elementDescriptionsImpl[] =
   {
     { "v", 3, readVector<3>, writeVector<3>  },
     { "n", 3, readVector<3>, writeVector<3> },
     { "vt", 2, readVector<2>, writeVector<2>  },
   };
 
-const XObjLoader::ObjElement *elementDescriptions[] =
+const ObjLoader::ObjElement *elementDescriptions[] =
   {
   &elementDescriptionsImpl[0], // pos
   0,                          // colour
@@ -95,28 +98,29 @@ const XObjLoader::ObjElement *elementDescriptions[] =
   &elementDescriptionsImpl[1], // normal
   };
 
-xCompileTimeAssert(X_ARRAY_COUNT(elementDescriptions) == XShaderVertexLayoutDescription::SemanticCount);
+xCompileTimeAssert(X_ARRAY_COUNT(elementDescriptions) == ShaderVertexLayoutDescription::SemanticCount);
 
-XObjLoader::XObjLoader(XAllocatorBase *allocator)
+ObjLoader::ObjLoader(AllocatorBase *allocator)
     : _allocator(allocator),
       _scratchString(_allocator)
   {
+  _scratchString.reserve(ExpectedFloatLength);
   }
 
-const XObjLoader::ObjElement *XObjLoader::findObjectDescriptionForSemantic(XShaderVertexLayoutDescription::Semantic s)
+const ObjLoader::ObjElement *ObjLoader::findObjectDescriptionForSemantic(ShaderVertexLayoutDescription::Semantic s)
   {
   return elementDescriptions[s];
   }
 
-void XObjLoader::bake(
-    const XVector<XVectorI3D>& unbakedTriangles,
+void ObjLoader::bake(
+    const Vector<VectorI3D>& unbakedTriangles,
     const ElementData *elements,
     xsize elementCount,
-    XVector<xuint8> *bakedData)
+    Vector<xuint8> *bakedData)
   {
   for(int i = 0, s = unbakedTriangles.size(); i < s; ++i)
     {
-    const XVectorI3D idx = unbakedTriangles[i];
+    const VectorI3D idx = unbakedTriangles[i];
 
     for(xsize elIdx = 0; elIdx < elementCount; ++elIdx)
       {
@@ -126,9 +130,9 @@ void XObjLoader::bake(
     }
   }
 
-bool XObjLoader::readIndices(const XVector<char> &arr, xsize start, xsize *end, XVectorI3D &indices)
+bool ObjLoader::readIndices(const LineCache &arr, xsize start, xsize *end, VectorI3D &indices)
   {
-  indices = XVectorI3D::Zero();
+  indices = VectorI3D::Zero();
 
   xsize firstSpace = start;
   xsize nextSpace = skipSpaces(arr, start, firstSpace);
@@ -142,7 +146,7 @@ bool XObjLoader::readIndices(const XVector<char> &arr, xsize start, xsize *end, 
   xsize sepEnd = start;
   while((sepEnd = arr.indexOf(separator, sepEnd+1)) != X_SIZE_SENTINEL && count < 3 && sepEnd < nextSpace)
     {
-    _scratchString.fromUtf8(arr, pos, sepEnd - pos);
+    _scratchString.mid(arr, pos, sepEnd - pos);
 
     bool ok = true;
     int val = _scratchString.toType<int>(&ok);
@@ -156,7 +160,7 @@ bool XObjLoader::readIndices(const XVector<char> &arr, xsize start, xsize *end, 
     return false;
     }
 
-  _scratchString.fromUtf8(arr, pos, firstSpace - pos);
+  _scratchString.mid(arr, pos, firstSpace - pos);
   
   bool ok = true;
   int val = _scratchString.toType<int>(&ok);
@@ -166,16 +170,16 @@ bool XObjLoader::readIndices(const XVector<char> &arr, xsize start, xsize *end, 
   return true;
   }
 
-bool XObjLoader::findElementType(
-    const XVector<char> &line,
-    const XShaderVertexLayoutDescription::Semantic *items,
+bool ObjLoader::findElementType(
+    const LineCache &line,
+    const ShaderVertexLayoutDescription::Semantic *items,
     xsize itemCount,
     xsize *foundItem)
   {
   *foundItem = X_SIZE_SENTINEL;
   for(xsize i = 0; i < itemCount; ++i)
     {
-    const XShaderVertexLayoutDescription::Semantic item = items[i];
+    const ShaderVertexLayoutDescription::Semantic item = items[i];
     const ObjElement* element = elementDescriptions[item];
     xsize len = strlen(element->name);
 
@@ -188,12 +192,12 @@ bool XObjLoader::findElementType(
   return false;
   }
 
-void XObjLoader::load(
+void ObjLoader::load(
     const char *data,
     xsize dataSize,
-    const XShaderVertexLayoutDescription::Semantic *items,
+    const ShaderVertexLayoutDescription::Semantic *items,
     xsize itemCount,
-    XVector<XVectorI3D> *tris,
+    Vector<VectorI3D> *tris,
     xsize *vertexSize,
     ElementData *elementData)
   {
@@ -202,12 +206,12 @@ void XObjLoader::load(
   xAssert(elementData);
   xAssert(itemCount <= MaxElements);
 
-  XVector<char> line(ExpectedLineLength, ' ', _allocator);
+  LineCache line(ExpectedLineLength, ' ', _allocator);
 
   *vertexSize = 0;
   for(xsize i = 0; i < itemCount; ++i)
     {
-    XShaderVertexLayoutDescription::Semantic semantic = items[i];
+    ShaderVertexLayoutDescription::Semantic semantic = items[i];
     const ObjElement *el = elementDescriptions[semantic];
 
     if(el != 0)
@@ -231,9 +235,7 @@ void XObjLoader::load(
     *vertexSize += sizeof(float) * el->components;
     }
 
-  XVectorI3D indices;
-
-  XVector<XVectorI3D> tempPoly(_allocator);
+  Vector<VectorI3D, 6> tempPoly(_allocator);
 
   const char *pos = data;
   while(pos < (data + dataSize))
@@ -253,7 +255,7 @@ void XObjLoader::load(
       line.popBack();
       }
 
-    // add a space to then end
+    // add a space to the end
     line << space;
 
     xsize firstSpace = 1;
@@ -266,7 +268,7 @@ void XObjLoader::load(
     xsize foundItem = 0;
     if(findElementType(line, items, itemCount, &foundItem))
       {
-      xAssert(foundItem < XShaderVertexLayoutDescription::SemanticCount);
+      xAssert(foundItem < ShaderVertexLayoutDescription::SemanticCount);
 
       ElementData &data = elementData[foundItem];
       const ObjElement *element(data.desc);
@@ -280,6 +282,7 @@ void XObjLoader::load(
       // face
       xsize pos = nonSpace;
       bool valid = false;
+      VectorI3D indices;
       while(
           pos < line.length() &&
           (valid = readIndices(line, pos, &pos, indices)) == true &&
@@ -313,7 +316,7 @@ void XObjLoader::load(
 //    nor.resize(vtx.size());
 //    for(xsize i = 0; i < ((xsize)bakedTris.size()-2); i+=3)
 //      {
-//      XVector3D pts[3];
+//      Eks::Vector3D pts[3];
 //      for(xsize j = 0; j < 3; ++j)
 //        {
 //        xsize idx = i + j;
@@ -321,8 +324,10 @@ void XObjLoader::load(
 //        pts[j] = vtx[vtxIdx];
 //        }
 
-//      XVector3D normal = (pts[1] - pts[0]).cross(pts[2] - pts[0]).normalized();
+//      Eks::Vector3D normal = (pts[1] - pts[0]).cross(pts[2] - pts[0]).normalized();
 
 //      nor[i] = nor[i+1] = nor[i+2] = normal;
 //      }
     }*/
+
+}

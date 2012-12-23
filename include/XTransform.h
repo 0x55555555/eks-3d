@@ -2,25 +2,23 @@
 #define XTRANSFORM_H
 
 #include "X3DGlobal.h"
-#include "XList"
 #undef min
 #undef max
 #include "Eigen/Geometry"
-#include "XVector3D"
-#include "XMatrix4x4"
+#include "XMathVector"
+#include "XMathMatrix"
 
-typedef Eigen::Affine3f XTransform;
-typedef Eigen::Projective3f XComplexTransform;
-
-#if X_DECLARE_METATYPES
-Q_DECLARE_METATYPE(XTransform)
-Q_DECLARE_METATYPE(XComplexTransform)
-#endif
-
-namespace XTransformUtilities
+namespace Eks
 {
-XTransform EKS3D_EXPORT lookAt(const XVector3D &eye, const XVector3D &aim, const XVector3D &up);
-XComplexTransform EKS3D_EXPORT perspective(xReal angle, xReal aspect, xReal nearPlane, xReal farPlane);
+
+typedef Eigen::Affine3f Transform;
+typedef Eigen::Projective3f ComplexTransform;
+
+namespace TransformUtilities
+{
+Transform EKS3D_EXPORT lookAt(const Vector3D &eye, const Vector3D &aim, const Vector3D &up);
+ComplexTransform EKS3D_EXPORT perspective(Real angle, Real aspect, Real nearPlane, Real farPlane);
+}
 }
 
 template <typename A, int B, int C, int D> QDebug operator <<(QDebug str, const Eigen::Transform <A, B, C, D> &data)
@@ -61,7 +59,5 @@ template <typename A, int B, int C, int D, typename E, int F, int G, int H>
   {
   return a.matrix() != b.matrix();
   }
-
-typedef XList <XTransform> XTransformList;
 
 #endif // XTRANSFORM_H

@@ -6,7 +6,10 @@
 
 #include "QVariant"
 
-class XRenderer;
+namespace Eks
+{
+
+class Renderer;
 class XAbstractTexture;
 
 class EKS3D_EXPORT XAbstractFramebuffer
@@ -48,12 +51,14 @@ public:
   void setSize( xuint32 width, xuint32 height );
 
   XAbstractFramebuffer *internal() const;
-  void prepareInternal( XRenderer * ) const;
+  void prepareInternal( Renderer * ) const;
 
 private:
   void clean() const;
   mutable XAbstractFramebuffer *_internal;
-  mutable XRenderer *_renderer;
+  mutable Renderer *_renderer;
   };
+
+}
 
 #endif // XFRAMEBUFFER_H

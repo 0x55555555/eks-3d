@@ -3,18 +3,21 @@
 #include "XAbstractDelegate.h"
 #include "XAbstractCanvasController.h"
 
-XAbstractCanvas::XAbstractCanvas(XAbstractRenderModel *m, XAbstractCanvasController *c)
+namespace Eks
+{
+
+AbstractCanvas::AbstractCanvas(AbstractRenderModel *m, AbstractCanvasController *c)
     : _model(0), _controller(c), _iterator(0), _delayedUpdate(false)
   {
   setModel(m);
   }
 
-XAbstractCanvas::~XAbstractCanvas()
+AbstractCanvas::~AbstractCanvas()
   {
   setModel(0);
   }
 
-void XAbstractCanvas::doUpdate()
+void AbstractCanvas::doUpdate()
   {
   X3DDataModelFunction
   xAssert(!_model || (_model && _iterator));
@@ -23,7 +26,7 @@ void XAbstractCanvas::doUpdate()
     _model->resetIterator(_iterator);
     while(_iterator->next())
       {
-      const XAbstractDelegate *delegate = _model->delegateFor(_iterator, this);
+      const AbstractDelegate *delegate = _model->delegateFor(_iterator, this);
       if(delegate)
         {
         delegate->update(this, _iterator, _model);
@@ -32,7 +35,7 @@ void XAbstractCanvas::doUpdate()
     }
   }
 
-void XAbstractCanvas::update(XAbstractRenderModel::UpdateMode)
+void AbstractCanvas::update(AbstractRenderModel::UpdateMode)
   {
   if(isShown())
     {
@@ -44,7 +47,7 @@ void XAbstractCanvas::update(XAbstractRenderModel::UpdateMode)
     }
   }
 
-void XAbstractCanvas::paint()
+void AbstractCanvas::paint()
   {
   if(_delayedUpdate)
     {
@@ -60,7 +63,7 @@ void XAbstractCanvas::paint()
     _model->resetIterator(_iterator);
     while(_iterator->next())
       {
-      const XAbstractDelegate *delegate = _model->delegateFor(_iterator, this);
+      const AbstractDelegate *delegate = _model->delegateFor(_iterator, this);
       if(delegate)
         {
         numPasses = qMax(numPasses, delegate->maxNumberOfPasses(this, _iterator, _model));
@@ -76,7 +79,7 @@ void XAbstractCanvas::paint()
       _model->resetIterator(_iterator);
       while(_iterator->next())
         {
-        const XAbstractDelegate *delegate = _model->delegateFor(_iterator, this);
+        const AbstractDelegate *delegate = _model->delegateFor(_iterator, this);
         if(delegate)
           {
           delegate->paint(passIndex, this, _iterator, _model);
@@ -91,7 +94,7 @@ void XAbstractCanvas::paint()
     }
   }
 
-void XAbstractCanvas::setModel(XAbstractRenderModel *m)
+void AbstractCanvas::setModel(AbstractRenderModel *m)
   {
   if(_iterator)
     {
@@ -102,7 +105,8 @@ void XAbstractCanvas::setModel(XAbstractRenderModel *m)
 
   if(_model)
     {
-    _model->_canvases.removeAll(this);
+    xAssertFail();
+    //_model->_canvases.removeAll(this);
     }
 
   _model = m;
@@ -112,3 +116,4 @@ void XAbstractCanvas::setModel(XAbstractRenderModel *m)
     _model->_canvases << this;
     }
   }
+}

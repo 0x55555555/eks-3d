@@ -2,7 +2,10 @@
 #include "XTransform.h"
 #include "XPlane.h"
 
-XLine::XLine( const XVector3D &p1, const XVector3D &p2, ConstructionMode mode ) : _position(p1)
+namespace Eks
+{
+
+Line::Line( const Eks::Vector3D &p1, const Eks::Vector3D &p2, ConstructionMode mode ) : _position(p1)
   {
   if(mode == TwoPoints)
     {
@@ -14,34 +17,36 @@ XLine::XLine( const XVector3D &p1, const XVector3D &p2, ConstructionMode mode ) 
     }
   }
 
-XVector3D XLine::sample( float t ) const
+Eks::Vector3D Line::sample( float t ) const
   {
   return position() + ( t * direction() );
   }
 
-void XLine::transform( const XTransform &tx )
+void Line::transform( const Transform &tx )
   {
-  _position = XVector3D(tx * _position);
-  _direction = XVector3D(tx.linear() * _direction);
+  _position = Eks::Vector3D(tx * _position);
+  _direction = Eks::Vector3D(tx.linear() * _direction);
   }
 
-float XLine::closestPointOn(const XLine &l) const
+float Line::closestPointOn(const Line &l) const
   {
-  XVector3D lDirNorm = l.direction().normalized();
-  XVector3D dirNorm = direction().normalized();
+  Eks::Vector3D lDirNorm = l.direction().normalized();
+  Eks::Vector3D dirNorm = direction().normalized();
 
-  XVector3D cP = lDirNorm.cross( lDirNorm.cross( dirNorm ) );
+  Eks::Vector3D cP = lDirNorm.cross( lDirNorm.cross( dirNorm ) );
   if(cP.squaredNorm() > 0.001f)
     {
-    return XPlane( l.position(), cP ).intersection(*this);
+    return Plane( l.position(), cP ).intersection(*this);
     }
 
   return HUGE_VAL;
   }
 
-float XLine::closestPointTo(const XVector3D &l) const
+float Line::closestPointTo(const Eks::Vector3D &l) const
   {
-  XVector3D lineToPt = l - position();
+  Eks::Vector3D lineToPt = l - position();
 
   return direction().dot(lineToPt) / direction().squaredNorm();
   }
+
+}

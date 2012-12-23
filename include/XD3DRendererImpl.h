@@ -1,12 +1,15 @@
 #ifndef XD3DRENDERERIMPL_H
 #define XD3DRENDERERIMPL_H
 
-#include "XMatrix4x4"
+#include "XMathMatrix"
 #include "XColour"
 #include <d3d11_1.h>
 #include <DXGI1_2.h>
 #include <DirectXMath.h>
 #include "wrl/client.h"
+
+namespace Eks
+{
 
 using Microsoft::WRL::ComPtr;
 
@@ -115,11 +118,11 @@ public:
   IUnknown *window;
   };
 
-class XD3DRendererImpl
+class D3DRendererImpl
   {
 public:
-  XD3DRendererImpl();
-  ~XD3DRendererImpl();
+  D3DRendererImpl();
+  ~D3DRendererImpl();
 
   // Direct3D Objects.
   D3D_FEATURE_LEVEL _featureLevel;
@@ -129,12 +132,12 @@ public:
 
   XD3DSwapChainImpl _renderTarget;
 
-  XColour _clearColour;
+  Eks::Colour _clearColour;
 
   struct WorldTransformData
     {
-    XMatrix4x4 view;
-    XMatrix4x4 projection;
+    Eks::Matrix4x4 view;
+    Eks::Matrix4x4 projection;
     };
   bool _updateWorldTransformData;
   XD3DTypedBufferImpl<WorldTransformData> _worldTransformData;
@@ -146,8 +149,8 @@ public:
     UserConstantBufferStartOffset = 2
     };
 
-  XMatrix4x4 _transformStack[TransformStackSize];
-  XMatrix4x4 *_currentTransform;
+  Eks::Matrix4x4 _transformStack[TransformStackSize];
+  Eks::Matrix4x4 *_currentTransform;
 
   void setRenderTarget(XD3DRenderTargetImpl *target);
   void clearRenderTarget();
@@ -156,5 +159,7 @@ public:
   };
 
 bool failedCheck(HRESULT res);
+
+}
 
 #endif // XD3DRENDERERIMPL_H

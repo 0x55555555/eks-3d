@@ -27,7 +27,6 @@ SOURCES += \
     ../src/XAbstractCanvas.cpp \
     ../src/X2DCanvas.cpp \
     ../src/XAbstractRenderModel.cpp \
-    ../src/XAbstractDelegate.cpp \
     ../src/XAbstractCanvasController.cpp \
     ../src/XCameraCanvasController.cpp \
     ../src/XObjLoader.cpp
@@ -79,14 +78,11 @@ win32-arm-msvc2012 {
 
   HEADERS += ../include/XGLRenderer.h \
              ../include/X3DCanvas.h
-}
 
-LIBS += -lEksCore
-
-RESOURCES += \
+  RESOURCES += \
     ../GLResources.qrc
 
-OTHER_FILES += \
+  OTHER_FILES += \
     ../GLResources/shaders/default.vert \
     ../GLResources/shaders/default.frag \
     ../GLResources/shaders/blinn.vert \
@@ -96,6 +92,9 @@ OTHER_FILES += \
     ../GLResources/shaders/standardSurface.frag \
     ../GLResources/shaders/standardSurface.vert
 
+}
+
+LIBS += -lEksCore
 
 
 

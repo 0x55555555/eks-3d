@@ -1,6 +1,9 @@
 #include "XFramebuffer.h"
 #include "XRenderer.h"
 
+namespace Eks
+{
+
 XAbstractFramebuffer::~XAbstractFramebuffer()
   {
   }
@@ -30,7 +33,7 @@ void XFramebuffer::clean() const
   if( _internal )
     {
     xAssert(_renderer);
-    _renderer->destroyFramebuffer(_internal);
+    //_renderer->destroyFramebuffer(_internal);
     _internal = 0;
     }
   }
@@ -66,11 +69,13 @@ XAbstractFramebuffer *XFramebuffer::internal() const
   return _internal;
   }
 
-void XFramebuffer::prepareInternal( XRenderer *r )const
+void XFramebuffer::prepareInternal( Renderer *r )const
   {
   if( !_internal )
     {
     _renderer = r;
-    _internal = r->getFramebuffer( _options, _colourFormat, _depthFormat, _width, _height );
+    //_internal = r->getFramebuffer( _options, _colourFormat, _depthFormat, _width, _height );
     }
   }
+
+}

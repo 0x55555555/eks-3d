@@ -1,61 +1,69 @@
-#ifndef XOBJLOADER_H
-#define XOBJLOADER_H
+#ifndef ObjLoader_H
+#define ObjLoader_H
 
 #include "X3DGlobal.h"
-#include "XVector3D"
-#include "XSimpleString"
+#include "XMathVector"
+#include "XStringSimple"
 #include "XShader.h"
 
-class XGeometry;
-class XRenderer;
-class XIndexGeometry;
+namespace Eks
+{
 
-class EKS3D_EXPORT XObjLoader
+class Geometry;
+class Renderer;
+class IndexGeometry;
+
+class EKS3D_EXPORT ObjLoader
   {
 public:
   enum
     {
     ExpectedVertices = 1024,
-    ExpectedLineLength = 1024,
+    ExpectedLineLength = 512,
+    ExpectedFloatLength = 32,
     MaxComponent = 3,
     MaxElements = 2
     };
 
+  typedef Vector<XChar, ExpectedLineLength> LineCache;
+
   struct ObjElement;
-  typedef Eigen::Matrix<xReal, MaxComponent, 1> ElementVector;
+  typedef Eigen::Matrix<Real, MaxComponent, 1> ElementVector;
   struct ElementData
     {
-    XVector<ElementVector> data;
-    const XObjLoader::ObjElement *desc;
+    Vector<ElementVector> data;
+    const ObjLoader::ObjElement *desc;
     };
 
-  XObjLoader(XAllocatorBase *allocator=XGlobalAllocator::instance());
+  ObjLoader(AllocatorBase *allocator=GlobalAllocator::instance());
 
   void load(const char *data,
     xsize dataSize,
-    const XShaderVertexLayoutDescription::Semantic *items,
+    const ShaderVertexLayoutDescription::Semantic *items,
     xsize itemCount,
-    XVector<XVectorI3D> *triangles, xsize *vertexSize,
+    Vector<VectorI3D> *triangles, xsize *vertexSize,
     ElementData *elements);
 
-  void bake(const XVector<XVectorI3D> &triangles,
+  void bake(const Vector<VectorI3D> &triangles,
     const ElementData *elementData,
     xsize elementCount,
-    XVector<xuint8> *dataOut);
+    Vector<xuint8> *dataOut);
 
-  const ObjElement *findObjectDescriptionForSemantic(XShaderVertexLayoutDescription::Semantic s);
+  const ObjElement *findObjectDescriptionForSemantic(ShaderVertexLayoutDescription::Semantic s);
 
 private:
   bool findElementType(
-    const XVector<char> &line,
-    const XShaderVertexLayoutDescription::Semantic *items,
+    const LineCache &line,
+    const ShaderVertexLayoutDescription::Semantic *items,
     xsize itemCount,
     xsize *foundItem);
 
-  bool readIndices(const XVector<char> &, xsize start, xsize *end, XVectorI3D &indices);
+  bool readIndices(const LineCache &, xsize start, xsize *end, VectorI3D &indices);
 
-  XAllocatorBase *_allocator;
-  XString _scratchString;
+  Eks::AllocatorBase *_allocator;
+  Eks::String _scratchString;
   };
 
-#endif // XOBJLOADER_H
+}
+
+#endif // ObjLoader_H

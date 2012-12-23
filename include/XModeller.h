@@ -2,11 +2,8 @@
 #define XMODELLER_H
 
 #include "X3DGlobal.h"
-#include "XVector2D"
-#include "XVector3D"
-#include "XList"
+#include "XMathVector"
 #include "XGeometry.h"
-#include "XSize"
 #include "XColour"
 #include "XTransform.h"
 
@@ -17,7 +14,7 @@ template <typename T> class XAbstractCurve;
 class EKS3D_EXPORT XModeller
     {
 public:
-    XModeller( XGeometry *, xsize initialSize );
+    XModeller( Geometry *, xsize initialSize );
     ~XModeller( );
 
     void flush( );
@@ -27,32 +24,32 @@ public:
     void begin( Type = Triangles );
     void end( );
 
-    void vertex( const XVector3D & );
-    inline void vertex( xReal, xReal, xReal );
-    void normal( const XVector3D & );
-    inline void normal( xReal, xReal, xReal );
+    void vertex( const Eks::Vector3D & );
+    inline void vertex( Real, Real, Real );
+    void normal( const Eks::Vector3D & );
+    inline void normal( Real, Real, Real );
     void texture( const XVector2D & );
-    inline void texture( xReal, xReal );
+    inline void texture( Real, Real );
     void colour( const XVector4D & );
-    inline void colour( xReal, xReal, xReal, xReal = 1.0 );
+    inline void colour( Real, Real, Real, Real = 1.0 );
 
     void setNormalsAutomatic( bool=true );
     bool normalsAutomatic( ) const;
 
     // Draw Functions
-    void drawGeometry( const XGeometry &, bool normaliseNormals=false );
-    void drawGeometry( XList <XVector3D> positions, const XGeometry &, bool normaliseNormals=false );
+    void drawGeometry( const Geometry &, bool normaliseNormals=false );
+    void drawGeometry( XList <Eks::Vector3D> positions, const Geometry &, bool normaliseNormals=false );
 
     void drawWireCube( const XCuboid &cube );
 
-    void drawCone(const XVector3D &point, const XVector3D &direction, float length, float radius, xuint32 divs=6);
+    void drawCone(const Eks::Vector3D &point, const Eks::Vector3D &direction, float length, float radius, xuint32 divs=6);
 
     void drawSphere(float radius, int lats = 8, int longs = 12);
-    void drawCube( XVector3D horizontal=XVector3D(1,0,0), XVector3D vertical=XVector3D(0,1,0), XVector3D depth=XVector3D(0,0,1), float tX=0.0, float tY=0.0 );
-    void drawQuad( XVector3D horizontal=XVector3D(1,0,0), XVector3D vertical=XVector3D(0,1,0) );
-    void drawLocator( XSize size=XSize(1,1,1), XVector3D center=XVector3D() );
+    void drawCube( Eks::Vector3D horizontal=Eks::Vector3D(1,0,0), Eks::Vector3D vertical=Eks::Vector3D(0,1,0), Eks::Vector3D depth=Eks::Vector3D(0,0,1), float tX=0.0, float tY=0.0 );
+    void drawQuad( Eks::Vector3D horizontal=Eks::Vector3D(1,0,0), Eks::Vector3D vertical=Eks::Vector3D(0,1,0) );
+    void drawLocator( XSize size=XSize(1,1,1), Eks::Vector3D center=Eks::Vector3D() );
 
-    void drawCurve( const XAbstractCurve <XVector3D> &, xsize segments );
+    void drawCurve( const XAbstractCurve <Eks::Vector3D> &, xsize segments );
 
     void setTransform( const XTransform & );
     XTransform transform( ) const;
@@ -61,31 +58,31 @@ public:
     void restore();
 
 private:
-    inline XVector3D transformPoint( const XVector3D & );
-    inline XVector <XVector3D> transformPoints( const XVector <XVector3D> & );
+    inline Eks::Vector3D transformPoint( const Eks::Vector3D & );
+    inline XVector <Eks::Vector3D> transformPoints( const XVector <Eks::Vector3D> & );
 
-    inline XVector3D transformNormal( XVector3D );
-    inline XVector <XVector3D> transformNormals( const XVector <XVector3D> &, bool reNormalize );
+    inline Eks::Vector3D transformNormal( Eks::Vector3D );
+    inline XVector <Eks::Vector3D> transformNormals( const XVector <Eks::Vector3D> &, bool reNormalize );
 
-    XGeometry *_geo;
+    Geometry *_geo;
     XVector <xuint32> _triIndices;
     XVector <xuint32> _linIndices;
     XVector <xuint32> _poiIndices;
-    XVector <XVector3D> _vertex;
+    XVector <Eks::Vector3D> _vertex;
     XVector <XVector2D> _texture;
-    XVector <XVector3D> _normals;
+    XVector <Eks::Vector3D> _normals;
     XVector <XVector4D> _colours;
 
     struct State
         {
-        State() : normal(XVector3D::Zero()),
+        State() : normal(Eks::Vector3D::Zero()),
             texture(XVector2D::Zero()),
             colour(0.0f, 0.0f, 0.0f, 0.0f),
             type( None ),
             normalsAutomatic( false )
           {
           }
-        XVector3D normal;
+        Eks::Vector3D normal;
         XVector2D texture;
         XVector4D colour;
         Type type;
@@ -97,16 +94,16 @@ private:
     int _quadCount;
     };
 
-void XModeller::vertex( xReal x, xReal y, xReal z )
-    { vertex( XVector3D(x,y,z) ); }
+void XModeller::vertex( Real x, Real y, Real z )
+    { vertex( Eks::Vector3D(x,y,z) ); }
 
-void XModeller::normal( xReal x, xReal y, xReal z )
-    { normal( XVector3D(x,y,z) ); }
+void XModeller::normal( Real x, Real y, Real z )
+    { normal( Eks::Vector3D(x,y,z) ); }
 
-void XModeller::texture( xReal x, xReal y )
+void XModeller::texture( Real x, Real y )
     { texture( XVector2D(x,y) ); }
 
-void XModeller::colour( xReal x, xReal y, xReal z, xReal w )
+void XModeller::colour( Real x, Real y, Real z, Real w )
     { colour( XVector4D(x,y,z,w) ); }
 
 #endif

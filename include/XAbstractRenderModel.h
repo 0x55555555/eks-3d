@@ -2,16 +2,19 @@
 #define XABSTRACTRENDERMODEL_H
 
 #include "X3DGlobal.h"
-#include "XList"
+#include "XVector"
 #include "XProperty"
 
-class XAbstractCanvas;
-class XAbstractDelegate;
+namespace Eks
+{
 
-class EKS3D_EXPORT XAbstractRenderModel
+class AbstractCanvas;
+class AbstractDelegate;
+
+class EKS3D_EXPORT AbstractRenderModel
   {
 XProperties:
-  XRORefProperty(XList<XAbstractCanvas*>, canvases);
+  XRORefProperty(Vector<AbstractCanvas*>, canvases);
 
 public:
   class EKS3D_EXPORT Iterator
@@ -28,7 +31,7 @@ public:
     TreeChange = 1<<2 | BoundsChange | RenderChange
     };
 
-  virtual ~XAbstractRenderModel();
+  virtual ~AbstractRenderModel();
 
   void update(UpdateMode m) const;
 
@@ -36,10 +39,12 @@ public:
 
   virtual void resetIterator(Iterator *) const = 0;
 
-  virtual const XAbstractDelegate *delegateFor(Iterator *, const XAbstractCanvas *) const = 0;
+  virtual const AbstractDelegate *delegateFor(Iterator *, const AbstractCanvas *) const = 0;
 
 private:
-  friend class XAbstractCanvas;
+  friend class AbstractCanvas;
   };
+
+}
 
 #endif // XABSTRACTRENDERMODEL_H

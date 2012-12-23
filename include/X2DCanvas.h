@@ -10,7 +10,7 @@
 
 class QPainter;
 
-class EKS3D_EXPORT X2DCanvas : public QWidget, public XAbstractCanvas
+class EKS3D_EXPORT X2DCanvas : public QWidget, public Eks::AbstractCanvas
   {
   Q_OBJECT
 
@@ -26,7 +26,7 @@ public:
 
   X_CANVAS_GENERAL_MOUSEHANDLERS()
 
-  virtual void update(XAbstractRenderModel::UpdateMode);
+  virtual void update(Eks::AbstractRenderModel::UpdateMode);
 
   virtual bool isShown();
 
@@ -34,12 +34,12 @@ protected:
   virtual void paintEvent(QPaintEvent *);
   };
 
-class EKS3D_EXPORT XSimple2DCanvasController : public XCameraCanvasController, XCameraCanvasController::CameraInterface
+class EKS3D_EXPORT XSimple2DCanvasController : public Eks::CameraCanvasController, Eks::CameraCanvasController::CameraInterface
   {
 public:
   XSimple2DCanvasController(X2DCanvas *canvas);
 
-  XCameraCanvasController::CameraInterface *camera() { return this; }
+  Eks::CameraCanvasController::CameraInterface *camera() { return this; }
 
 
   virtual MovementFlags supportedMovements() const;

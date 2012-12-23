@@ -1,13 +1,16 @@
 #include "XCameraCanvasController.h"
 #include "QDebug"
 
-XCameraCanvasController::XCameraCanvasController(XAbstractCanvas *canvas)
-    : XAbstractCanvasController(canvas), _current(CameraInterface::None)
+namespace Eks
+{
+
+CameraCanvasController::CameraCanvasController(AbstractCanvas *canvas)
+    : AbstractCanvasController(canvas), _current(CameraInterface::None)
   {
   }
 
 
-XCameraCanvasController::UsedFlags XCameraCanvasController::mouseEvent(const MouseEvent &e)
+CameraCanvasController::UsedFlags CameraCanvasController::mouseEvent(const MouseEvent &e)
   {
   CameraInterface *cam = camera();
   if(!cam)
@@ -95,7 +98,7 @@ XCameraCanvasController::UsedFlags XCameraCanvasController::mouseEvent(const Mou
   }
 
 
-XCameraCanvasController::UsedFlags XCameraCanvasController::wheelEvent(const WheelEvent &w)
+CameraCanvasController::UsedFlags CameraCanvasController::wheelEvent(const WheelEvent &w)
   {
   CameraInterface *cam = camera();
   if(!cam)
@@ -115,3 +118,5 @@ XCameraCanvasController::UsedFlags XCameraCanvasController::wheelEvent(const Whe
 
   return NotUsed;
   }
+
+}

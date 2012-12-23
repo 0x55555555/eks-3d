@@ -5,29 +5,34 @@
 #include "XProperty"
 #include "XAbstractRenderModel.h"
 
-class XAbstractCanvasController;
+namespace Eks
+{
 
-class EKS3D_EXPORT XAbstractCanvas
+class AbstractCanvasController;
+
+class EKS3D_EXPORT AbstractCanvas
   {
 XProperties:
-  XROProperty(XAbstractRenderModel *, model);
-  XProperty(XAbstractCanvasController *, controller, setController);
+  XROProperty(AbstractRenderModel *, model);
+  XProperty(AbstractCanvasController *, controller, setController);
 
 public:
-  XAbstractCanvas(XAbstractRenderModel *model=0, XAbstractCanvasController *controller=0);
-  virtual ~XAbstractCanvas();
+  AbstractCanvas(AbstractRenderModel *model=0, AbstractCanvasController *controller=0);
+  virtual ~AbstractCanvas();
 
-  virtual void update(XAbstractRenderModel::UpdateMode);
+  virtual void update(AbstractRenderModel::UpdateMode);
   virtual void paint();
 
   virtual bool isShown() = 0;
 
-  void setModel(XAbstractRenderModel *);
+  void setModel(AbstractRenderModel *);
 
 private:
   void doUpdate();
-  XAbstractRenderModel::Iterator *_iterator;
+  AbstractRenderModel::Iterator *_iterator;
   bool _delayedUpdate;
   };
+
+}
 
 #endif // XABSTRACTCANVAS_H

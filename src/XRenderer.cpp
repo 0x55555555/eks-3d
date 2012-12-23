@@ -1,14 +1,17 @@
 #include "XRenderer.h"
 
-XRenderer::XRenderer( ) : _renderFlags(0)
+namespace Eks
+{
+
+Renderer::Renderer( ) : _renderFlags(0)
   {
   }
 
-XRenderer::~XRenderer( )
+Renderer::~Renderer( )
   {
   }
 
-void XRenderer::setRenderFlags( int flags )
+void Renderer::setRenderFlags( int flags )
   {
   for( unsigned int x=0; x<sizeof(int)*8; x++ )
     {
@@ -30,7 +33,9 @@ void XRenderer::setRenderFlags( int flags )
   _renderFlags = flags;
   }
 
-int XRenderer::renderFlags() const
+int Renderer::renderFlags() const
   {
   return *_renderFlags;
   }
+
+}

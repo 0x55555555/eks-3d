@@ -1,22 +1,27 @@
 #include "XAbstractRenderModel.h"
 #include "XAbstractCanvas.h"
 
-XAbstractRenderModel::Iterator::~Iterator()
+namespace Eks
+{
+
+AbstractRenderModel::Iterator::~Iterator()
   {
   }
 
-XAbstractRenderModel::~XAbstractRenderModel()
+AbstractRenderModel::~AbstractRenderModel()
   {
-  Q_FOREACH(XAbstractCanvas *canvas, _canvases)
+  xForeach(AbstractCanvas *canvas, _canvases)
     {
     canvas->setModel(0);
     }
   }
 
-void XAbstractRenderModel::update(UpdateMode m) const
+void AbstractRenderModel::update(UpdateMode m) const
   {
-  Q_FOREACH(XAbstractCanvas *canvas, _canvases)
+  xForeach(AbstractCanvas *canvas, _canvases)
     {
     canvas->update(m);
     }
   }
+}
+

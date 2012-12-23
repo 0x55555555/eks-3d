@@ -2,23 +2,28 @@
 #define XTRIANGLE_H
 
 #include "XProperty"
-#include "XVector3D"
+#include "XMathVector"
 
-class XLine;
+namespace Eks
+{
 
-class XTriangle
+class Line;
+
+class Triangle
   {
-  XProperty( XVector3D, pointA, setPointA );
-  XProperty( XVector3D, pointB, setPointB );
-  XProperty( XVector3D, pointC, setPointC );
+  XProperty( Vector3D, pointA, setPointA );
+  XProperty( Vector3D, pointB, setPointB );
+  XProperty( Vector3D, pointC, setPointC );
 
 public:
-  XTriangle( const XVector3D &pA, const XVector3D &pB, const XVector3D &pC );
+  Triangle( const Vector3D &pA, const Vector3D &pB, const Vector3D &pC );
 
   // does the given point lie on the triangle
-  bool liesOn( const XVector3D &point ) const;
+  bool liesOn( const Vector3D &point ) const;
 
-  bool intersects( const XLine &ray, XVector3D &pos );
+  bool intersects( const Line &ray, Vector3D &pos );
   };
+
+}
 
 #endif // XTRIANGLE_H

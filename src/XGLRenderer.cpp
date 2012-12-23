@@ -4,14 +4,14 @@
 
 #include "GL/glew.h"
 #include "XFramebuffer.h"
-#include "XGeometry.h"
-#include "XShader.h"
+#include "Geometry.h"
+#include "Shader.h"
 #include "XTexture.h"
-#include "XColour"
+#include "Colour"
 #include "QGLShaderProgram"
 #include "QVarLengthArray"
 #include "QDebug"
-#include "XShader.h"
+#include "Shader.h"
 #include "QFile"
 
 const char *glErrorString( int err )
@@ -157,7 +157,7 @@ private:
 class XGLIndexGeometryCache
   {
 public:
-  XGLIndexGeometryCache( XGLRenderer *, const void *data, XIndexGeometry::Type type, xsize elementCount );
+  XGLIndexGeometryCache( XGLRenderer *, const void *data, IndexGeometry::Type type, xsize elementCount );
   ~XGLIndexGeometryCache( );
 
   unsigned int _indexArray;
@@ -223,7 +223,7 @@ void XGLRenderer::popTransform( )
   glPopMatrix() GLE;
   }
 
-void XGLRenderer::setClearColour(const XColour &col)
+void XGLRenderer::setClearColour(const Colour &col)
   {
   glClearColor(col.x(), col.y(), col.z(), col.w());
   }
@@ -317,12 +317,12 @@ QDebug operator<<( QDebug dbg, XVector2D v )
   return dbg << "Vertex2D(" << v.x() << "," << v.y() << ")";
   }
 
-QDebug operator<<( QDebug dbg, XVector3D v )
+QDebug operator<<( QDebug dbg, Eks::Vector3D v )
   {
   return dbg << "Vertex2D(" <<v.x() << "," << v.y() << "," << v.z() << ")";
   }
 
-void XGLRenderer::drawTriangles(const XIndexGeometry *indices, const XGeometry *vert)
+void XGLRenderer::drawTriangles(const IndexGeometry *indices, const Geometry *vert)
   {
   xAssert(_currentShader);
   xAssert(_vertexLayout);
@@ -361,7 +361,7 @@ void XGLRenderer::drawTriangles(const XIndexGeometry *indices, const XGeometry *
   }
 
 bool XGLRenderer::createGeometry(
-    XGeometry *g,
+    Geometry *g,
     const void *data,
     xsize elementSize,
     xsize elementCount)
@@ -371,11 +371,11 @@ bool XGLRenderer::createGeometry(
   return true;
   }
 
-void XGLRenderer::setShader( const XShader *shader )
+void XGLRenderer::setShader( const Shader *shader )
   {
   if( shader && ( _currentShader == 0 || _currentShader != shader ) )
     {
-    _currentShader = const_cast<XShader *>(shader);
+    _currentShader = const_cast<Shader *>(shader);
     XGLShader* shaderInt = _currentShader->data<XGLShader>();
 
     xAssert(shaderInt->shader.isLinked());
@@ -384,7 +384,7 @@ void XGLRenderer::setShader( const XShader *shader )
 
     /*
     int x=0;
-    Q_FOREACH( XShaderVariable *var, shader->variables() )
+    Q_FOREACH( ShaderVariable *var, shader->variables() )
       {
       XGLShaderVariable *glVar( static_cast<XGLShaderVariable*>(var->internal()) );
       if( glVar->_texture )
@@ -409,9 +409,9 @@ void XGLRenderer::setShader( const XShader *shader )
   }
 
 bool XGLRenderer::createShader(
-    XShader *s,
-    XShaderVertexComponent *v,
-    XShaderFragmentComponent *f)
+    Shader *s,
+    ShaderVertexComponent *v,
+    ShaderFragmentComponent *f)
   {
   XGLShader *glS = s->data<XGLShader>();
   new(glS) XGLShader( this, v, f );
@@ -771,7 +771,7 @@ void XGLShaderVariable::setValue( int value )
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
   }
 
-void XGLShaderVariable::setValue( xReal value )
+void XGLShaderVariable::setValue( Real value )
   {
   clear();
   bindShader();
@@ -785,7 +785,7 @@ void XGLShaderVariable::setValue( unsigned int value )
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
   }
 
-void XGLShaderVariable::setValue( const XColour &value )
+void XGLShaderVariable::setValue( const Colour &value )
   {
   clear();
   bindShader();
@@ -799,7 +799,7 @@ void XGLShaderVariable::setValue( const XVector2D &value )
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, toQt(value) ) GLE;
   }
 
-void XGLShaderVariable::setValue( const XVector3D &value )
+void XGLShaderVariable::setValue( const Eks::Vector3D &value )
   {
   clear();
   bindShader();
@@ -891,7 +891,7 @@ void XGLShaderVariable::setValueArray( const XVector<int> &values )
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size() ) GLE;
   }
 
-void XGLShaderVariable::setValueArray( const XVector<xReal> &values )
+void XGLShaderVariable::setValueArray( const XVector<Real> &values )
   {
   clear();
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size(), 1 ) GLE;
@@ -903,7 +903,7 @@ void XGLShaderVariable::setValueArray( const XVector<unsigned int> &values )
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size() ) GLE;
   }
 
-void XGLShaderVariable::setValueArray( const XVector<XColour> &values )
+void XGLShaderVariable::setValueArray( const XVector<Colour> &values )
   {
   clear();
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, values.front().data(), values.size(), 4 ) GLE;
@@ -915,7 +915,7 @@ void XGLShaderVariable::setValueArray( const XVector<XVector2D> &values )
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, values.front().data(), values.size(), 2 ) GLE;
   }
 
-void XGLShaderVariable::setValueArray( const XVector<XVector3D> &values )
+void XGLShaderVariable::setValueArray( const XVector<Eks::Vector3D> &values )
   {
   clear();
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, values.front().data(), values.size(), 3 ) GLE;
@@ -996,13 +996,13 @@ void XGLShaderVariable::clear()
 //----------------------------------------------------------------------------------------------------------------------
 // INDEX GEOMETRY CACHE
 //----------------------------------------------------------------------------------------------------------------------
-XGLIndexGeometryCache::XGLIndexGeometryCache( XGLRenderer *, const void *data, XIndexGeometry::Type type, xsize elementCount )
+XGLIndexGeometryCache::XGLIndexGeometryCache( XGLRenderer *, const void *data, IndexGeometry::Type type, xsize elementCount )
   {
   unsigned int typeMap[] =
     {
     GL_UNSIGNED_SHORT
     };
-  xCompileTimeAssert(XIndexGeometry::TypeCount == X_ARRAY_COUNT(typeMap));
+  xCompileTimeAssert(IndexGeometry::TypeCount == X_ARRAY_COUNT(typeMap));
 
   _indexType = typeMap[type];
   _indexCount = elementCount;
@@ -1023,11 +1023,11 @@ XGLGeometryCache::XGLGeometryCache( XGLRenderer *r, const void *data, xsize elem
   _triangleSize = 0;
 
   glGenBuffers( 1, &_vertexArray ) GLE;
-  if( type == XGeometry::Dynamic )
+  if( type == Geometry::Dynamic )
     {
     _type = GL_DYNAMIC_DRAW;
     }
-  else if( type == XGeometry::Stream )
+  else if( type == Geometry::Stream )
     {
     _type = GL_STREAM_DRAW;
     }
@@ -1128,7 +1128,7 @@ void XGLGeometryCache::setAttributesSize( int s, int num1D, int num2D, int num3D
   glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
   }
 
-void XGLGeometryCache::setAttribute( QString name, const XVector<xReal> &attr )
+void XGLGeometryCache::setAttribute( QString name, const XVector<Real> &attr )
   {
   int offset( getCacheOffset( name, 1, attr.size() ) );
 
@@ -1148,7 +1148,7 @@ void XGLGeometryCache::setAttribute( QString name, const XVector<XVector2D> &att
   glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
   }
 
-void XGLGeometryCache::setAttribute( QString name, const XVector<XVector3D> &attr )
+void XGLGeometryCache::setAttribute( QString name, const XVector<Eks::Vector3D> &attr )
   {
   int offset( getCacheOffset( name, 3, attr.size() ) );
 

@@ -1,72 +1,71 @@
-#ifndef XCUBOID_H
-#define XCUBOID_H
+#ifndef Cuboid_H
+#define Cuboid_H
 
 #include "X3DGlobal.h"
-#include "XVector3D"
-#include "XSize"
+#include "XMathVector"
 #include "XProperty"
 #include "XTransform.h"
 
-class XLine;
+namespace Eks
+{
 
-class EKS3D_EXPORT XCuboid
-    {
-public:
-    XROProperty( XVector3D, minimum );
-    XROProperty( XVector3D, maximum );
-    XROProperty( bool, isValid )
+class Line;
 
-public:
-    XCuboid( );
-    XCuboid( XVector3D minimum, XVector3D maximum );
-    XCuboid( XVector3D minimum, XSize );
-
-    bool operator==(const XCuboid& oth) const;
-    bool operator!=(const XCuboid& oth) const;
-
-    XVector3D centre() const;
-
-    void unite( const XVector3D & );
-    void unite( const XCuboid & );
-
-    XCuboid united( const XVector3D & ) const;
-    XCuboid united( const XCuboid & ) const;
-
-    XCuboid &operator|=( const XCuboid & );
-    XCuboid operator|( const XCuboid & ) const;
-
-    void setMinimum( const XVector3D & );
-    void setMaximum( const XVector3D & );
-
-    void expand(float amount);
-
-    XSize size() const;
-
-    xReal maximumDistanceSquared() const;
-
-    bool isInside( const XVector3D & ) const;
-    bool intersects( const XCuboid & ) const;
-    bool intersects( const XLine &, float &distance ) const;
-
-    friend EKS3D_EXPORT QDataStream &operator<<(QDataStream &stream, const XCuboid &itemRequest);
-    friend EKS3D_EXPORT QDataStream &operator>>(QDataStream &stream, XCuboid &itemRequest);
-    friend EKS3D_EXPORT QTextStream &operator<<(QTextStream &stream, const XCuboid &itemRequest);
-    friend EKS3D_EXPORT QTextStream &operator>>(QTextStream &stream, XCuboid &itemRequest);
-    };
-
-#if X_DECLARE_METATYPES
-Q_DECLARE_METATYPE(XCuboid)
-#endif
-
-inline XCuboid operator *( const XTransform &mat, const XCuboid &cub )
+class EKS3D_EXPORT Cuboid
   {
-  XVector3D min = mat * cub.minimum();
-  XVector3D max = mat * cub.maximum();
+public:
+  XRORefProperty( Vector3D, minimum );
+  XRORefProperty( Vector3D, maximum );
+  XROProperty( bool, isValid )
 
-  XCuboid ret;
+public:
+
+  Cuboid( );
+  Cuboid( Vector3D minimum, Vector3D maximum );
+
+  bool operator==(const Cuboid& oth) const;
+  bool operator!=(const Cuboid& oth) const;
+
+  Vector3D centre() const;
+
+  void unite( const Vector3D & );
+  void unite( const Cuboid & );
+
+  Cuboid united( const Vector3D & ) const;
+  Cuboid united( const Cuboid & ) const;
+
+  Cuboid &operator|=( const Cuboid & );
+  Cuboid operator|( const Cuboid & ) const;
+
+  void setMinimum( const Vector3D & );
+  void setMaximum( const Vector3D & );
+
+  void expand(float amount);
+
+  Vector3D size() const;
+
+  Real maximumDistanceSquared() const;
+
+  bool isInside( const Vector3D & ) const;
+  bool intersects( const Cuboid & ) const;
+  bool intersects( const Line &, float &distance ) const;
+
+  friend EKS3D_EXPORT QDataStream &operator<<(QDataStream &stream, const Cuboid &itemRequest);
+  friend EKS3D_EXPORT QDataStream &operator>>(QDataStream &stream, Cuboid &itemRequest);
+  friend EKS3D_EXPORT QTextStream &operator<<(QTextStream &stream, const Cuboid &itemRequest);
+  friend EKS3D_EXPORT QTextStream &operator>>(QTextStream &stream, Cuboid &itemRequest);
+  };
+}
+
+inline Eks::Cuboid operator *( const Eks::Transform &mat, const Eks::Cuboid &cub )
+  {
+  Eks::Vector3D min = mat * cub.minimum();
+  Eks::Vector3D max = mat * cub.maximum();
+
+  Eks::Cuboid ret;
   ret.unite(min);
   ret.unite(max);
   return ret;
   }
 
-#endif // XCUBOID_H
+#endif // Cuboid_H

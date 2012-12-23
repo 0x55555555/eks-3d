@@ -4,16 +4,21 @@
 #include "X3DGlobal.h"
 #include "XAbstractRenderModel.h"
 
-class XAbstractCanvas;
+namespace Eks
+{
 
-class EKS3D_EXPORT XAbstractDelegate
+class AbstractCanvas;
+
+class EKS3D_EXPORT AbstractDelegate
   {
 public:
-  virtual ~XAbstractDelegate();
+  virtual ~AbstractDelegate() { }
 
-  virtual void update(const XAbstractCanvas *, const XAbstractRenderModel::Iterator *, const XAbstractRenderModel *) const { };
-  virtual void paint(xuint32 pass, XAbstractCanvas *, const XAbstractRenderModel::Iterator *, const XAbstractRenderModel *) const = 0;
-  virtual xuint32 maxNumberOfPasses(XAbstractCanvas *, const XAbstractRenderModel::Iterator *, const XAbstractRenderModel *) const { return 1; }
+  virtual void update(const AbstractCanvas *, const AbstractRenderModel::Iterator *, const AbstractRenderModel *) const { }
+  virtual void paint(xuint32 pass, AbstractCanvas *, const AbstractRenderModel::Iterator *, const AbstractRenderModel *) const = 0;
+  virtual xuint32 maxNumberOfPasses(AbstractCanvas *, const AbstractRenderModel::Iterator *, const AbstractRenderModel *) const { return 1; }
   };
+
+}
 
 #endif // XABSTRACTDELEGATE_H

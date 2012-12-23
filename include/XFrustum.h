@@ -1,13 +1,16 @@
 #ifndef XFRUSTUM
 #define XFRUSTUM
 
-class XCuboid;
-
 #include "XGlobal"
 #include "XTransform.h"
 #include "XPlane.h"
 
-class EKS3D_EXPORT XFrustum
+namespace Eks
+{
+
+class Cuboid;
+
+class EKS3D_EXPORT Frustum
   {
 public:
   enum IntersectionResult
@@ -16,6 +19,7 @@ public:
     Intersects,
     Outside
     };
+
   enum PlaneType
     {
     NearPlane,
@@ -26,16 +30,17 @@ public:
     FarPlane
     };
 
-  XFrustum();
-  XFrustum( const XVector3D &point, const XVector3D &look, const XVector3D &across, const XVector3D &up,
+  Frustum();
+  Frustum( const Vector3D &point, const Vector3D &look, const Vector3D &across, const Vector3D &up,
              float angle, float aspect, float near, float far );
 
-  IntersectionResult intersects(const XCuboid &) const;
+  IntersectionResult intersects(const Cuboid &) const;
 
-  void transform( const XTransform &tx );
+  void transform( const Transform &tx );
 
 private:
-  XPlane _planes[6];
+  Plane _planes[6];
   };
+}
 
 #endif // XFRUSTRUM

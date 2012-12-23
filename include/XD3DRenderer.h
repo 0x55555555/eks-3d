@@ -8,27 +8,30 @@ struct IUnknown;
 struct ID3D11Device1;
 struct ID3D11DeviceContext1;
 
-class XD3DRenderer;
-class XD3DRendererImpl;
+namespace Eks
+{
 
-class XD3DRendererRenderFrame
+class D3DRenderer;
+class D3DRendererImpl;
+
+class D3DRendererRenderFrame
   {
 public:
-  XD3DRendererRenderFrame(XD3DRenderer &r, bool *deviceLost);
-  ~XD3DRendererRenderFrame();
+  D3DRendererRenderFrame(D3DRenderer &r, bool *deviceLost);
+  ~D3DRendererRenderFrame();
 
 private:
-  XD3DRenderer &_renderer;
+  D3DRenderer &_renderer;
   bool *_deviceLost;
   };
 
-class EKS3D_EXPORT XD3DRenderer : public XRenderer
+class EKS3D_EXPORT D3DRenderer : public Renderer
   {
 public:
-  XD3DRenderer(IUnknown *window);
-  ~XD3DRenderer();
+  D3DRenderer(IUnknown *window);
+  ~D3DRenderer();
 
-  typedef XD3DRendererRenderFrame RenderFrame;
+  typedef D3DRendererRenderFrame RenderFrame;
 
   bool resize(xuint32 w, xuint32 h, Rotation rotation);
 
@@ -38,88 +41,85 @@ public:
   void beginFrame();
   void endFrame(bool *deviceLost);
 
-  void pushTransform( const XTransform & ) X_OVERRIDE;
+  void pushTransform( const Transform & ) X_OVERRIDE;
   void popTransform( ) X_OVERRIDE;
 
-  void setClearColour(const XColour &col) X_OVERRIDE;
+  void setClearColour(const Colour &col) X_OVERRIDE;
   void clear(int=ClearColour|ClearDepth) X_OVERRIDE;
 
   // creation accessors for abstract types
   bool createShader(
-    XShader *s,
-    XShaderVertexComponent *v,
-    XShaderFragmentComponent *f) X_OVERRIDE;
+    Shader *s,
+    ShaderVertexComponent *v,
+    ShaderFragmentComponent *f) X_OVERRIDE;
 
   bool createVertexShaderComponent(
-    XShaderVertexComponent *v,
+    ShaderVertexComponent *v,
     const char *s,
     xsize l,
-    const XShaderVertexLayoutDescription *vertexDescriptions,
+    const ShaderVertexLayoutDescription *vertexDescriptions,
     xsize vertexItemCount,
-    XShaderVertexLayout *layout) X_OVERRIDE;
+    ShaderVertexLayout *layout) X_OVERRIDE;
 
   bool createFragmentShaderComponent(
-    XShaderFragmentComponent *f,
+    ShaderFragmentComponent *f,
     const char *s,
     xsize l) X_OVERRIDE;
 
   bool createGeometry(
-    XGeometry *g,
+    Geometry *g,
     const void *data,
     xsize elementSize,
     xsize elementCount) X_OVERRIDE;
 
   bool createIndexGeometry(
-    XIndexGeometry *g,
+    IndexGeometry *g,
     int type,
     const void *index,
     xsize indexCount) X_OVERRIDE;
 
-  XAbstractTexture *getTexture() X_OVERRIDE;
-  XAbstractFramebuffer *getFramebuffer( int options, int colourFormat, int depthFormat, int width, int height ) X_OVERRIDE;
 
   void debugRenderLocator(DebugLocatorMode) X_OVERRIDE;
 
   // destroy abstract types
-  void destroyShader(XShader* s) X_OVERRIDE;
-  void destroyShaderVertexLayout(XShaderVertexLayout *d) X_OVERRIDE;
-  void destroyVertexShaderComponent(XShaderVertexComponent* s) X_OVERRIDE;
-  void destroyFragmentShaderComponent(XShaderFragmentComponent* s) X_OVERRIDE;
-  void destroyGeometry( XGeometry * ) X_OVERRIDE;
-  void destroyIndexGeometry( XIndexGeometry * ) X_OVERRIDE;
-  void destroyTexture( XAbstractTexture * ) X_OVERRIDE;
-  void destroyFramebuffer( XAbstractFramebuffer * ) X_OVERRIDE;
+  void destroyShader(Shader* s) X_OVERRIDE;
+  void destroyShaderVertexLayout(ShaderVertexLayout *d) X_OVERRIDE;
+  void destroyVertexShaderComponent(ShaderVertexComponent* s) X_OVERRIDE;
+  void destroyFragmentShaderComponent(ShaderFragmentComponent* s) X_OVERRIDE;
+  void destroyGeometry( Geometry * ) X_OVERRIDE;
+  void destroyIndexGeometry( IndexGeometry * ) X_OVERRIDE;
 
-  void setViewTransform( const XTransform & ) X_OVERRIDE;
-  void setProjectionTransform( const XComplexTransform & ) X_OVERRIDE;
+  void setViewTransform( const Transform & ) X_OVERRIDE;
+  void setProjectionTransform( const ComplexTransform & ) X_OVERRIDE;
 
   // set the current shader
-  void setShader( const XShader *, const XShaderVertexLayout *layout ) X_OVERRIDE;
+  void setShader( const Shader *, const ShaderVertexLayout *layout ) X_OVERRIDE;
 
   // draw the given geometry
-  void drawTriangles(const XIndexGeometry *indices, const XGeometry *vert) X_OVERRIDE;
-  void drawTriangles(const XGeometry *vert) X_OVERRIDE;
+  void drawTriangles(const IndexGeometry *indices, const Geometry *vert) X_OVERRIDE;
+  void drawTriangles(const Geometry *vert) X_OVERRIDE;
 
   // bind the given framebuffer for drawing
-  void setFramebuffer( const XFramebuffer * ) X_OVERRIDE;
+  void setFramebuffer( const Framebuffer * ) X_OVERRIDE;
 
 protected:
   void enableRenderFlag( RenderFlags ) X_OVERRIDE;
   void disableRenderFlag( RenderFlags ) X_OVERRIDE;
 
-  XD3DRendererImpl *_impl;
+  D3DRendererImpl *_impl;
   };
 
-inline XD3DRendererRenderFrame::XD3DRendererRenderFrame(XD3DRenderer &r, bool *deviceLost)
-  : _renderer(r), _deviceLost(deviceLost)
+inline D3DRendererRenderFrame::D3DRendererRenderFrame(D3DRenderer &r, bool *deviceLost)
+    : _renderer(r), _deviceLost(deviceLost)
   {
   r.beginFrame();
   }
 
-inline XD3DRendererRenderFrame::~XD3DRendererRenderFrame()
+inline D3DRendererRenderFrame::~D3DRendererRenderFrame()
   {
   _renderer.endFrame(_deviceLost);
-
   }
+
+}
 
 #endif // XD3DRENDERER_H

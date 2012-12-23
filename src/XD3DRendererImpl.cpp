@@ -3,6 +3,9 @@
 #include "XAssert"
 #include "XOptional"
 
+namespace Eks
+{
+
 bool failedCheck(HRESULT res)
   {
   if(SUCCEEDED(res))
@@ -17,32 +20,32 @@ bool failedCheck(HRESULT res)
   return true;
   }
 
-XD3DRendererImpl::XD3DRendererImpl()
+D3DRendererImpl::D3DRendererImpl()
   {
   _featureLevel = D3D_FEATURE_LEVEL_9_1;
   _window = 0;
 
   _currentTransform = _transformStack;
-  *_currentTransform = XMatrix4x4::Identity();
+  *_currentTransform = Eks::Matrix4x4::Identity();
   }
 
-XD3DRendererImpl::~XD3DRendererImpl()
+D3DRendererImpl::~D3DRendererImpl()
   {
   }
 
-void XD3DRendererImpl::setRenderTarget(XD3DRenderTargetImpl *target)
+void D3DRendererImpl::setRenderTarget(XD3DRenderTargetImpl *target)
   {
   ID3D11RenderTargetView* views[] = { target->renderTargetView.Get() };
   _d3dContext->OMSetRenderTargets(1, views, target->depthStencilView.Get());
   }
 
-void XD3DRendererImpl::clearRenderTarget()
+void D3DRendererImpl::clearRenderTarget()
   {
   ID3D11RenderTargetView* views[] = { nullptr };
   _d3dContext->OMSetRenderTargets(X_ARRAY_COUNT(views), views, 0);
   }
 
-bool XD3DRendererImpl::createResources()
+bool D3DRendererImpl::createResources()
   {
   // This flag adds support for surfaces with a different color channel ordering
   // than the API default. It is required for compatibility with Direct2D.
@@ -102,7 +105,7 @@ bool XD3DRendererImpl::createResources()
   _worldTransformData.create(_d3dDevice.Get(), D3D11_BIND_CONSTANT_BUFFER);
   _modelTransformData.create(_d3dDevice.Get(),
                              0,
-                             sizeof(XD3DRendererImpl::_transformStack[0]),
+                             sizeof(D3DRendererImpl::_transformStack[0]),
                              D3D11_BIND_CONSTANT_BUFFER);
 
   return true;
@@ -433,7 +436,7 @@ void XD3DSwapChainImpl::discard()
   framebuffer.discard();
   }
 
-bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
+bool D3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
   {
   // clear the state.
   clearRenderTarget();
@@ -453,3 +456,5 @@ bool XD3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
   _d3dContext->RSSetViewports(1, &viewport);
   return true;
   }
+
+}

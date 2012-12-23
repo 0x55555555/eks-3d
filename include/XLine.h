@@ -2,14 +2,17 @@
 #define XLINE_H
 
 #include "X3DGlobal.h"
-#include "XVector3D"
+#include "XMathVector"
 #include "XProperty"
 #include "XTransform.h"
 
-class EKS3D_EXPORT XLine
+namespace Eks
+{
+
+class EKS3D_EXPORT Line
   {
-  XProperty( XVector3D, position, setPosition );
-  XProperty( XVector3D, direction, setDirection );
+  XProperty( Vector3D, position, setPosition );
+  XProperty( Vector3D, direction, setDirection );
 public:
   enum ConstructionMode
     {
@@ -17,24 +20,27 @@ public:
     PointAndDirection
     };
 
-  XLine( const XVector3D &, const XVector3D &, ConstructionMode=TwoPoints );
+  Line( const Vector3D &, const Vector3D &, ConstructionMode=TwoPoints );
 
-  void transform(const XTransform &);
+  void transform(const Eks::Transform &);
 
-  XVector3D sample(float) const;
+  Vector3D sample(float) const;
 
   // returns t for this line, for the closest point on that line
-  float closestPointOn(const XLine &l) const;
+  float closestPointOn(const Line &l) const;
 
   // returns the closest t to l
-  float closestPointTo(const XVector3D &l) const;
+  float closestPointTo(const Vector3D &l) const;
   };
 
-inline XLine operator*( const XTransform &tx, const XLine &line )
+}
+
+inline Eks::Line operator*( const Eks::Transform &tx, const Eks::Line &line )
   {
-  XLine l(line);
+  Eks::Line l(line);
   l.transform(tx);
   return l;
   }
+
 
 #endif // XLINE_H

@@ -25,9 +25,9 @@ void X2DCanvas::paintEvent(QPaintEvent *event)
   _currentPainter = 0;
   }
 
-void X2DCanvas::update(XAbstractRenderModel::UpdateMode c)
+void X2DCanvas::update(Eks::AbstractRenderModel::UpdateMode c)
   {
-  XAbstractCanvas::update(c);
+  Eks::AbstractCanvas::update(c);
   QWidget::update();
   }
 
@@ -37,7 +37,7 @@ bool X2DCanvas::isShown()
   }
 
 
-XSimple2DCanvasController::XSimple2DCanvasController(X2DCanvas *canvas) : XCameraCanvasController(canvas)
+XSimple2DCanvasController::XSimple2DCanvasController(X2DCanvas *canvas) : Eks::CameraCanvasController(canvas)
   {
   }
 

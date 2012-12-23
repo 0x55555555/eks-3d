@@ -2,40 +2,43 @@
 #include "XCuboid.h"
 #include "XPlane.h"
 
-XFrustum::XFrustum( )
+namespace Eks
+{
+
+Frustum::Frustum( )
   {
   }
 
-XFrustum::XFrustum( const XVector3D &point, const XVector3D &look, const XVector3D &across,
-    const XVector3D &up, float viewAngle, float aspect, float nearPlane, float farPlane )
+Frustum::Frustum( const Vector3D &point, const Vector3D &look, const Vector3D &across,
+    const Vector3D &up, float viewAngle, float aspect, float nearPlane, float farPlane )
   {
-  XVector3D lookNorm = look.normalized();
-  XVector3D acrossNorm = across.normalized();
-  XVector3D upNorm = up.normalized();
+  Vector3D lookNorm = look.normalized();
+  Vector3D acrossNorm = across.normalized();
+  Vector3D upNorm = up.normalized();
   float fovUpY = tan(X_DEGTORAD(viewAngle)/2.0f);
   float fovUpX = tan(X_DEGTORAD(viewAngle*aspect)/2.0f);
 
   // near plane
-  _planes[NearPlane] = XPlane(point+(lookNorm*nearPlane), -lookNorm);
+  _planes[NearPlane] = Plane(point+(lookNorm*nearPlane), -lookNorm);
   // far plane
-  _planes[FarPlane] = XPlane(point+(lookNorm*farPlane), lookNorm);
+  _planes[FarPlane] = Plane(point+(lookNorm*farPlane), lookNorm);
 
   // top plane
-  _planes[TopPlane] = XPlane(point, (lookNorm + (fovUpY * upNorm)).cross(across) );
+  _planes[TopPlane] = Plane(point, (lookNorm + (fovUpY * upNorm)).cross(across) );
   // bottom plane
-  _planes[BottomPlane] = XPlane(point, across.cross(lookNorm - (fovUpY * upNorm)) );
+  _planes[BottomPlane] = Plane(point, across.cross(lookNorm - (fovUpY * upNorm)) );
 
   // left plane
-  _planes[LeftPlane] = XPlane(point, up.cross(lookNorm+(fovUpX * acrossNorm)) );
+  _planes[LeftPlane] = Plane(point, up.cross(lookNorm+(fovUpX * acrossNorm)) );
   // right plane
-  _planes[RightPlane] = XPlane(point, (lookNorm - (fovUpX * acrossNorm)).cross(up) );
+  _planes[RightPlane] = Plane(point, (lookNorm - (fovUpX * acrossNorm)).cross(up) );
 
   }
 
-XFrustum::IntersectionResult XFrustum::intersects( const XCuboid &cuboid ) const
+Frustum::IntersectionResult Frustum::intersects( const Cuboid &cuboid ) const
   {
-  XFrustum::IntersectionResult ret = Inside;
-  XVector3D vec;
+  Frustum::IntersectionResult ret = Inside;
+  Vector3D vec;
   for(xsize i=0; i<6; ++i)
     {
     vec.x() = (_planes[i].normal().x() >= 0.0f) ? cuboid.maximum().x() : cuboid.minimum().x();
@@ -59,10 +62,12 @@ XFrustum::IntersectionResult XFrustum::intersects( const XCuboid &cuboid ) const
   return ret;
   }
 
-void XFrustum::transform( const XTransform &tx )
+void Frustum::transform( const Transform &tx )
   {
   for(xsize i=0; i<6; ++i)
     {
     _planes[i].transform(tx);
     }
   }
+
+}

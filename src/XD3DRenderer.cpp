@@ -10,32 +10,35 @@
 
 using namespace DirectX;
 
-XD3DRenderer::XD3DRenderer(IUnknown *window)
+namespace Eks
+{
+
+D3DRenderer::D3DRenderer(IUnknown *window)
   {
-  _impl = new XD3DRendererImpl;
+  _impl = new D3DRendererImpl;
 
   _impl->_window = window;
   _impl->createResources();
-  setClearColour(XColour(0.0f, 0.0f, 0.0f));
+  setClearColour(Colour(0.0f, 0.0f, 0.0f));
   }
 
-XD3DRenderer::~XD3DRenderer()
+D3DRenderer::~D3DRenderer()
   {
   delete _impl;
   _impl = 0;
   }
 
-ID3D11Device1 *XD3DRenderer::getD3DDevice()
+ID3D11Device1 *D3DRenderer::getD3DDevice()
   {
   return _impl->_d3dDevice.Get();
   }
 
-ID3D11DeviceContext1 *XD3DRenderer::getD3DContext()
+ID3D11DeviceContext1 *D3DRenderer::getD3DContext()
   {
   return _impl->_d3dContext.Get();
   }
 
-void XD3DRenderer::beginFrame()
+void D3DRenderer::beginFrame()
   {
   if(_impl->_updateWorldTransformData)
     {
@@ -46,51 +49,51 @@ void XD3DRenderer::beginFrame()
   _impl->setRenderTarget(&_impl->_renderTarget);
   }
 
-void XD3DRenderer::endFrame(bool *deviceListOptional)
+void D3DRenderer::endFrame(bool *deviceListOptional)
   {
   _impl->_renderTarget.present(_impl->_d3dContext.Get(), deviceListOptional);
   }
 
-bool XD3DRenderer::resize(xuint32 w, xuint32 h, Rotation rotation)
+bool D3DRenderer::resize(xuint32 w, xuint32 h, Rotation rotation)
   {
   return _impl->resize(w, h, rotation);
   }
 
-void XD3DRenderer::pushTransform(const Transform &tr)
+void D3DRenderer::pushTransform(const Transform &tr)
   {
   xAssert((_impl->_currentTransform - _impl->_transformStack) <
-            XD3DRendererImpl::TransformStackSize);
+            D3DRendererImpl::TransformStackSize);
 
-  XMatrix4x4& oldTransform = *_impl->_currentTransform;
-  XMatrix4x4& newTransform = *(++_impl->_currentTransform);
+  Matrix4x4& oldTransform = *_impl->_currentTransform;
+  Matrix4x4& newTransform = *(++_impl->_currentTransform);
 
   newTransform = (oldTransform * tr).matrix();
   _impl->_modelTransformData.update(_impl->_d3dContext.Get(), newTransform.transpose().data());
   }
 
-void XD3DRenderer::popTransform( )
+void D3DRenderer::popTransform( )
   {
   _impl->_currentTransform--;
   xAssert(_impl->_currentTransform >= _impl->_transformStack);
   }
 
-void XD3DRenderer::setClearColour(const XColour &col)
+void D3DRenderer::setClearColour(const Colour &col)
   {
   _impl->_clearColour = col;
   }
 
-void XD3DRenderer::clear(int clear)
+void D3DRenderer::clear(int clear)
   {
   _impl->_renderTarget.clear(
         _impl->_d3dContext.Get(),
-        (clear&XRenderer::ClearColour) != 0,
-        (clear&XRenderer::ClearDepth) != 0,
+        (clear&Renderer::ClearColour) != 0,
+        (clear&Renderer::ClearDepth) != 0,
         _impl->_clearColour.data(),
         1.0f,
         0);
   }
 
-bool XD3DRenderer::createShader(XShader *s, XShaderVertexComponent *v, XShaderFragmentComponent *f)
+bool D3DRenderer::createShader(Shader *s, ShaderVertexComponent *v, ShaderFragmentComponent *f)
   {
   XD3DFragmentShaderImpl *frag = f->data<XD3DFragmentShaderImpl>();
   XD3DVertexShaderImpl *vert = v->data<XD3DVertexShaderImpl>();
@@ -104,12 +107,12 @@ bool XD3DRenderer::createShader(XShader *s, XShaderVertexComponent *v, XShaderFr
   return shd->_pixelShader && shd->_vertexShader;
   }
 
-bool XD3DRenderer::createVertexShaderComponent(XShaderVertexComponent *v,
+bool D3DRenderer::createVertexShaderComponent(ShaderVertexComponent *v,
                                                const char *s,
                                                xsize l,
-                                               const XShaderVertexLayoutDescription *vertexDescriptions,
+                                               const ShaderVertexLayoutDescription *vertexDescriptions,
                                                xsize vertexItemCount,
-                                               XShaderVertexLayout *layout)
+                                               ShaderVertexLayout *layout)
   {
   XD3DVertexShaderImpl *vert = v->data<XD3DVertexShaderImpl>();
   new(vert) XD3DVertexShaderImpl();
@@ -125,8 +128,8 @@ bool XD3DRenderer::createVertexShaderComponent(XShaderVertexComponent *v,
     xAssert(vertexItemCount);
 
     xCompileTimeAssert(D3D11_APPEND_ALIGNED_ELEMENT == X_SIZE_SENTINEL);
-    xCompileTimeAssert(D3D11_INPUT_PER_VERTEX_DATA == XShaderVertexLayoutDescription::Slot::PerVertex);
-    xCompileTimeAssert(D3D11_INPUT_PER_INSTANCE_DATA == XShaderVertexLayoutDescription::Slot::PerInstance);
+    xCompileTimeAssert(D3D11_INPUT_PER_VERTEX_DATA == ShaderVertexLayoutDescription::Slot::PerVertex);
+    xCompileTimeAssert(D3D11_INPUT_PER_INSTANCE_DATA == ShaderVertexLayoutDescription::Slot::PerInstance);
 
     const char* semanticMap[] =
     {
@@ -135,7 +138,7 @@ bool XD3DRenderer::createVertexShaderComponent(XShaderVertexComponent *v,
       "TEXCOORD",
       "NORMAL"
     };
-    xCompileTimeAssert(X_ARRAY_COUNT(semanticMap) == XShaderVertexLayoutDescription::SemanticCount);
+    xCompileTimeAssert(X_ARRAY_COUNT(semanticMap) == ShaderVertexLayoutDescription::SemanticCount);
 
 
     const DXGI_FORMAT formatMap[] =
@@ -145,7 +148,7 @@ bool XD3DRenderer::createVertexShaderComponent(XShaderVertexComponent *v,
       DXGI_FORMAT_R32G32B32_FLOAT,
       DXGI_FORMAT_R32G32B32A32_FLOAT
     };
-    xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == XShaderVertexLayoutDescription::FormatCount);
+    xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == ShaderVertexLayoutDescription::FormatCount);
 
     D3D11_INPUT_ELEMENT_DESC *vertexDesc =
         (D3D11_INPUT_ELEMENT_DESC*)alloca(sizeof(D3D11_INPUT_ELEMENT_DESC)*vertexItemCount);
@@ -181,15 +184,15 @@ bool XD3DRenderer::createVertexShaderComponent(XShaderVertexComponent *v,
   return true;
   }
 
-bool XD3DRenderer::createFragmentShaderComponent(XShaderFragmentComponent *f, const char *s, xsize l)
+bool D3DRenderer::createFragmentShaderComponent(ShaderFragmentComponent *f, const char *s, xsize l)
   {
   XD3DFragmentShaderImpl *frag = f->data<XD3DFragmentShaderImpl>();
   new(frag) XD3DFragmentShaderImpl();
   return frag->create(_impl->_d3dDevice.Get(), s, l);
   }
 
-bool XD3DRenderer::createGeometry(
-    XGeometry *g,
+bool D3DRenderer::createGeometry(
+    Geometry *g,
     const void *data,
     xsize elementSize,
     xsize elementCount)
@@ -208,8 +211,8 @@ bool XD3DRenderer::createGeometry(
   }
 
 
-bool XD3DRenderer::createIndexGeometry(
-    XIndexGeometry *g,
+bool D3DRenderer::createIndexGeometry(
+    IndexGeometry *g,
     int type,
     const void *index,
     xsize indexCount)
@@ -227,7 +230,7 @@ bool XD3DRenderer::createIndexGeometry(
   {
     { DXGI_FORMAT_R16_UINT, sizeof(xuint16) }
   };
-  xCompileTimeAssert(X_ARRAY_COUNT(typeMap) == XIndexGeometry::TypeCount);
+  xCompileTimeAssert(X_ARRAY_COUNT(typeMap) == IndexGeometry::TypeCount);
   const Format &typeData = typeMap[type];
   geo->format = typeData.format;
 
@@ -239,26 +242,11 @@ bool XD3DRenderer::createIndexGeometry(
   return result;
   }
 
-XAbstractTexture *XD3DRenderer::getTexture()
-  {
-  return 0;
-  }
-
-XAbstractFramebuffer *XD3DRenderer::getFramebuffer(int,
-                                     int,
-                                     int,
-                                     int,
-                                     int)
-  {
-  xAssertFail();
-  return 0;
-  }
-
-void XD3DRenderer::debugRenderLocator(DebugLocatorMode)
+void D3DRenderer::debugRenderLocator(DebugLocatorMode)
   {
   }
 
-void XD3DRenderer::drawTriangles(const XGeometry *vert)
+void D3DRenderer::drawTriangles(const Geometry *vert)
   {
   const XD3DVertexBufferImpl *geo = vert->data<XD3DVertexBufferImpl>();
 
@@ -280,7 +268,7 @@ void XD3DRenderer::drawTriangles(const XGeometry *vert)
     );
   }
 
-void XD3DRenderer::drawTriangles(const XIndexGeometry *indices, const XGeometry *vert)
+void D3DRenderer::drawTriangles(const IndexGeometry *indices, const Geometry *vert)
   {
   const XD3DVertexBufferImpl *geo = vert->data<XD3DVertexBufferImpl>();
   const XD3DIndexBufferImpl *idx = indices->data<XD3DIndexBufferImpl>();
@@ -310,63 +298,55 @@ void XD3DRenderer::drawTriangles(const XIndexGeometry *indices, const XGeometry 
     );
   }
 
-void XD3DRenderer::destroyShader(XShader* s)
+void D3DRenderer::destroyShader(Shader* s)
   {
   XD3DSurfaceShaderImpl* shd = s->data<XD3DSurfaceShaderImpl>();
   shd->~XD3DSurfaceShaderImpl();
   }
 
-void XD3DRenderer::destroyShaderVertexLayout(XShaderVertexLayout *d)
+void D3DRenderer::destroyShaderVertexLayout(ShaderVertexLayout *d)
   {
   XD3DShaderInputLayout* lay = d->data<XD3DShaderInputLayout>();
   lay->~XD3DShaderInputLayout();
   }
 
-void XD3DRenderer::destroyVertexShaderComponent(XShaderVertexComponent* s)
+void D3DRenderer::destroyVertexShaderComponent(ShaderVertexComponent* s)
   {
   XD3DVertexShaderImpl *vert = s->data<XD3DVertexShaderImpl>();
   vert->~XD3DVertexShaderImpl();
   }
 
-void XD3DRenderer::destroyFragmentShaderComponent(XShaderFragmentComponent* s)
+void D3DRenderer::destroyFragmentShaderComponent(ShaderFragmentComponent* s)
   {
   XD3DFragmentShaderImpl *frag = s->data<XD3DFragmentShaderImpl>();
   frag->~XD3DFragmentShaderImpl();
   }
 
-void XD3DRenderer::destroyGeometry( XGeometry *g )
+void D3DRenderer::destroyGeometry( Geometry *g )
   {
   XD3DVertexBufferImpl *geo = g->data<XD3DVertexBufferImpl>();
   geo->~XD3DVertexBufferImpl();
   }
 
-void XD3DRenderer::destroyIndexGeometry( XIndexGeometry *g )
+void D3DRenderer::destroyIndexGeometry( IndexGeometry *g )
   {
   XD3DIndexBufferImpl *geo = g->data<XD3DIndexBufferImpl>();
   geo->~XD3DIndexBufferImpl();
   }
 
-void XD3DRenderer::destroyTexture( XAbstractTexture * )
-  {
-  }
-
-void XD3DRenderer::destroyFramebuffer( XAbstractFramebuffer * )
-  {
-  }
-
-void XD3DRenderer::setViewTransform(const XTransform &v)
+void D3DRenderer::setViewTransform(const Transform &v)
   {
   _impl->_worldTransformData.data.view = v.matrix().transpose();
   _impl->_updateWorldTransformData = true;
   }
 
-void XD3DRenderer::setProjectionTransform(const XComplexTransform &p)
+void D3DRenderer::setProjectionTransform(const ComplexTransform &p)
   {
   _impl->_worldTransformData.data.projection = p.matrix().transpose();
   _impl->_updateWorldTransformData = true;
   }
 
-void XD3DRenderer::setShader(const XShader *s, const XShaderVertexLayout *layout)
+void D3DRenderer::setShader(const Shader *s, const ShaderVertexLayout *layout)
   {
   const XD3DSurfaceShaderImpl* shd = s->data<XD3DSurfaceShaderImpl>();
   shd->bind(_impl->_d3dContext.Get());
@@ -388,14 +368,16 @@ void XD3DRenderer::setShader(const XShader *s, const XShaderVertexLayout *layout
   _impl->_d3dContext->IASetInputLayout(lay->_inputLayout.Get());
   }
 
-void XD3DRenderer::setFramebuffer( const XFramebuffer * )
+void D3DRenderer::setFramebuffer( const Framebuffer * )
   {
   }
 
-void XD3DRenderer::enableRenderFlag( RenderFlags )
+void D3DRenderer::enableRenderFlag( RenderFlags )
   {
   }
 
-void XD3DRenderer::disableRenderFlag( RenderFlags )
+void D3DRenderer::disableRenderFlag( RenderFlags )
   {
   }
+
+}

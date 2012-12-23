@@ -4,11 +4,14 @@
 #include "X3DGlobal.h"
 #include "XPrivateImpl"
 
-class XShader;
-class XRenderer;
+namespace Eks
+{
+
+class Shader;
+class Renderer;
 
 
-class XShaderVertexLayoutDescription
+class ShaderVertexLayoutDescription
   {
 public:
   enum Format
@@ -53,7 +56,7 @@ public:
     SemanticCount
     };
 
-  XShaderVertexLayoutDescription(Semantic s, Format fmt, xsize off=OffsetPackTight, Slot sl=Slot())
+  ShaderVertexLayoutDescription(Semantic s, Format fmt, xsize off=OffsetPackTight, Slot sl=Slot())
     : semantic(s), format(fmt), offset(off), slot(sl)
     {
     }
@@ -64,35 +67,35 @@ public:
   Slot slot;
   };
 
-class XShaderVertexLayout : public XPrivateImpl<sizeof(void*)>
+class ShaderVertexLayout : public PrivateImpl<sizeof(void*)>
   {
 public:
-  typedef XShaderVertexLayoutDescription Description;
-  XShaderVertexLayout() : _renderer(0) { }
-  ~XShaderVertexLayout();
+  typedef ShaderVertexLayoutDescription Description;
+  ShaderVertexLayout() : _renderer(0) { }
+  ~ShaderVertexLayout();
 
 private:
-  X_DISABLE_COPY(XShaderVertexLayout);
-  friend class XShaderVertexComponent;
+  X_DISABLE_COPY(ShaderVertexLayout);
+  friend class ShaderVertexComponent;
 
-  XRenderer *_renderer;
+  Renderer *_renderer;
   };
 
-class EKS3D_EXPORT XShaderVertexComponent : public XPrivateImpl<sizeof(void*)>
+class EKS3D_EXPORT ShaderVertexComponent : public PrivateImpl<sizeof(void*)>
   {
 public:
-  typedef XShaderVertexLayout VertexLayout;
+  typedef ShaderVertexLayout VertexLayout;
 
-  XShaderVertexComponent(XRenderer *r=0,
+  ShaderVertexComponent(Renderer *r=0,
                          const char *source=0,
                          xsize length=0,
                          const VertexLayout::Description *vertexDescriptions=0,
                          xsize vertexItemCount=0,
                          VertexLayout *layout=0);
-  ~XShaderVertexComponent();
+  ~ShaderVertexComponent();
 
-  static bool delayedCreate(XShaderVertexComponent &ths,
-                            XRenderer *r,
+  static bool delayedCreate(ShaderVertexComponent &ths,
+                            Renderer *r,
                             const char *source,
                             xsize length,
                             const VertexLayout::Description *vertexDescription=0,
@@ -101,47 +104,49 @@ public:
 
 
 private:
-  X_DISABLE_COPY(XShaderVertexComponent);
+  X_DISABLE_COPY(ShaderVertexComponent);
 
-  XRenderer *_renderer;
+  Renderer *_renderer;
   };
 
-class EKS3D_EXPORT XShaderFragmentComponent : public XPrivateImpl<sizeof(void*)>
+class EKS3D_EXPORT ShaderFragmentComponent : public PrivateImpl<sizeof(void*)>
   {
 public:
-  XShaderFragmentComponent(XRenderer *r=0,
+  ShaderFragmentComponent(Renderer *r=0,
                            const char *source=0,
                            xsize length=0);
-  ~XShaderFragmentComponent();
+  ~ShaderFragmentComponent();
 
-  static bool delayedCreate(XShaderFragmentComponent &ths,
-                            XRenderer *r,
+  static bool delayedCreate(ShaderFragmentComponent &ths,
+                            Renderer *r,
                             const char *source,
                             xsize length);
 
 private:
-  X_DISABLE_COPY(XShaderFragmentComponent);
+  X_DISABLE_COPY(ShaderFragmentComponent);
 
-  XRenderer *_renderer;
+  Renderer *_renderer;
   };
 
-class EKS3D_EXPORT XShader : public XPrivateImpl<sizeof(void*)*2>
+class EKS3D_EXPORT Shader : public PrivateImpl<sizeof(void*)*2>
   {
 public:
-  XShader(XRenderer *r=0,
-          XShaderVertexComponent *v=0,
-          XShaderFragmentComponent *f=0);
-  ~XShader();
+  Shader(Renderer *r=0,
+          ShaderVertexComponent *v=0,
+          ShaderFragmentComponent *f=0);
+  ~Shader();
 
-  static bool delayedCreate(XShader &ths,
-              XRenderer *r,
-              XShaderVertexComponent *v,
-              XShaderFragmentComponent *f);
+  static bool delayedCreate(Shader &ths,
+              Renderer *r,
+              ShaderVertexComponent *v,
+              ShaderFragmentComponent *f);
 
 private:
-  X_DISABLE_COPY(XShader);
+  X_DISABLE_COPY(Shader);
 
-  XRenderer *_renderer;
+  Renderer *_renderer;
   };
+
+}
 
 #endif // XABSTRACTSHADER_H

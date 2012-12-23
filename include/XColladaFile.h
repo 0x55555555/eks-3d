@@ -8,7 +8,7 @@
 #include "XHash"
 #include "QStringList"
 
-class XGeometry;
+class Geometry;
 class QDomElement;
 
 class EKS3D_EXPORT XColladaFile
@@ -18,7 +18,7 @@ public:
     
     bool geometryExists( QString );
     QStringList geometryNames() const;
-    XGeometry geometry( QString ) const;
+    Geometry geometry( QString ) const;
 
 private:
     XHash <QString, QDomElement> _geometries;

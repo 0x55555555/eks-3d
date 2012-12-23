@@ -6,44 +6,34 @@
 #include "XFlags"
 #include "XTransform.h"
 
-class XColour;
-class XShape;
-class XShader;
-class XGeometry;
-class XIndexGeometry;
-class XShaderVertexLayout;
-class XShaderVertexLayoutDescription;
-class XFramebuffer;
-class XShaderVertexComponent;
-class XShaderFragmentComponent;
-class XAbstractTexture;
-class XAbstractFramebuffer;
-class XGeometry;
+namespace Eks
+{
 
-enum XBufferType
-  {
-  Thing
-  };
+class Colour;
+class Shader;
+class Geometry;
+class IndexGeometry;
+class ShaderVertexLayout;
+class ShaderVertexLayoutDescription;
+class Framebuffer;
+class ShaderVertexComponent;
+class ShaderFragmentComponent;
+class Geometry;
 
-class XRendererType
-  {
-  XRefProperty(QAtomicInt, refCount);
-  };
-
-class EKS3D_EXPORT XRenderer
+class EKS3D_EXPORT Renderer
   {
 public:
 
-  typedef enum Rotation
+  enum Rotation
     {
     RotateNone,
     Rotate90,
     Rotate180,
-    Rotate270,
+    Rotate270
     };
 
-  XRenderer( );
-  virtual ~XRenderer( );
+  Renderer( );
+  virtual ~Renderer( );
 
   typedef Eigen::Affine3f Transform;
 
@@ -55,42 +45,39 @@ public:
     ClearColour = 1,
     ClearDepth = 2
     };
-  virtual void setClearColour(const XColour &col) = 0;
+  virtual void setClearColour(const Colour &col) = 0;
   virtual void clear(int=ClearColour|ClearDepth) = 0;
 
   // creation accessors for abstract types
   virtual bool createGeometry(
-      XGeometry *g,
+      Geometry *g,
       const void *data,
       xsize elementSize,
       xsize elementCount) = 0;
 
   virtual bool createIndexGeometry(
-      XIndexGeometry *g,
+      IndexGeometry *g,
       int type,
       const void *index,
       xsize indexCount) = 0;
 
   virtual bool createShader(
-      XShader *s,
-      XShaderVertexComponent *v,
-      XShaderFragmentComponent *f) = 0;
+      Shader *s,
+      ShaderVertexComponent *v,
+      ShaderFragmentComponent *f) = 0;
 
   virtual bool createVertexShaderComponent(
-      XShaderVertexComponent *v,
+      ShaderVertexComponent *v,
       const char *s,
       xsize l,
-      const XShaderVertexLayoutDescription *vertexDescriptions,
+      const ShaderVertexLayoutDescription *vertexDescriptions,
       xsize vertexItemCount,
-      XShaderVertexLayout *layout) = 0;
+      ShaderVertexLayout *layout) = 0;
 
   virtual bool createFragmentShaderComponent(
-      XShaderFragmentComponent *f,
+      ShaderFragmentComponent *f,
       const char *s,
       xsize l) = 0;
-
-  virtual XAbstractTexture *getTexture() = 0;
-  virtual XAbstractFramebuffer *getFramebuffer( int options, int colourFormat, int depthFormat, int width, int height ) = 0;
 
   enum DebugLocatorMode
     {
@@ -100,31 +87,29 @@ public:
   virtual void debugRenderLocator(DebugLocatorMode) = 0;
 
   // destroy abstract types
-  virtual void destroyShader(XShader* s) = 0;
-  virtual void destroyShaderVertexLayout(XShaderVertexLayout *d) = 0;
-  virtual void destroyVertexShaderComponent(XShaderVertexComponent* s) = 0;
-  virtual void destroyFragmentShaderComponent(XShaderFragmentComponent* s) = 0;
-  virtual void destroyGeometry( XGeometry * ) = 0;
-  virtual void destroyIndexGeometry( XIndexGeometry * ) = 0;
-  virtual void destroyTexture( XAbstractTexture * ) = 0;
-  virtual void destroyFramebuffer( XAbstractFramebuffer * ) = 0;
+  virtual void destroyShader(Shader* s) = 0;
+  virtual void destroyShaderVertexLayout(ShaderVertexLayout *d) = 0;
+  virtual void destroyVertexShaderComponent(ShaderVertexComponent* s) = 0;
+  virtual void destroyFragmentShaderComponent(ShaderFragmentComponent* s) = 0;
+  virtual void destroyGeometry(Geometry *) = 0;
+  virtual void destroyIndexGeometry(IndexGeometry *) = 0;
 
   enum RenderFlags { AlphaBlending=1, DepthTest=2, BackfaceCulling=4 };
   void setRenderFlags( int );
   virtual int renderFlags() const;
 
-  virtual void setViewTransform( const XTransform & ) = 0;
-  virtual void setProjectionTransform( const XComplexTransform & ) = 0;
+  virtual void setViewTransform(const Transform &) = 0;
+  virtual void setProjectionTransform(const ComplexTransform &) = 0;
 
   // set the current shader
-  virtual void setShader( const XShader *, const XShaderVertexLayout *layout ) = 0;
+  virtual void setShader(const Shader *, const ShaderVertexLayout *layout ) = 0;
 
   // draw the given geometry
-  virtual void drawTriangles(const XIndexGeometry *indices, const XGeometry *vert) = 0;
-  virtual void drawTriangles(const XGeometry *vert) = 0;
+  virtual void drawTriangles(const IndexGeometry *indices, const Geometry *vert) = 0;
+  virtual void drawTriangles(const Geometry *vert) = 0;
 
   // bind the given framebuffer for drawing
-  virtual void setFramebuffer( const XFramebuffer * ) = 0;
+  virtual void setFramebuffer(const Framebuffer *) = 0;
 
 protected:
   virtual void enableRenderFlag( RenderFlags ) = 0;
@@ -134,23 +119,25 @@ private:
   XFlags<RenderFlags, int> _renderFlags;
   };
 
-class XRendererFlagBlock
+class RendererFlagBlock
   {
 public:
-  XRendererFlagBlock(XRenderer *r, int flagsToSet) : _renderer(r)
+  RendererFlagBlock(Renderer *r, int flagsToSet) : _renderer(r)
     {
     _oldFlags = _renderer->renderFlags();
     _renderer->setRenderFlags(_oldFlags | flagsToSet);
     }
 
-  ~XRendererFlagBlock()
+  ~RendererFlagBlock()
     {
     _renderer->setRenderFlags(_oldFlags);
     }
 
 private:
-  XRenderer *_renderer;
+  Renderer *_renderer;
   int _oldFlags;
   };
+
+}
 
 #endif // XRENDERER_H

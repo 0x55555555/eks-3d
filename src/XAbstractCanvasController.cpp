@@ -1,11 +1,14 @@
 #include "XAbstractCanvasController.h"
 
-XAbstractCanvasController::XAbstractCanvasController(XAbstractCanvas *canvas) : _canvas(canvas)
+namespace Eks
+{
+
+AbstractCanvasController::AbstractCanvasController(AbstractCanvas *canvas) : _canvas(canvas)
   {
   }
 
 
-XAbstractCanvasController::UsedFlags XAbstractCanvasController::triggerMouseEvent(MouseEventType type,
+AbstractCanvasController::UsedFlags AbstractCanvasController::triggerMouseEvent(MouseEventType type,
                        QPoint point,
                        Qt::MouseButton triggerButton,
                        Qt::MouseButtons buttonsDown,
@@ -27,7 +30,7 @@ XAbstractCanvasController::UsedFlags XAbstractCanvasController::triggerMouseEven
 
 
 
-XAbstractCanvasController::UsedFlags XAbstractCanvasController::triggerWheelEvent(int delta,
+AbstractCanvasController::UsedFlags AbstractCanvasController::triggerWheelEvent(int delta,
                        Qt::Orientation orientation,
                        QPoint point,
                        Qt::MouseButtons buttonsDown,
@@ -45,3 +48,5 @@ XAbstractCanvasController::UsedFlags XAbstractCanvasController::triggerWheelEven
   _lastKnownMousePosition = point;
   return ret;
   }
+
+}

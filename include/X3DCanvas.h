@@ -2,7 +2,7 @@
 #define X3DCANVAS_H
 
 #include "XAbstractCanvas.h"
-#include "XAbstractCanvasController.h"
+#include "AbstractCanvasController.h"
 #include "QGLWidget"
 #include "QMouseEvent"
 

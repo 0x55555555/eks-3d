@@ -22,10 +22,10 @@ XList<int> getListInt( QString data )
     return ret;
     }
 
-XList<xReal> getList1D( QString data, int count )
+XList<Real> getList1D( QString data, int count )
     {
     QTextStream stream( &data, QIODevice::ReadOnly );
-    XList<xReal> ret;
+    XList<Real> ret;
 
     for( int i=0; i<count; i++ )
         {
@@ -50,16 +50,16 @@ XList<XVector2D> getList2D( QString data, int count )
     return ret;
     }
 
-XList<XVector3D> getList3D( QString data, int count )
+XList<Eks::Vector3D> getList3D( QString data, int count )
     {
     QTextStream stream( &data, QIODevice::ReadOnly );
-    XList<XVector3D> ret;
+    XList<Eks::Vector3D> ret;
 
     for( int i=0; i<count; i++ )
         {
         float x, y, z;
         stream >> x >> y >> z;
-        ret << XVector3D( x, y, z );
+        ret << Eks::Vector3D( x, y, z );
         }
     return ret;
     }
@@ -127,13 +127,13 @@ QStringList XColladaFile::geometryNames() const
     return _geometries.keys();
     }
 
-XGeometry XColladaFile::geometry( QString name ) const
+Geometry XColladaFile::geometry( QString name ) const
     {
-    XGeometry ret;
+    Geometry ret;
 
-    XHash <QString, XList<xReal> > attr1D;
+    XHash <QString, XList<Real> > attr1D;
     XHash <QString, XList<XVector2D> > attr2D;
-    XHash <QString, XList<XVector3D> > attr3D;
+    XHash <QString, XList<Eks::Vector3D> > attr3D;
     XHash <QString, XList<XVector4D> > attr4D;
 
     if( !_geometries.contains( name ) )
@@ -177,7 +177,7 @@ XGeometry XColladaFile::geometry( QString name ) const
 
         if( size == 1 )
             {
-            XList<xReal> floats( getList1D( arrayElement.text(), count/size ) );
+            XList<Real> floats( getList1D( arrayElement.text(), count/size ) );
             attr1D.insert( name, floats );
             }
         else if( size == 2 )
@@ -187,7 +187,7 @@ XGeometry XColladaFile::geometry( QString name ) const
             }
         else if( size == 3 )
             {
-            XList<XVector3D> floats( getList3D( arrayElement.text(), count/size ) );
+            XList<Eks::Vector3D> floats( getList3D( arrayElement.text(), count/size ) );
             attr3D.insert( name, floats );
             }
         else if( size == 4 )
@@ -203,9 +203,9 @@ XGeometry XColladaFile::geometry( QString name ) const
     unsigned int maxOffset = 0;
 
     int posOff = -1;
-    XList<XVector3D> *posPtr = 0;
+    XList<Eks::Vector3D> *posPtr = 0;
     int norOff = -1;
-    XList<XVector3D> *norPtr = 0;
+    XList<Eks::Vector3D> *norPtr = 0;
     int texOff = -1;
     XList<XVector2D> *texPtr = 0;
 
@@ -291,8 +291,8 @@ XGeometry XColladaFile::geometry( QString name ) const
 
     xAssert( posOff != -1 );
 
-    XList <XVector3D> positions;
-    XList <XVector3D> normals;
+    XList <Eks::Vector3D> positions;
+    XList <Eks::Vector3D> normals;
     XList <XVector2D> textures;
 
     XList <unsigned int> indices;

@@ -1,14 +1,17 @@
 #include "XTransform.h"
 
-namespace XTransformUtilities
+namespace Eks
 {
-XTransform lookAt(const XVector3D &eye, const XVector3D &aim, const XVector3D &up)
-  {
-  XVector3D forward = (aim - eye).normalized();
-  XVector3D side = forward.cross(up).normalized();
-  XVector3D upVector = side.cross(forward);
 
-  XTransform m = XTransform::Identity();
+namespace TransformUtilities
+{
+Transform lookAt(const Vector3D &eye, const Vector3D &aim, const Vector3D &up)
+  {
+  Vector3D forward = (aim - eye).normalized();
+  Vector3D side = forward.cross(up).normalized();
+  Vector3D upVector = side.cross(forward);
+
+  Transform m = Transform::Identity();
 
   m.matrix().row(0).head<3>() = side;
   m.matrix().row(1).head<3>() = upVector;
@@ -19,27 +22,27 @@ XTransform lookAt(const XVector3D &eye, const XVector3D &aim, const XVector3D &u
   return m;
   }
 
-XComplexTransform perspective(xReal angle, xReal aspect, xReal nearPlane, xReal farPlane)
+ComplexTransform perspective(Real angle, Real aspect, Real nearPlane, Real farPlane)
   {
   // Bail out if the projection volume is zero-sized.
   if (nearPlane == farPlane || aspect == 0.0f)
     {
-    return XComplexTransform();
+    return ComplexTransform::Identity();
     }
 
   // Construct the projection.
-  XComplexTransform m;
-  m.matrix() = XMatrix4x4::Zero();
+  ComplexTransform m;
+  m.matrix() = Eks::Matrix4x4::Zero();
 
-  qreal radians = (angle / 2.0f) * M_PI / 180.0f;
-  qreal sine = sin(radians);
+  Real radians = (angle / 2.0f) * M_PI / 180.0f;
+  Real sine = Eks::sin(radians);
   if (sine == 0.0f)
     {
-    return XComplexTransform();
+    return ComplexTransform::Identity();
     }
 
-  qreal cotan = cos(radians) / sine;
-  qreal clip = farPlane - nearPlane;
+  Real cotan = Eks::cos(radians) / sine;
+  Real clip = farPlane - nearPlane;
 
   m(0,0) = cotan / aspect;
   m(1,1) = cotan;
@@ -49,4 +52,6 @@ XComplexTransform perspective(xReal angle, xReal aspect, xReal nearPlane, xReal 
 
   return m;
   }
+}
+
 }
