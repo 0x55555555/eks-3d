@@ -154,6 +154,11 @@ void XD3DSurfaceShaderImpl::bind(ID3D11DeviceContext1 *context) const
     );
   }
 
+bool XD3DRasteriserStateImpl::create(ID3D11Device1 *device, const D3D11_RASTERIZER_DESC1 &m)
+  {
+  return device->CreateRasterizerState1( &m, &_state );
+  }
+
 void XD3DFrameBufferImpl::discard()
   {
   colour = nullptr;

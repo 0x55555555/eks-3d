@@ -78,6 +78,10 @@ public:
     const void *index,
     xsize indexCount) X_OVERRIDE;
 
+  bool createRasteriserState(
+      RasteriserState *s,
+      RasteriserState::CullMode cull) X_OVERRIDE;
+
 
   void debugRenderLocator(DebugLocatorMode) X_OVERRIDE;
 
@@ -88,12 +92,15 @@ public:
   void destroyFragmentShaderComponent(ShaderFragmentComponent* s) X_OVERRIDE;
   void destroyGeometry( Geometry * ) X_OVERRIDE;
   void destroyIndexGeometry( IndexGeometry * ) X_OVERRIDE;
+  void destroyRasteriserState(RasteriserState *) X_OVERRIDE;
 
   void setViewTransform( const Transform & ) X_OVERRIDE;
   void setProjectionTransform( const ComplexTransform & ) X_OVERRIDE;
 
   // set the current shader
   void setShader( const Shader *, const ShaderVertexLayout *layout ) X_OVERRIDE;
+
+  void setRasteriserState(const RasteriserState *state) X_OVERRIDE;
 
   // draw the given geometry
   void drawTriangles(const IndexGeometry *indices, const Geometry *vert) X_OVERRIDE;
@@ -102,10 +109,7 @@ public:
   // bind the given framebuffer for drawing
   void setFramebuffer( const Framebuffer * ) X_OVERRIDE;
 
-protected:
-  void enableRenderFlag( RenderFlags ) X_OVERRIDE;
-  void disableRenderFlag( RenderFlags ) X_OVERRIDE;
-
+private:
   D3DRendererImpl *_impl;
   };
 

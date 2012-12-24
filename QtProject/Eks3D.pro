@@ -13,7 +13,6 @@ QT += opengl \
 SOURCES += \
     ../src/XCuboid.cpp \
     ../src/XTransform.cpp \
-    ../src/XRenderer.cpp \
     ../src/XGeometry.cpp \
     ../src/XShader.cpp \
     ../src/XTexture.cpp \
@@ -29,7 +28,8 @@ SOURCES += \
     ../src/XAbstractRenderModel.cpp \
     ../src/XAbstractCanvasController.cpp \
     ../src/XCameraCanvasController.cpp \
-    ../src/XObjLoader.cpp
+    ../src/XObjLoader.cpp \
+    ../src/XRasteriserState.cpp
 
 HEADERS += \
     ../include/X3DGlobal.h \
@@ -52,7 +52,8 @@ HEADERS += \
     ../include/XAbstractDelegate.h \
     ../include/XAbstractCanvasController.h \
     ../include/XCameraCanvasController.h \
-    ../include/XObjLoader.h
+    ../include/XObjLoader.h \
+    ../include/XRasteriserState.h
 
 
 INCLUDEPATH += ../include/ \

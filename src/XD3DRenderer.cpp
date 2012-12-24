@@ -210,7 +210,6 @@ bool D3DRenderer::createGeometry(
   return result;
   }
 
-
 bool D3DRenderer::createIndexGeometry(
     IndexGeometry *g,
     int type,
@@ -240,6 +239,40 @@ bool D3DRenderer::createIndexGeometry(
   geo->count = indexCount;
 
   return result;
+  }
+
+
+bool D3DRenderer::createRasteriserState(
+    RasteriserState *s,
+    RasteriserState::CullMode cull)
+  {
+  XD3DRasteriserStateImpl *ras = s->data<XD3DRasteriserStateImpl>();
+
+  new(ras) XD3DRasteriserStateImpl();
+
+  D3D11_RASTERIZER_DESC1 desc;
+
+  D3D11_CULL_MODE cullMap[] =
+  {
+    D3D11_CULL_NONE,
+    D3D11_CULL_BACK,
+    D3D11_CULL_FRONT
+  };
+  xCompileTimeAssert(X_ARRAY_COUNT(cullMap) == RasteriserState::CullModeCount);
+
+  desc.FillMode = D3D11_FILL_SOLID;
+  desc.CullMode = cullMap[cull];
+  desc.FrontCounterClockwise = true;
+  desc.DepthBias = false;
+  desc.DepthBiasClamp = 0;
+  desc.SlopeScaledDepthBias = 0;
+  desc.DepthClipEnable = true;
+  desc.ScissorEnable = false;
+  desc.MultisampleEnable = false;
+  desc.AntialiasedLineEnable = false;
+  desc.ForcedSampleCount = 0;
+
+  return ras->create(_impl->_d3dDevice.Get(), desc);
   }
 
 void D3DRenderer::debugRenderLocator(DebugLocatorMode)
@@ -334,6 +367,12 @@ void D3DRenderer::destroyIndexGeometry( IndexGeometry *g )
   geo->~XD3DIndexBufferImpl();
   }
 
+void D3DRenderer::destroyRasteriserState(RasteriserState *s)
+  {
+  XD3DRasteriserStateImpl *r = s->data<XD3DRasteriserStateImpl>();
+  r->~XD3DRasteriserStateImpl();
+  }
+
 void D3DRenderer::setViewTransform(const Transform &v)
   {
   _impl->_worldTransformData.data.view = v.matrix().transpose();
@@ -368,15 +407,14 @@ void D3DRenderer::setShader(const Shader *s, const ShaderVertexLayout *layout)
   _impl->_d3dContext->IASetInputLayout(lay->_inputLayout.Get());
   }
 
+void D3DRenderer::setRasteriserState(const RasteriserState *s)
+  {
+  const XD3DRasteriserStateImpl *r = s->data<XD3DRasteriserStateImpl>();
+
+  _impl->_d3dContext->RSSetState(r->_state.Get());
+  }
+
 void D3DRenderer::setFramebuffer( const Framebuffer * )
-  {
-  }
-
-void D3DRenderer::enableRenderFlag( RenderFlags )
-  {
-  }
-
-void D3DRenderer::disableRenderFlag( RenderFlags )
   {
   }
 

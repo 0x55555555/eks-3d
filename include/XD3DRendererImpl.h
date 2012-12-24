@@ -7,6 +7,7 @@
 #include <DXGI1_2.h>
 #include <DirectXMath.h>
 #include "wrl/client.h"
+#include "XRasteriserState.h"
 
 namespace Eks
 {
@@ -42,6 +43,14 @@ public:
 
   ComPtr<ID3D11VertexShader> _vertexShader;
   ComPtr<ID3D11PixelShader> _pixelShader;
+  };
+
+class XD3DRasteriserStateImpl
+  {
+public:
+  bool create(ID3D11Device1 *context, const D3D11_RASTERIZER_DESC1& m);
+
+  ComPtr<ID3D11RasterizerState1> _state;
   };
 
 class XD3DFrameBufferImpl

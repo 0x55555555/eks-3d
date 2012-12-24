@@ -5,6 +5,7 @@
 #include "XProperty"
 #include "XFlags"
 #include "XTransform.h"
+#include "XRasteriserState.h"
 
 namespace Eks
 {
@@ -20,6 +21,8 @@ class ShaderVertexComponent;
 class ShaderFragmentComponent;
 class Geometry;
 
+class RendererStackTransform;
+
 class EKS3D_EXPORT Renderer
   {
 public:
@@ -32,10 +35,9 @@ public:
     Rotate270
     };
 
-  Renderer( );
-  virtual ~Renderer( );
+  virtual ~Renderer( ) { }
 
-  typedef Eigen::Affine3f Transform;
+  typedef RendererStackTransform StackTransform;
 
   virtual void pushTransform( const Transform & ) = 0;
   virtual void popTransform( ) = 0;
@@ -79,6 +81,10 @@ public:
       const char *s,
       xsize l) = 0;
 
+  virtual bool createRasteriserState(
+      RasteriserState *s,
+      RasteriserState::CullMode cull) = 0;
+
   enum DebugLocatorMode
     {
     None=0,
@@ -93,16 +99,16 @@ public:
   virtual void destroyFragmentShaderComponent(ShaderFragmentComponent* s) = 0;
   virtual void destroyGeometry(Geometry *) = 0;
   virtual void destroyIndexGeometry(IndexGeometry *) = 0;
-
-  enum RenderFlags { AlphaBlending=1, DepthTest=2, BackfaceCulling=4 };
-  void setRenderFlags( int );
-  virtual int renderFlags() const;
+  virtual void destroyRasteriserState(RasteriserState *) = 0;
 
   virtual void setViewTransform(const Transform &) = 0;
   virtual void setProjectionTransform(const ComplexTransform &) = 0;
 
   // set the current shader
-  virtual void setShader(const Shader *, const ShaderVertexLayout *layout ) = 0;
+  virtual void setShader(const Shader *, const ShaderVertexLayout *layout) = 0;
+
+  // set rasteriser
+  virtual void setRasteriserState(const RasteriserState *state) = 0;
 
   // draw the given geometry
   virtual void drawTriangles(const IndexGeometry *indices, const Geometry *vert) = 0;
@@ -110,32 +116,24 @@ public:
 
   // bind the given framebuffer for drawing
   virtual void setFramebuffer(const Framebuffer *) = 0;
-
-protected:
-  virtual void enableRenderFlag( RenderFlags ) = 0;
-  virtual void disableRenderFlag( RenderFlags ) = 0;
-
-private:
-  XFlags<RenderFlags, int> _renderFlags;
   };
 
-class RendererFlagBlock
+class RendererStackTransform
   {
 public:
-  RendererFlagBlock(Renderer *r, int flagsToSet) : _renderer(r)
+  RendererStackTransform(Renderer *r, const Transform &t)
+      : _renderer(r)
     {
-    _oldFlags = _renderer->renderFlags();
-    _renderer->setRenderFlags(_oldFlags | flagsToSet);
+    xAssert(_renderer);
+    _renderer->pushTransform(t);
     }
-
-  ~RendererFlagBlock()
+  ~RendererStackTransform()
     {
-    _renderer->setRenderFlags(_oldFlags);
+    _renderer->popTransform();
     }
 
 private:
   Renderer *_renderer;
-  int _oldFlags;
   };
 
 }
