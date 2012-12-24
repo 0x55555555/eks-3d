@@ -31,6 +31,12 @@ public:
   D3DRenderer(IUnknown *window);
   ~D3DRenderer();
 
+  enum
+    {
+    UserVSContantBufferOffset = 2,
+    UserPSContantBufferOffset = 0
+    };
+
   typedef D3DRendererRenderFrame RenderFrame;
 
   bool resize(xuint32 w, xuint32 h, Rotation rotation);
@@ -82,6 +88,12 @@ public:
       RasteriserState *s,
       RasteriserState::CullMode cull) X_OVERRIDE;
 
+  bool createShaderConstantData(
+      ShaderConstantData *,
+      xsize size,
+      void *data) X_OVERRIDE;
+
+  void updateShaderConstantData(ShaderConstantData *, void *data) X_OVERRIDE;
 
   void debugRenderLocator(DebugLocatorMode) X_OVERRIDE;
 
@@ -93,9 +105,20 @@ public:
   void destroyGeometry( Geometry * ) X_OVERRIDE;
   void destroyIndexGeometry( IndexGeometry * ) X_OVERRIDE;
   void destroyRasteriserState(RasteriserState *) X_OVERRIDE;
+  void destroyShaderConstantData(ShaderConstantData *) X_OVERRIDE;
 
   void setViewTransform( const Transform & ) X_OVERRIDE;
   void setProjectionTransform( const ComplexTransform & ) X_OVERRIDE;
+
+  void setFragmentShaderConstantBuffer(
+    Shader *shader,
+    xsize index,
+    const ShaderConstantData *data) X_OVERRIDE;
+
+  void setVertexShaderConstantBuffer(
+    Shader *shader,
+    xsize index,
+    const ShaderConstantData *data) X_OVERRIDE;
 
   // set the current shader
   void setShader( const Shader *, const ShaderVertexLayout *layout ) X_OVERRIDE;

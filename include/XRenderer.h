@@ -10,6 +10,7 @@
 namespace Eks
 {
 
+class ShaderConstantData;
 class Colour;
 class Shader;
 class Geometry;
@@ -85,12 +86,19 @@ public:
       RasteriserState *s,
       RasteriserState::CullMode cull) = 0;
 
+  virtual bool createShaderConstantData(
+      ShaderConstantData *,
+      xsize size,
+      void *data = 0) = 0;
+
   enum DebugLocatorMode
     {
     None=0,
     ClearShader=1
     };
   virtual void debugRenderLocator(DebugLocatorMode) = 0;
+
+  virtual void updateShaderConstantData(ShaderConstantData *, void *data) = 0;
 
   // destroy abstract types
   virtual void destroyShader(Shader* s) = 0;
@@ -100,9 +108,20 @@ public:
   virtual void destroyGeometry(Geometry *) = 0;
   virtual void destroyIndexGeometry(IndexGeometry *) = 0;
   virtual void destroyRasteriserState(RasteriserState *) = 0;
+  virtual void destroyShaderConstantData(ShaderConstantData *) = 0;
 
   virtual void setViewTransform(const Transform &) = 0;
   virtual void setProjectionTransform(const ComplexTransform &) = 0;
+
+  virtual void setFragmentShaderConstantBuffer(
+    Shader *shader,
+    xsize index,
+    const ShaderConstantData *data) = 0;
+
+  virtual void setVertexShaderConstantBuffer(
+    Shader *shader,
+    xsize index,
+    const ShaderConstantData *data) = 0;
 
   // set the current shader
   virtual void setShader(const Shader *, const ShaderVertexLayout *layout) = 0;

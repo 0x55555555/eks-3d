@@ -92,6 +92,36 @@ bool ShaderFragmentComponent::delayedCreate(ShaderFragmentComponent &ths,
   return r->createFragmentShaderComponent(&ths, source, length);
   }
 
+ShaderConstantData::ShaderConstantData(Renderer *r, xsize sizeOfData, void *data)
+  {
+  if(r)
+    {
+    delayedCreate(*this, r, sizeOfData, data);
+    }
+  }
+
+ShaderConstantData::~ShaderConstantData()
+  {
+  if(_renderer)
+    {
+    _renderer->destroyShaderConstantData(this);
+    }
+  }
+
+bool ShaderConstantData::delayedCreate(ShaderConstantData &ths, Renderer *r, xsize sizeOfData, void *data)
+  {
+  xAssert(!ths.isValid());
+  xAssert(r);
+  ths._renderer = r;
+  return r->createShaderConstantData(&ths, sizeOfData, data);
+  }
+
+void ShaderConstantData::update(void *data)
+  {
+  xAssert(_renderer);
+  _renderer->updateShaderConstantData(this, data);
+  }
+
 Shader::Shader(Renderer *r,
         ShaderVertexComponent *v,
         ShaderFragmentComponent *f)
@@ -119,4 +149,15 @@ bool Shader::delayedCreate(Shader &ths, Renderer *r, ShaderVertexComponent *v, S
   return r->createShader(&ths, v, f);
   }
 
+void Shader::setFragmentShaderConstantData(xsize index, ConstantData *data)
+  {
+  xAssert(_renderer);
+  _renderer->setFragmentShaderConstantBuffer(this, index, data);
+  }
+
+void Shader::setVertexShaderConstantData(xsize index, ConstantData *data)
+  {
+  xAssert(_renderer);
+  _renderer->setVertexShaderConstantBuffer(this, index, data);
+  }
 }

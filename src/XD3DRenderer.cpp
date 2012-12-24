@@ -275,8 +275,32 @@ bool D3DRenderer::createRasteriserState(
   return ras->create(_impl->_d3dDevice.Get(), desc);
   }
 
+bool D3DRenderer::createShaderConstantData(
+    ShaderConstantData *s,
+    xsize size,
+    void *data)
+  {
+  XD3DBufferImpl *r = s->data<XD3DBufferImpl>();
+
+  enum
+    {
+    SizeAlignment = 16
+    };
+
+  xAssert((size % SizeAlignment) == 0)
+
+  new(r) XD3DBufferImpl();
+  return r->create(_impl->_d3dDevice.Get(), data, size, D3D11_BIND_CONSTANT_BUFFER);
+  }
+
 void D3DRenderer::debugRenderLocator(DebugLocatorMode)
   {
+  }
+
+void D3DRenderer::updateShaderConstantData(ShaderConstantData *s, void *data)
+  {
+  XD3DBufferImpl *r = s->data<XD3DBufferImpl>();
+  r->update(_impl->_d3dContext.Get(), data);
   }
 
 void D3DRenderer::drawTriangles(const Geometry *vert)
@@ -373,6 +397,12 @@ void D3DRenderer::destroyRasteriserState(RasteriserState *s)
   r->~XD3DRasteriserStateImpl();
   }
 
+void D3DRenderer::destroyShaderConstantData(ShaderConstantData *s)
+  {
+  XD3DBufferImpl *r = s->data<XD3DBufferImpl>();
+  r->~XD3DBufferImpl();
+  }
+
 void D3DRenderer::setViewTransform(const Transform &v)
   {
   _impl->_worldTransformData.data.view = v.matrix().transpose();
@@ -383,6 +413,44 @@ void D3DRenderer::setProjectionTransform(const ComplexTransform &p)
   {
   _impl->_worldTransformData.data.projection = p.matrix().transpose();
   _impl->_updateWorldTransformData = true;
+  }
+
+void D3DRenderer::setFragmentShaderConstantBuffer(
+  Shader *,
+  xsize index,
+  const ShaderConstantData *s)
+  {
+  const XD3DBufferImpl *r = s->data<XD3DBufferImpl>();
+
+  ID3D11Buffer *buffers[] =
+  {
+    r->buffer.Get()
+  };
+
+  _impl->_d3dContext->PSSetConstantBuffers(
+    UserPSContantBufferOffset + index,
+    X_ARRAY_COUNT(buffers),
+    buffers
+    );
+  }
+
+void D3DRenderer::setVertexShaderConstantBuffer(
+  Shader *,
+  xsize index,
+  const ShaderConstantData *s)
+  {
+  const XD3DBufferImpl *r = s->data<XD3DBufferImpl>();
+
+  ID3D11Buffer *buffers[] =
+  {
+    r->buffer.Get()
+  };
+
+  _impl->_d3dContext->VSSetConstantBuffers(
+    UserVSContantBufferOffset + index,
+    X_ARRAY_COUNT(buffers),
+    buffers
+    );
   }
 
 void D3DRenderer::setShader(const Shader *s, const ShaderVertexLayout *layout)

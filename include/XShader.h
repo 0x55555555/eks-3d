@@ -81,6 +81,25 @@ private:
   Renderer *_renderer;
   };
 
+class ShaderConstantData : public PrivateImpl<sizeof(void*)>
+  {
+public:
+  ShaderConstantData(Renderer *r=0, xsize sizeOfData=0, void *data=0);
+  ~ShaderConstantData();
+
+  static bool delayedCreate(ShaderConstantData &ths,
+                            Renderer *r,
+                            xsize size,
+                            void *data = 0);
+
+  void update(void *data);
+
+private:
+  X_DISABLE_COPY(ShaderConstantData);
+
+  Renderer *_renderer;
+  };
+
 class EKS3D_EXPORT ShaderVertexComponent : public PrivateImpl<sizeof(void*)>
   {
 public:
@@ -131,6 +150,8 @@ private:
 class EKS3D_EXPORT Shader : public PrivateImpl<sizeof(void*)*2>
   {
 public:
+  typedef ShaderConstantData ConstantData;
+
   Shader(Renderer *r=0,
           ShaderVertexComponent *v=0,
           ShaderFragmentComponent *f=0);
@@ -140,6 +161,10 @@ public:
               Renderer *r,
               ShaderVertexComponent *v,
               ShaderFragmentComponent *f);
+
+
+  void setFragmentShaderConstantData(xsize index, ConstantData *data);
+  void setVertexShaderConstantData(xsize index, ConstantData *data);
 
 private:
   X_DISABLE_COPY(Shader);
