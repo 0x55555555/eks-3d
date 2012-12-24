@@ -174,4 +174,29 @@ private:
 
 }
 
+#include "XRenderer.h"
+
+namespace Eks
+{
+
+void ShaderConstantData::update(void *data)
+  {
+  xAssert(_renderer);
+  _renderer->functions().set.shaderConstantData(_renderer, this, data);
+  }
+
+void Shader::setFragmentShaderConstantData(xsize index, ConstantData *data)
+  {
+  xAssert(_renderer);
+  _renderer->functions().set.fragmentShaderConstantBuffer(_renderer, this, index, data);
+  }
+
+void Shader::setVertexShaderConstantData(xsize index, ConstantData *data)
+  {
+  xAssert(_renderer);
+  _renderer->functions().set.vertexShaderConstantBuffer(_renderer, this, index, data);
+  }
+
+}
+
 #endif // XABSTRACTSHADER_H

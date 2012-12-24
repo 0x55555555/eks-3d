@@ -7,6 +7,7 @@
 #include <DXGI1_2.h>
 #include <DirectXMath.h>
 #include "wrl/client.h"
+#include "XRenderer.h"
 #include "XRasteriserState.h"
 
 namespace Eks
@@ -127,11 +128,17 @@ public:
   IUnknown *window;
   };
 
-class D3DRendererImpl
+class D3DRendererImpl : public Renderer
   {
 public:
-  D3DRendererImpl();
+  D3DRendererImpl(IUnknown *w, const detail::RendererFunctions &fn);
   ~D3DRendererImpl();
+
+  enum
+    {
+    UserVSContantBufferOffset = 2,
+    UserPSContantBufferOffset = 0
+    };
 
   // Direct3D Objects.
   D3D_FEATURE_LEVEL _featureLevel;
@@ -150,16 +157,7 @@ public:
     };
   bool _updateWorldTransformData;
   XD3DTypedBufferImpl<WorldTransformData> _worldTransformData;
-  XD3DBufferImpl _modelTransformData;
-
-  enum
-    {
-    TransformStackSize = 16,
-    UserConstantBufferStartOffset = 2
-    };
-
-  Eks::Matrix4x4 _transformStack[TransformStackSize];
-  Eks::Matrix4x4 *_currentTransform;
+  XD3DTypedBufferImpl<Eks::Matrix4x4> _modelTransformData;
 
   void setRenderTarget(XD3DRenderTargetImpl *target);
   void clearRenderTarget();

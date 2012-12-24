@@ -16,14 +16,14 @@ RasteriserState::~RasteriserState()
   {
   if(_renderer)
     {
-    _renderer->destroyRasteriserState(this);
+    _renderer->functions().destroy.rasteriserState(_renderer, this);
     }
   }
 
 bool RasteriserState::delayedCreate(RasteriserState &ths, Renderer *r, CullMode cull)
   {
   ths._renderer = r;
-  return r->createRasteriserState(&ths, cull);
+  return r->functions().create.rasteriserState(r, &ths, cull);
   }
 
 }

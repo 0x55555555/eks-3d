@@ -9,7 +9,7 @@ ShaderVertexLayout::~ShaderVertexLayout()
   {
   if(isValid())
     {
-    _renderer->destroyShaderVertexLayout(this);
+    _renderer->functions().destroy.shaderVertexLayout(_renderer, this);
     }
   }
 
@@ -32,7 +32,7 @@ ShaderVertexComponent::~ShaderVertexComponent()
   {
   if(isValid())
     {
-    _renderer->destroyVertexShaderComponent(this);
+    _renderer->functions().destroy.vertexShaderComponent(_renderer, this);
     }
   }
 
@@ -49,12 +49,14 @@ bool ShaderVertexComponent::delayedCreate(
   xAssert(r && source && length);
   xAssert(!vertexDescription || (layout && vertexItemCount));
   ths._renderer = r;
-  bool result = r->createVertexShaderComponent(&ths,
-                                               source,
-                                               length,
-                                               vertexDescription,
-                                               vertexItemCount,
-                                               layout);
+  bool result = r->functions().create.vertexShaderComponent(
+                  r,
+                  &ths,
+                  source,
+                  length,
+                  vertexDescription,
+                  vertexItemCount,
+                  layout);
 
   if(result && vertexDescription && layout)
     {
@@ -77,7 +79,7 @@ ShaderFragmentComponent::~ShaderFragmentComponent()
   {
   if(isValid())
     {
-    _renderer->destroyFragmentShaderComponent(this);
+    _renderer->functions().destroy.fragmentShaderComponent(_renderer, this);
     }
   }
 
@@ -89,7 +91,7 @@ bool ShaderFragmentComponent::delayedCreate(ShaderFragmentComponent &ths,
   xAssert(!ths.isValid());
   xAssert(r && source && length);
   ths._renderer = r;
-  return r->createFragmentShaderComponent(&ths, source, length);
+  return r->functions().create.fragmentShaderComponent(r, &ths, source, length);
   }
 
 ShaderConstantData::ShaderConstantData(Renderer *r, xsize sizeOfData, void *data)
@@ -104,7 +106,7 @@ ShaderConstantData::~ShaderConstantData()
   {
   if(_renderer)
     {
-    _renderer->destroyShaderConstantData(this);
+    _renderer->functions().destroy.shaderConstantData(_renderer, this);
     }
   }
 
@@ -113,13 +115,7 @@ bool ShaderConstantData::delayedCreate(ShaderConstantData &ths, Renderer *r, xsi
   xAssert(!ths.isValid());
   xAssert(r);
   ths._renderer = r;
-  return r->createShaderConstantData(&ths, sizeOfData, data);
-  }
-
-void ShaderConstantData::update(void *data)
-  {
-  xAssert(_renderer);
-  _renderer->updateShaderConstantData(this, data);
+  return r->functions().create.shaderConstantData(r, &ths, sizeOfData, data);
   }
 
 Shader::Shader(Renderer *r,
@@ -137,7 +133,7 @@ Shader::~Shader()
   {
   if(isValid())
     {
-    _renderer->destroyShader(this);
+    _renderer->functions().destroy.shader(_renderer, this);
     }
   }
 
@@ -146,18 +142,6 @@ bool Shader::delayedCreate(Shader &ths, Renderer *r, ShaderVertexComponent *v, S
   xAssert(!ths.isValid());
   xAssert(r);
   ths._renderer = r;
-  return r->createShader(&ths, v, f);
-  }
-
-void Shader::setFragmentShaderConstantData(xsize index, ConstantData *data)
-  {
-  xAssert(_renderer);
-  _renderer->setFragmentShaderConstantBuffer(this, index, data);
-  }
-
-void Shader::setVertexShaderConstantData(xsize index, ConstantData *data)
-  {
-  xAssert(_renderer);
-  _renderer->setVertexShaderConstantBuffer(this, index, data);
+  return r->functions().create.shader(r, &ths, v, f);
   }
 }

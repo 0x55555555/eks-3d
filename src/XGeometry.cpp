@@ -20,7 +20,7 @@ Geometry::~Geometry()
   {
   if(_renderer)
     {
-    _renderer->destroyGeometry(this);
+    _renderer->functions().destroy.geometry(_renderer, this);
     }
   }
 
@@ -32,7 +32,7 @@ bool Geometry::delayedCreate(
     xsize elementCount)
   {
   ths._renderer = r;
-  return r->createGeometry(&ths, data, elementSize, elementCount);
+  return r->functions().create.geometry(r, &ths, data, elementSize, elementCount);
   }
 
 IndexGeometry::IndexGeometry(Renderer *r, Type type, const void *data, xsize dataSize)
@@ -49,7 +49,7 @@ IndexGeometry::~IndexGeometry()
   {
   if(_renderer)
     {
-    _renderer->destroyIndexGeometry(this);
+    _renderer->functions().destroy.indexGeometry(_renderer, this);
     }
   }
 
@@ -61,7 +61,7 @@ bool IndexGeometry::delayedCreate(
     xsize indexCount)
   {
   ths._renderer = r;
-  return r->createIndexGeometry(&ths, type, index, indexCount);
+  return r->functions().create.indexGeometry(r, &ths, type, index, indexCount);
   }
 
 }

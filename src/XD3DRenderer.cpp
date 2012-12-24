@@ -4,6 +4,7 @@
 #include "XD3DRenderer.h"
 #include "XGeometry.h"
 #include "XD3DRendererImpl.h"
+#include "XRenderer.h"
 #include "XColour"
 #include "XOptional"
 #include "XShader.h"
@@ -13,87 +14,52 @@ using namespace DirectX;
 namespace Eks
 {
 
-D3DRenderer::D3DRenderer(IUnknown *window)
+#define D3D(r) static_cast<D3DRendererImpl*>(r)
+
+void clear(Renderer *r, int clear)
   {
-  _impl = new D3DRendererImpl;
-
-  _impl->_window = window;
-  _impl->createResources();
-  setClearColour(Colour(0.0f, 0.0f, 0.0f));
-  }
-
-D3DRenderer::~D3DRenderer()
-  {
-  delete _impl;
-  _impl = 0;
-  }
-
-ID3D11Device1 *D3DRenderer::getD3DDevice()
-  {
-  return _impl->_d3dDevice.Get();
-  }
-
-ID3D11DeviceContext1 *D3DRenderer::getD3DContext()
-  {
-  return _impl->_d3dContext.Get();
-  }
-
-void D3DRenderer::beginFrame()
-  {
-  if(_impl->_updateWorldTransformData)
-    {
-    _impl->_worldTransformData.update(_impl->_d3dContext.Get());
-    }
-
-  clear();
-  _impl->setRenderTarget(&_impl->_renderTarget);
-  }
-
-void D3DRenderer::endFrame(bool *deviceListOptional)
-  {
-  _impl->_renderTarget.present(_impl->_d3dContext.Get(), deviceListOptional);
-  }
-
-bool D3DRenderer::resize(xuint32 w, xuint32 h, Rotation rotation)
-  {
-  return _impl->resize(w, h, rotation);
-  }
-
-void D3DRenderer::pushTransform(const Transform &tr)
-  {
-  xAssert((_impl->_currentTransform - _impl->_transformStack) <
-            D3DRendererImpl::TransformStackSize);
-
-  Matrix4x4& oldTransform = *_impl->_currentTransform;
-  Matrix4x4& newTransform = *(++_impl->_currentTransform);
-
-  newTransform = (oldTransform * tr).matrix();
-  _impl->_modelTransformData.update(_impl->_d3dContext.Get(), newTransform.transpose().data());
-  }
-
-void D3DRenderer::popTransform( )
-  {
-  _impl->_currentTransform--;
-  xAssert(_impl->_currentTransform >= _impl->_transformStack);
-  }
-
-void D3DRenderer::setClearColour(const Colour &col)
-  {
-  _impl->_clearColour = col;
-  }
-
-void D3DRenderer::clear(int clear)
-  {
-  _impl->_renderTarget.clear(
-        _impl->_d3dContext.Get(),
-        (clear&Renderer::ClearColour) != 0,
-        (clear&Renderer::ClearDepth) != 0,
-        _impl->_clearColour.data(),
+  D3D(r)->_renderTarget.clear(
+        D3D(r)->_d3dContext.Get(),
+        (clear&ClearColour) != 0,
+        (clear&ClearDepth) != 0,
+        D3D(r)->_clearColour.data(),
         1.0f,
         0);
   }
 
-bool D3DRenderer::createShader(Shader *s, ShaderVertexComponent *v, ShaderFragmentComponent *f)
+void beginFrame(Renderer *r)
+  {
+  if(D3D(r)->_updateWorldTransformData)
+    {
+    D3D(r)->_worldTransformData.update(D3D(r)->_d3dContext.Get());
+    }
+
+  clear(r, ClearColour|ClearDepth);
+  D3D(r)->setRenderTarget(&D3D(r)->_renderTarget);
+  }
+
+void endFrame(Renderer *r, bool *deviceListOptional)
+  {
+  D3D(r)->_renderTarget.present(D3D(r)->_d3dContext.Get(), deviceListOptional);
+  }
+
+bool resize(Renderer *r, xuint32 w, xuint32 h, RendererRotation rotation)
+  {
+  return D3D(r)->resize(w, h, rotation);
+  }
+
+void setTransform(Renderer *r, const Transform &tr)
+  {
+  D3D(r)->_modelTransformData.data = tr.matrix();
+  D3D(r)->_modelTransformData.update(D3D(r)->_d3dContext.Get());
+  }
+
+void setClearColour(Renderer *r, const Colour &col)
+  {
+  D3D(r)->_clearColour = col;
+  }
+
+bool createShader(Renderer *, Shader *s, ShaderVertexComponent *v, ShaderFragmentComponent *f)
   {
   XD3DFragmentShaderImpl *frag = f->data<XD3DFragmentShaderImpl>();
   XD3DVertexShaderImpl *vert = v->data<XD3DVertexShaderImpl>();
@@ -107,17 +73,19 @@ bool D3DRenderer::createShader(Shader *s, ShaderVertexComponent *v, ShaderFragme
   return shd->_pixelShader && shd->_vertexShader;
   }
 
-bool D3DRenderer::createVertexShaderComponent(ShaderVertexComponent *v,
-                                               const char *s,
-                                               xsize l,
-                                               const ShaderVertexLayoutDescription *vertexDescriptions,
-                                               xsize vertexItemCount,
-                                               ShaderVertexLayout *layout)
+bool createVertexShaderComponent(
+    Renderer *r,
+    ShaderVertexComponent *v,
+    const char *s,
+    xsize l,
+    const ShaderVertexLayoutDescription *vertexDescriptions,
+    xsize vertexItemCount,
+    ShaderVertexLayout *layout)
   {
   XD3DVertexShaderImpl *vert = v->data<XD3DVertexShaderImpl>();
   new(vert) XD3DVertexShaderImpl();
 
-  if(!vert->create(_impl->_d3dDevice.Get(), s, l))
+  if(!vert->create(D3D(r)->_d3dDevice.Get(), s, l))
     {
     return false;
     }
@@ -169,7 +137,7 @@ bool D3DRenderer::createVertexShaderComponent(ShaderVertexComponent *v,
     XD3DShaderInputLayout *lay = layout->data<XD3DShaderInputLayout>();
     new(lay) XD3DShaderInputLayout();
     if(failedCheck(
-      _impl->_d3dDevice->CreateInputLayout(
+      D3D(r)->_d3dDevice->CreateInputLayout(
         vertexDesc,
         vertexItemCount,
         s,
@@ -184,14 +152,15 @@ bool D3DRenderer::createVertexShaderComponent(ShaderVertexComponent *v,
   return true;
   }
 
-bool D3DRenderer::createFragmentShaderComponent(ShaderFragmentComponent *f, const char *s, xsize l)
+bool createFragmentShaderComponent(Renderer *r, ShaderFragmentComponent *f, const char *s, xsize l)
   {
   XD3DFragmentShaderImpl *frag = f->data<XD3DFragmentShaderImpl>();
   new(frag) XD3DFragmentShaderImpl();
-  return frag->create(_impl->_d3dDevice.Get(), s, l);
+  return frag->create(D3D(r)->_d3dDevice.Get(), s, l);
   }
 
-bool D3DRenderer::createGeometry(
+bool createGeometry(
+    Renderer *r,
     Geometry *g,
     const void *data,
     xsize elementSize,
@@ -202,7 +171,7 @@ bool D3DRenderer::createGeometry(
 
   xsize dataSize = elementSize * elementCount;
 
-  bool result = geo->create(_impl->_d3dDevice.Get(), data, dataSize, D3D11_BIND_VERTEX_BUFFER);
+  bool result = geo->create(D3D(r)->_d3dDevice.Get(), data, dataSize, D3D11_BIND_VERTEX_BUFFER);
 
   geo->elementSize = elementSize;
   geo->elementCount = elementCount;
@@ -210,7 +179,8 @@ bool D3DRenderer::createGeometry(
   return result;
   }
 
-bool D3DRenderer::createIndexGeometry(
+bool createIndexGeometry(
+    Renderer *r,
     IndexGeometry *g,
     int type,
     const void *index,
@@ -234,7 +204,7 @@ bool D3DRenderer::createIndexGeometry(
   geo->format = typeData.format;
 
   xsize dataSize = indexCount * typeData.elementSize;
-  bool result = geo->create(_impl->_d3dDevice.Get(), index, dataSize, D3D11_BIND_INDEX_BUFFER);
+  bool result = geo->create(D3D(r)->_d3dDevice.Get(), index, dataSize, D3D11_BIND_INDEX_BUFFER);
 
   geo->count = indexCount;
 
@@ -242,9 +212,10 @@ bool D3DRenderer::createIndexGeometry(
   }
 
 
-bool D3DRenderer::createRasteriserState(
+bool createRasteriserState(
+    Renderer *r,
     RasteriserState *s,
-    RasteriserState::CullMode cull)
+    xuint32 cull)
   {
   XD3DRasteriserStateImpl *ras = s->data<XD3DRasteriserStateImpl>();
 
@@ -272,15 +243,16 @@ bool D3DRenderer::createRasteriserState(
   desc.AntialiasedLineEnable = false;
   desc.ForcedSampleCount = 0;
 
-  return ras->create(_impl->_d3dDevice.Get(), desc);
+  return ras->create(D3D(r)->_d3dDevice.Get(), desc);
   }
 
-bool D3DRenderer::createShaderConstantData(
+bool createShaderConstantData(
+    Renderer *r,
     ShaderConstantData *s,
     xsize size,
     void *data)
   {
-  XD3DBufferImpl *r = s->data<XD3DBufferImpl>();
+  XD3DBufferImpl *b = s->data<XD3DBufferImpl>();
 
   enum
     {
@@ -289,27 +261,27 @@ bool D3DRenderer::createShaderConstantData(
 
   xAssert((size % SizeAlignment) == 0)
 
-  new(r) XD3DBufferImpl();
-  return r->create(_impl->_d3dDevice.Get(), data, size, D3D11_BIND_CONSTANT_BUFFER);
+  new(b) XD3DBufferImpl();
+  return b->create(D3D(r)->_d3dDevice.Get(), data, size, D3D11_BIND_CONSTANT_BUFFER);
   }
 
-void D3DRenderer::debugRenderLocator(DebugLocatorMode)
+void debugRenderLocator(Renderer *, RendererDebugLocatorMode)
   {
   }
 
-void D3DRenderer::updateShaderConstantData(ShaderConstantData *s, void *data)
+void updateShaderConstantData(Renderer *r, ShaderConstantData *s, void *data)
   {
-  XD3DBufferImpl *r = s->data<XD3DBufferImpl>();
-  r->update(_impl->_d3dContext.Get(), data);
+  XD3DBufferImpl *b = s->data<XD3DBufferImpl>();
+  b->update(D3D(r)->_d3dContext.Get(), data);
   }
 
-void D3DRenderer::drawTriangles(const Geometry *vert)
+void drawTriangles(Renderer *r, const Geometry *vert)
   {
   const XD3DVertexBufferImpl *geo = vert->data<XD3DVertexBufferImpl>();
 
   UINT stride = geo->elementSize;
   UINT offset = 0;
-  _impl->_d3dContext->IASetVertexBuffers(
+  D3D(r)->_d3dContext->IASetVertexBuffers(
     0,
     1,
     geo->buffer.GetAddressOf(),
@@ -317,22 +289,22 @@ void D3DRenderer::drawTriangles(const Geometry *vert)
     &offset
     );
 
-  _impl->_d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  D3D(r)->_d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-  _impl->_d3dContext->Draw(
+  D3D(r)->_d3dContext->Draw(
     geo->elementCount,
     0
     );
   }
 
-void D3DRenderer::drawTriangles(const IndexGeometry *indices, const Geometry *vert)
+void drawIndexedTriangles(Renderer *r, const IndexGeometry *indices, const Geometry *vert)
   {
   const XD3DVertexBufferImpl *geo = vert->data<XD3DVertexBufferImpl>();
   const XD3DIndexBufferImpl *idx = indices->data<XD3DIndexBufferImpl>();
 
   UINT stride = geo->elementSize;
   UINT offset = 0;
-  _impl->_d3dContext->IASetVertexBuffers(
+  D3D(r)->_d3dContext->IASetVertexBuffers(
     0,
     1,
     geo->buffer.GetAddressOf(),
@@ -340,131 +312,91 @@ void D3DRenderer::drawTriangles(const IndexGeometry *indices, const Geometry *ve
     &offset
     );
 
-  _impl->_d3dContext->IASetIndexBuffer(
+  D3D(r)->_d3dContext->IASetIndexBuffer(
     idx->buffer.Get(),
     idx->format,
     0
     );
 
-  _impl->_d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  D3D(r)->_d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-  _impl->_d3dContext->DrawIndexed(
+  D3D(r)->_d3dContext->DrawIndexed(
     idx->count,
     0,
     0
     );
   }
 
-void D3DRenderer::destroyShader(Shader* s)
+template <typename T, typename U> void destroy(Renderer *, T *g )
   {
-  XD3DSurfaceShaderImpl* shd = s->data<XD3DSurfaceShaderImpl>();
-  shd->~XD3DSurfaceShaderImpl();
+  U *geo = g->data<U>();
+  geo->~U();
   }
 
-void D3DRenderer::destroyShaderVertexLayout(ShaderVertexLayout *d)
+void setViewTransform(Renderer *r, const Transform &v)
   {
-  XD3DShaderInputLayout* lay = d->data<XD3DShaderInputLayout>();
-  lay->~XD3DShaderInputLayout();
+  D3D(r)->_worldTransformData.data.view = v.matrix().transpose();
+  D3D(r)->_updateWorldTransformData = true;
   }
 
-void D3DRenderer::destroyVertexShaderComponent(ShaderVertexComponent* s)
+void setProjectionTransform(Renderer *r, const ComplexTransform &p)
   {
-  XD3DVertexShaderImpl *vert = s->data<XD3DVertexShaderImpl>();
-  vert->~XD3DVertexShaderImpl();
+  D3D(r)->_worldTransformData.data.projection = p.matrix().transpose();
+  D3D(r)->_updateWorldTransformData = true;
   }
 
-void D3DRenderer::destroyFragmentShaderComponent(ShaderFragmentComponent* s)
+void setFragmentShaderConstantBuffer(
+    Renderer *r,
+    Shader *,
+    xsize index,
+    const ShaderConstantData *s)
   {
-  XD3DFragmentShaderImpl *frag = s->data<XD3DFragmentShaderImpl>();
-  frag->~XD3DFragmentShaderImpl();
-  }
-
-void D3DRenderer::destroyGeometry( Geometry *g )
-  {
-  XD3DVertexBufferImpl *geo = g->data<XD3DVertexBufferImpl>();
-  geo->~XD3DVertexBufferImpl();
-  }
-
-void D3DRenderer::destroyIndexGeometry( IndexGeometry *g )
-  {
-  XD3DIndexBufferImpl *geo = g->data<XD3DIndexBufferImpl>();
-  geo->~XD3DIndexBufferImpl();
-  }
-
-void D3DRenderer::destroyRasteriserState(RasteriserState *s)
-  {
-  XD3DRasteriserStateImpl *r = s->data<XD3DRasteriserStateImpl>();
-  r->~XD3DRasteriserStateImpl();
-  }
-
-void D3DRenderer::destroyShaderConstantData(ShaderConstantData *s)
-  {
-  XD3DBufferImpl *r = s->data<XD3DBufferImpl>();
-  r->~XD3DBufferImpl();
-  }
-
-void D3DRenderer::setViewTransform(const Transform &v)
-  {
-  _impl->_worldTransformData.data.view = v.matrix().transpose();
-  _impl->_updateWorldTransformData = true;
-  }
-
-void D3DRenderer::setProjectionTransform(const ComplexTransform &p)
-  {
-  _impl->_worldTransformData.data.projection = p.matrix().transpose();
-  _impl->_updateWorldTransformData = true;
-  }
-
-void D3DRenderer::setFragmentShaderConstantBuffer(
-  Shader *,
-  xsize index,
-  const ShaderConstantData *s)
-  {
-  const XD3DBufferImpl *r = s->data<XD3DBufferImpl>();
+  const XD3DBufferImpl *b = s->data<XD3DBufferImpl>();
 
   ID3D11Buffer *buffers[] =
   {
-    r->buffer.Get()
+    b->buffer.Get()
   };
 
-  _impl->_d3dContext->PSSetConstantBuffers(
-    UserPSContantBufferOffset + index,
+  D3D(r)->_d3dContext->PSSetConstantBuffers(
+    D3DRendererImpl::UserPSContantBufferOffset + index,
     X_ARRAY_COUNT(buffers),
     buffers
     );
   }
 
-void D3DRenderer::setVertexShaderConstantBuffer(
-  Shader *,
-  xsize index,
-  const ShaderConstantData *s)
+void setVertexShaderConstantBuffer(
+    Renderer *r,
+    Shader *,
+    xsize index,
+    const ShaderConstantData *s)
   {
-  const XD3DBufferImpl *r = s->data<XD3DBufferImpl>();
+  const XD3DBufferImpl *b = s->data<XD3DBufferImpl>();
 
   ID3D11Buffer *buffers[] =
   {
-    r->buffer.Get()
+    b->buffer.Get()
   };
 
-  _impl->_d3dContext->VSSetConstantBuffers(
-    UserVSContantBufferOffset + index,
+  D3D(r)->_d3dContext->VSSetConstantBuffers(
+    D3DRendererImpl::UserVSContantBufferOffset + index,
     X_ARRAY_COUNT(buffers),
     buffers
     );
   }
 
-void D3DRenderer::setShader(const Shader *s, const ShaderVertexLayout *layout)
+void setShader(Renderer *r, const Shader *s, const ShaderVertexLayout *layout)
   {
   const XD3DSurfaceShaderImpl* shd = s->data<XD3DSurfaceShaderImpl>();
-  shd->bind(_impl->_d3dContext.Get());
+  shd->bind(D3D(r)->_d3dContext.Get());
 
   ID3D11Buffer *buffers[] =
   {
-    _impl->_worldTransformData.buffer.Get(),
-    _impl->_modelTransformData.buffer.Get()
+    D3D(r)->_worldTransformData.buffer.Get(),
+    D3D(r)->_modelTransformData.buffer.Get()
   };
 
-  _impl->_d3dContext->VSSetConstantBuffers(
+  D3D(r)->_d3dContext->VSSetConstantBuffers(
     0,
     X_ARRAY_COUNT(buffers),
     buffers
@@ -472,18 +404,74 @@ void D3DRenderer::setShader(const Shader *s, const ShaderVertexLayout *layout)
 
 
   const XD3DShaderInputLayout* lay = layout->data<XD3DShaderInputLayout>();
-  _impl->_d3dContext->IASetInputLayout(lay->_inputLayout.Get());
+  D3D(r)->_d3dContext->IASetInputLayout(lay->_inputLayout.Get());
   }
 
-void D3DRenderer::setRasteriserState(const RasteriserState *s)
+void setRasteriserState(Renderer *r, const RasteriserState *s)
   {
-  const XD3DRasteriserStateImpl *r = s->data<XD3DRasteriserStateImpl>();
+  const XD3DRasteriserStateImpl *ras = s->data<XD3DRasteriserStateImpl>();
 
-  _impl->_d3dContext->RSSetState(r->_state.Get());
+  D3D(r)->_d3dContext->RSSetState(ras->_state.Get());
   }
 
-void D3DRenderer::setFramebuffer( const Framebuffer * )
+void setFramebuffer(Renderer *, const Framebuffer *)
   {
+  }
+
+Renderer *D3DRenderer::createD3DRenderer(IUnknown *window)
+  {
+  detail::RendererFunctions fns =
+  {
+    {
+      createGeometry,
+      createIndexGeometry,
+      createShader,
+      createVertexShaderComponent,
+      createFragmentShaderComponent,
+      createRasteriserState,
+      createShaderConstantData
+    },
+    {
+      destroy<Geometry, XD3DVertexBufferImpl>,
+      destroy<IndexGeometry, XD3DIndexBufferImpl>,
+      destroy<Shader, XD3DSurfaceShaderImpl>,
+      destroy<ShaderVertexLayout, XD3DShaderInputLayout>,
+      destroy<ShaderVertexComponent, XD3DVertexShaderImpl>,
+      destroy<ShaderFragmentComponent, XD3DFragmentShaderImpl>,
+      destroy<RasteriserState, XD3DRasteriserStateImpl>,
+      destroy<ShaderConstantData, XD3DBufferImpl>
+    },
+    {
+      setClearColour,
+      updateShaderConstantData,
+      setViewTransform,
+      setProjectionTransform,
+      setFragmentShaderConstantBuffer,
+      setVertexShaderConstantBuffer,
+      setShader,
+      setRasteriserState,
+      setFramebuffer,
+      setTransform
+    },
+    {
+      drawIndexedTriangles,
+      drawTriangles
+    },
+    clear,
+    resize,
+    beginFrame,
+    endFrame,
+    debugRenderLocator
+  };
+
+  D3DRendererImpl *r = new D3DRendererImpl(window, fns);
+
+  return r;
+  }
+
+void D3DRenderer::destroyD3DRenderer(Renderer *r)
+  {
+  delete D3D(r);
   }
 
 }

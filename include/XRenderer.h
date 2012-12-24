@@ -3,13 +3,12 @@
 
 #include "X3DGlobal.h"
 #include "XProperty"
-#include "XFlags"
 #include "XTransform.h"
-#include "XRasteriserState.h"
 
 namespace Eks
 {
 
+class Renderer;
 class ShaderConstantData;
 class Colour;
 class Shader;
@@ -21,139 +20,234 @@ class Framebuffer;
 class ShaderVertexComponent;
 class ShaderFragmentComponent;
 class Geometry;
+class RasteriserState;
 
 class RendererStackTransform;
 
-class EKS3D_EXPORT Renderer
+enum RendererDebugLocatorMode
   {
-public:
+  DebugLocatorBasic=0,
+  DebugLocatorClearShader=1
+  };
 
-  enum Rotation
-    {
-    RotateNone,
-    Rotate90,
-    Rotate180,
-    Rotate270
-    };
+enum RendererRotation
+  {
+  RotateNone,
+  Rotate90,
+  Rotate180,
+  Rotate270
+  };
 
-  virtual ~Renderer( ) { }
+enum RendererClearMode
+  {
+  ClearColour = 1,
+  ClearDepth = 2
+  };
 
-  typedef RendererStackTransform StackTransform;
+namespace detail
+{
 
-  virtual void pushTransform( const Transform & ) = 0;
-  virtual void popTransform( ) = 0;
-
-  enum ClearMode
-    {
-    ClearColour = 1,
-    ClearDepth = 2
-    };
-  virtual void setClearColour(const Colour &col) = 0;
-  virtual void clear(int=ClearColour|ClearDepth) = 0;
-
-  // creation accessors for abstract types
-  virtual bool createGeometry(
+// creation for types
+struct RendererCreateFunctions
+  {
+  bool (*geometry)(
+      Renderer *r,
       Geometry *g,
       const void *data,
       xsize elementSize,
-      xsize elementCount) = 0;
+      xsize elementCount);
 
-  virtual bool createIndexGeometry(
+  bool (*indexGeometry)(
+      Renderer *r,
       IndexGeometry *g,
       int type,
       const void *index,
-      xsize indexCount) = 0;
+      xsize indexCount);
 
-  virtual bool createShader(
+  bool (*shader)(
+      Renderer *r,
       Shader *s,
       ShaderVertexComponent *v,
-      ShaderFragmentComponent *f) = 0;
+      ShaderFragmentComponent *f);
 
-  virtual bool createVertexShaderComponent(
+  bool (*vertexShaderComponent)(
+      Renderer *r,
       ShaderVertexComponent *v,
       const char *s,
       xsize l,
       const ShaderVertexLayoutDescription *vertexDescriptions,
       xsize vertexItemCount,
-      ShaderVertexLayout *layout) = 0;
+      ShaderVertexLayout *layout);
 
-  virtual bool createFragmentShaderComponent(
+  bool (*fragmentShaderComponent)(
+      Renderer *r,
       ShaderFragmentComponent *f,
       const char *s,
-      xsize l) = 0;
+      xsize l);
 
-  virtual bool createRasteriserState(
+  bool (*rasteriserState)(
+      Renderer *r,
       RasteriserState *s,
-      RasteriserState::CullMode cull) = 0;
+      xuint32 cull);
 
-  virtual bool createShaderConstantData(
+  bool (*shaderConstantData)(
+      Renderer *r,
       ShaderConstantData *,
       xsize size,
-      void *data = 0) = 0;
-
-  enum DebugLocatorMode
-    {
-    None=0,
-    ClearShader=1
-    };
-  virtual void debugRenderLocator(DebugLocatorMode) = 0;
-
-  virtual void updateShaderConstantData(ShaderConstantData *, void *data) = 0;
-
-  // destroy abstract types
-  virtual void destroyShader(Shader* s) = 0;
-  virtual void destroyShaderVertexLayout(ShaderVertexLayout *d) = 0;
-  virtual void destroyVertexShaderComponent(ShaderVertexComponent* s) = 0;
-  virtual void destroyFragmentShaderComponent(ShaderFragmentComponent* s) = 0;
-  virtual void destroyGeometry(Geometry *) = 0;
-  virtual void destroyIndexGeometry(IndexGeometry *) = 0;
-  virtual void destroyRasteriserState(RasteriserState *) = 0;
-  virtual void destroyShaderConstantData(ShaderConstantData *) = 0;
-
-  virtual void setViewTransform(const Transform &) = 0;
-  virtual void setProjectionTransform(const ComplexTransform &) = 0;
-
-  virtual void setFragmentShaderConstantBuffer(
-    Shader *shader,
-    xsize index,
-    const ShaderConstantData *data) = 0;
-
-  virtual void setVertexShaderConstantBuffer(
-    Shader *shader,
-    xsize index,
-    const ShaderConstantData *data) = 0;
-
-  // set the current shader
-  virtual void setShader(const Shader *, const ShaderVertexLayout *layout) = 0;
-
-  // set rasteriser
-  virtual void setRasteriserState(const RasteriserState *state) = 0;
-
-  // draw the given geometry
-  virtual void drawTriangles(const IndexGeometry *indices, const Geometry *vert) = 0;
-  virtual void drawTriangles(const Geometry *vert) = 0;
-
-  // bind the given framebuffer for drawing
-  virtual void setFramebuffer(const Framebuffer *) = 0;
+      void *data);
   };
 
-class RendererStackTransform
+// destroy types
+struct RendererDestroyFunctions
+  {
+  void (*geometry)(Renderer *r, Geometry *);
+  void (*indexGeometry)(Renderer *r, IndexGeometry *);
+  void (*shader)(Renderer *r, Shader* s);
+  void (*shaderVertexLayout)(Renderer *r, ShaderVertexLayout *d);
+  void (*vertexShaderComponent)(Renderer *r, ShaderVertexComponent* s);
+  void (*fragmentShaderComponent)(Renderer *r, ShaderFragmentComponent* s);
+  void (*rasteriserState)(Renderer *r, RasteriserState *);
+  void (*shaderConstantData)(Renderer *r, ShaderConstantData *);
+  };
+
+struct RendererSetFunctions
+  {
+  void (*clearColour)(Renderer *r, const Colour &col);
+
+  void (*shaderConstantData)(Renderer *r, ShaderConstantData *, void *data);
+
+  void (*viewTransform)(Renderer *r, const Transform &);
+  void (*projectionTransform)(Renderer *r, const ComplexTransform &);
+
+  void (*fragmentShaderConstantBuffer)(
+    Renderer *r,
+    Shader *shader,
+    xsize index,
+    const ShaderConstantData *data);
+
+  void (*vertexShaderConstantBuffer)(
+    Renderer *r,
+    Shader *shader,
+    xsize index,
+    const ShaderConstantData *data);
+
+  // set the current shader
+  void (*shader)(Renderer *r, const Shader *, const ShaderVertexLayout *layout);
+
+  // set rasteriser
+  void (*rasteriserState)(Renderer *r, const RasteriserState *state);
+
+  // bind the given framebuffer for drawing
+  void (*framebuffer)(Renderer *r, const Framebuffer *);
+
+  void (*transform)(Renderer *r, const Transform &);
+  };
+
+struct RendererDrawFunctions
+  {
+  // draw the given geometry
+  void (*indexedTriangles)(Renderer *r, const IndexGeometry *indices, const Geometry *vert);
+  void (*triangles)(Renderer *r, const Geometry *vert);
+  };
+
+struct RendererFunctions
+  {
+  RendererCreateFunctions create;
+  RendererDestroyFunctions destroy;
+  RendererSetFunctions set;
+  RendererDrawFunctions draw;
+
+  void (*clear)(Renderer *r, int);
+  bool (*resize)(Renderer *r, xuint32 w, xuint32 h, RendererRotation rotation);
+  void (*beginFrame)(Renderer *r);
+  void (*endFrame)(Renderer *r, bool *deviceLost);
+
+  void (*debugRenderLocator)(Renderer *r, RendererDebugLocatorMode);
+  };
+
+}
+
+class RendererRenderFrame
   {
 public:
-  RendererStackTransform(Renderer *r, const Transform &t)
-      : _renderer(r)
-    {
-    xAssert(_renderer);
-    _renderer->pushTransform(t);
-    }
-  ~RendererStackTransform()
-    {
-    _renderer->popTransform();
-    }
+  RendererRenderFrame(Renderer *r, bool *deviceLost);
+  ~RendererRenderFrame();
 
 private:
   Renderer *_renderer;
+  bool *_deviceLost;
   };
+
+class EKS3D_EXPORT Renderer
+  {
+public:
+  typedef RendererStackTransform StackTransform;
+  typedef RendererRenderFrame RenderFrame;
+
+  void setProjectionTransform(const ComplexTransform &tr)
+    {
+    functions().set.projectionTransform(this, tr);
+    }
+
+  void setViewTransform(const Transform &tr)
+    {
+    functions().set.viewTransform(this, tr);
+    }
+
+  void setTransform(const Transform &tr)
+    {
+    functions().set.transform(this, tr);
+    }
+
+  void setClearColour(const Colour &c)
+    {
+    functions().set.clearColour(this, c);
+    }
+
+  void setShader(const Shader *s, const ShaderVertexLayout *layout)
+    {
+    functions().set.shader(this, s, layout);
+    }
+
+  void setRasteriserState(const RasteriserState *s)
+    {
+    functions().set.rasteriserState(this, s);
+    }
+
+  void drawTriangles(Geometry *g)
+    {
+    functions().draw.triangles(this, g);
+    }
+
+  void drawTriangles(IndexGeometry *i, Geometry *g)
+    {
+    functions().draw.indexedTriangles(this, i, g);
+    }
+
+  void resize(xuint32 w, xuint32 h, RendererRotation rotation)
+    {
+    functions().resize(this, w, h, rotation);
+    }
+
+XProperties:
+  XRORefProperty(detail::RendererFunctions, functions);
+
+protected:
+  ~Renderer() { }
+  XWriteProperty(detail::RendererFunctions, functions, setFunctions)
+  };
+
+
+inline RendererRenderFrame::RendererRenderFrame(Renderer *r, bool *deviceLost)
+    : _renderer(r), _deviceLost(deviceLost)
+  {
+  _renderer->functions().beginFrame(_renderer);
+  }
+
+inline RendererRenderFrame::~RendererRenderFrame()
+  {
+  _renderer->functions().endFrame(_renderer, _deviceLost);
+  }
 
 }
 

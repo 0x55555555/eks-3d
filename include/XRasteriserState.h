@@ -11,6 +11,7 @@ class Renderer;
 class RasteriserState : public PrivateImpl<sizeof(void *)>
   {
 public:
+
   enum CullMode
     {
     CullNone,
@@ -22,7 +23,6 @@ public:
 
   RasteriserState(Renderer *r=0, CullMode cull=CullBack);
   ~RasteriserState();
-
 
   static bool delayedCreate(
     RasteriserState &ths,

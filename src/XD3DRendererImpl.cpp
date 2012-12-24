@@ -20,13 +20,14 @@ bool failedCheck(HRESULT res)
   return true;
   }
 
-D3DRendererImpl::D3DRendererImpl()
+D3DRendererImpl::D3DRendererImpl(IUnknown *w, const detail::RendererFunctions& fns)
   {
+  setFunctions(fns);
   _featureLevel = D3D_FEATURE_LEVEL_9_1;
-  _window = 0;
 
-  _currentTransform = _transformStack;
-  *_currentTransform = Eks::Matrix4x4::Identity();
+  _clearColour = Colour::Zero();
+  _window = w;
+  createResources();
   }
 
 D3DRendererImpl::~D3DRendererImpl()
@@ -103,10 +104,9 @@ bool D3DRendererImpl::createResources()
     }
 
   _worldTransformData.create(_d3dDevice.Get(), D3D11_BIND_CONSTANT_BUFFER);
-  _modelTransformData.create(_d3dDevice.Get(),
-                             0,
-                             sizeof(D3DRendererImpl::_transformStack[0]),
-                             D3D11_BIND_CONSTANT_BUFFER);
+  _modelTransformData.create(_d3dDevice.Get(), D3D11_BIND_CONSTANT_BUFFER);
+
+  _modelTransformData.data = Matrix4x4::Identity();
 
   return true;
   }
