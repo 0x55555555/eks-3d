@@ -125,7 +125,7 @@ void ObjLoader::bake(
     for(xsize elIdx = 0; elIdx < elementCount; ++elIdx)
       {
       const ElementData &element(elements[elIdx]);
-      element.desc->write(element.data[idx(0)], bakedData);
+      element.desc->write(element.data[idx(elIdx)], bakedData);
       }
     }
   }

@@ -21,6 +21,8 @@ class ShaderVertexComponent;
 class ShaderFragmentComponent;
 class Geometry;
 class RasteriserState;
+class Texture2D;
+class Resource;
 
 class RendererStackTransform;
 
@@ -64,6 +66,14 @@ struct RendererCreateFunctions
       const void *index,
       xsize indexCount);
 
+  bool (*texture2D)(
+      Renderer *r,
+      Texture2D *tex,
+      xsize width,
+      xsize height,
+      xuint32 format,
+      void *data);
+
   bool (*shader)(
       Renderer *r,
       Shader *s,
@@ -102,6 +112,7 @@ struct RendererDestroyFunctions
   {
   void (*geometry)(Renderer *r, Geometry *);
   void (*indexGeometry)(Renderer *r, IndexGeometry *);
+  void (*texture2D)(Renderer *r, Texture2D* s);
   void (*shader)(Renderer *r, Shader* s);
   void (*shaderVertexLayout)(Renderer *r, ShaderVertexLayout *d);
   void (*vertexShaderComponent)(Renderer *r, ShaderVertexComponent* s);
@@ -123,13 +134,29 @@ struct RendererSetFunctions
     Renderer *r,
     Shader *shader,
     xsize index,
-    const ShaderConstantData *data);
+    xsize count,
+    const ShaderConstantData **data);
 
   void (*vertexShaderConstantBuffer)(
     Renderer *r,
     Shader *shader,
     xsize index,
-    const ShaderConstantData *data);
+    xsize count,
+    const ShaderConstantData **data);
+
+  void (*fragmentShaderResource)(
+    Renderer *r,
+    Shader *shader,
+    xsize index,
+    xsize count,
+    const Resource **data);
+
+  void (*vertexShaderResource)(
+    Renderer *r,
+    Shader *shader,
+    xsize index,
+    xsize count,
+    const Resource **data);
 
   // set the current shader
   void (*shader)(Renderer *r, const Shader *, const ShaderVertexLayout *layout);

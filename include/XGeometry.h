@@ -9,7 +9,7 @@ namespace Eks
 
 class Renderer;
 
-class Geometry : public PrivateImpl<sizeof(void*)>
+class Geometry : public PrivateImpl<sizeof(void*) * 3>
   {
 public:
   Geometry(Renderer *r=0, const void *data=0, xsize elementSize=0, xsize elementCount=0);
@@ -21,7 +21,7 @@ private:
   Renderer *_renderer;
   };
 
-class IndexGeometry: public PrivateImpl<sizeof(void*)>
+class IndexGeometry: public PrivateImpl<sizeof(void*) * 3>
   {
 public:
   enum Type

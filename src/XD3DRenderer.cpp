@@ -3,6 +3,7 @@
 #include <DirectXMath.h>
 #include "XD3DRenderer.h"
 #include "XGeometry.h"
+#include "XTexture.h"
 #include "XD3DRendererImpl.h"
 #include "XRenderer.h"
 #include "XColour"
@@ -211,6 +212,20 @@ bool createIndexGeometry(
   return result;
   }
 
+bool createTexture(
+    Renderer *r,
+    Texture2D *t,
+    xsize width,
+    xsize height,
+    xuint32 format,
+    void *data)
+  {
+  XD3DTexture2DImpl *tex = t->data<XD3DTexture2DImpl>();
+
+  new(tex) XD3DTexture2DImpl();
+
+  return tex->create(D3D(r)->_d3dDevice.Get(), width, height, format, data);
+  }
 
 bool createRasteriserState(
     Renderer *r,
@@ -349,18 +364,19 @@ void setFragmentShaderConstantBuffer(
     Renderer *r,
     Shader *,
     xsize index,
-    const ShaderConstantData *s)
+    xsize num,
+    const ShaderConstantData **s)
   {
-  const XD3DBufferImpl *b = s->data<XD3DBufferImpl>();
-
-  ID3D11Buffer *buffers[] =
-  {
-    b->buffer.Get()
-  };
+  ID3D11Buffer **buffers = (ID3D11Buffer **)alloca(sizeof(ID3D11Buffer *) * num);
+  for(xsize i = 0; i < num; ++i)
+    {
+    const XD3DBufferImpl *b = s[i]->data<XD3DBufferImpl>();
+    buffers[i] = b->buffer.Get();
+    }
 
   D3D(r)->_d3dContext->PSSetConstantBuffers(
     D3DRendererImpl::UserPSContantBufferOffset + index,
-    X_ARRAY_COUNT(buffers),
+    num,
     buffers
     );
   }
@@ -369,18 +385,63 @@ void setVertexShaderConstantBuffer(
     Renderer *r,
     Shader *,
     xsize index,
-    const ShaderConstantData *s)
+    xsize num,
+    const ShaderConstantData **s)
   {
-  const XD3DBufferImpl *b = s->data<XD3DBufferImpl>();
-
-  ID3D11Buffer *buffers[] =
-  {
-    b->buffer.Get()
-  };
+  ID3D11Buffer **buffers = (ID3D11Buffer **)alloca(sizeof(ID3D11Buffer *) * num);
+  for(xsize i = 0; i < num; ++i)
+    {
+    const XD3DBufferImpl *b = s[i]->data<XD3DBufferImpl>();
+    buffers[i] = b->buffer.Get();
+    }
 
   D3D(r)->_d3dContext->VSSetConstantBuffers(
     D3DRendererImpl::UserVSContantBufferOffset + index,
-    X_ARRAY_COUNT(buffers),
+    num,
+    buffers
+    );
+  }
+
+void setFragmentShaderResource(
+    Renderer *r,
+    Shader *,
+    xsize index,
+    xsize num,
+    const Resource **s)
+  {
+  ID3D11ShaderResourceView **buffers =
+    (ID3D11ShaderResourceView **)alloca(sizeof(ID3D11ShaderResourceView *) * num);
+  for(xsize i = 0; i < num; ++i)
+    {
+    const XD3DShaderResourceImpl *b = s[i]->data<XD3DShaderResourceImpl>();
+    buffers[i] = b->view.Get();
+    }
+
+  D3D(r)->_d3dContext->PSSetShaderResources(
+    D3DRendererImpl::UserPSContantBufferOffset + index,
+    num,
+    buffers
+    );
+  }
+
+void setVertexShaderResource(
+    Renderer *r,
+    Shader *,
+    xsize index,
+    xsize num,
+    const Resource **s)
+  {
+  ID3D11ShaderResourceView **buffers =
+    (ID3D11ShaderResourceView **)alloca(sizeof(ID3D11ShaderResourceView *) * num);
+  for(xsize i = 0; i < num; ++i)
+    {
+    const XD3DShaderResourceImpl *b = s[i]->data<XD3DShaderResourceImpl>();
+    buffers[i] = b->view.Get();
+    }
+
+  D3D(r)->_d3dContext->VSSetShaderResources(
+    D3DRendererImpl::UserVSContantBufferOffset + index,
+    num,
     buffers
     );
   }
@@ -402,6 +463,8 @@ void setShader(Renderer *r, const Shader *s, const ShaderVertexLayout *layout)
     buffers
     );
 
+  ID3D11SamplerState *smplr[] = { D3D(r)->_sampler._sampler.Get() };
+  D3D(r)->_d3dContext->PSSetSamplers(0, 1, smplr);
 
   const XD3DShaderInputLayout* lay = layout->data<XD3DShaderInputLayout>();
   D3D(r)->_d3dContext->IASetInputLayout(lay->_inputLayout.Get());
@@ -425,6 +488,7 @@ Renderer *D3DRenderer::createD3DRenderer(IUnknown *window)
     {
       createGeometry,
       createIndexGeometry,
+      createTexture,
       createShader,
       createVertexShaderComponent,
       createFragmentShaderComponent,
@@ -434,6 +498,7 @@ Renderer *D3DRenderer::createD3DRenderer(IUnknown *window)
     {
       destroy<Geometry, XD3DVertexBufferImpl>,
       destroy<IndexGeometry, XD3DIndexBufferImpl>,
+      destroy<Texture2D, XD3DTexture2DImpl>,
       destroy<Shader, XD3DSurfaceShaderImpl>,
       destroy<ShaderVertexLayout, XD3DShaderInputLayout>,
       destroy<ShaderVertexComponent, XD3DVertexShaderImpl>,
@@ -448,6 +513,8 @@ Renderer *D3DRenderer::createD3DRenderer(IUnknown *window)
       setProjectionTransform,
       setFragmentShaderConstantBuffer,
       setVertexShaderConstantBuffer,
+      setFragmentShaderResource,
+      setVertexShaderResource,
       setShader,
       setRasteriserState,
       setFramebuffer,

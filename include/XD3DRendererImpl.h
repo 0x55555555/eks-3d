@@ -8,6 +8,7 @@
 #include <DirectXMath.h>
 #include "wrl/client.h"
 #include "XRenderer.h"
+#include "XTexture.h"
 #include "XRasteriserState.h"
 
 namespace Eks
@@ -94,11 +95,32 @@ public:
   xsize count;
   };
 
+class XD3DShaderResourceImpl
+  {
+public:
+  bool create(ID3D11Device1 *dev, const D3D11_SHADER_RESOURCE_VIEW_DESC *desc);
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> resource;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> view;
+  };
+
+class XD3DTexture2DImpl : public XD3DShaderResourceImpl
+  {
+public:
+  bool create(ID3D11Device1 *dev, xsize width, xsize height, xuint32 format, void *data);
+  };
+
 class XD3DVertexBufferImpl : public XD3DBufferImpl
   {
 public:
   xsize elementSize;
   xsize elementCount;
+  };
+
+class XD3DSamplerImpl
+  {
+public:
+  bool create(ID3D11Device *dev);
+  ComPtr<ID3D11SamplerState> _sampler;
   };
 
 template <typename T> class XD3DTypedBufferImpl : public XD3DBufferImpl
@@ -158,6 +180,9 @@ public:
   bool _updateWorldTransformData;
   XD3DTypedBufferImpl<WorldTransformData> _worldTransformData;
   XD3DTypedBufferImpl<Eks::Matrix4x4> _modelTransformData;
+
+
+  XD3DSamplerImpl _sampler;
 
   void setRenderTarget(XD3DRenderTargetImpl *target);
   void clearRenderTarget();

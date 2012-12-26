@@ -108,6 +108,8 @@ bool D3DRendererImpl::createResources()
 
   _modelTransformData.data = Matrix4x4::Identity();
 
+  _sampler.create(device.Get());
+
   return true;
   }
 
@@ -459,6 +461,88 @@ bool D3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
         );
 
   _d3dContext->RSSetViewports(1, &viewport);
+  return true;
+  }
+
+bool XD3DShaderResourceImpl::create(ID3D11Device1 *dev, const D3D11_SHADER_RESOURCE_VIEW_DESC *desc)
+  {
+  if(failedCheck(dev->CreateShaderResourceView(resource.Get(), desc, &view)))
+    {
+    return false;
+    }
+
+  return true;
+  }
+
+bool XD3DTexture2DImpl::create(ID3D11Device1 *dev, xsize width, xsize height, xuint32 format, void *inp)
+  {
+  struct Format
+    {
+    DXGI_FORMAT format;
+    xuint8 bpp;
+    };
+
+  Format formatMap[] =
+    {
+    { DXGI_FORMAT_R8G8B8A8_UNORM, sizeof(xuint8) * 4 }
+    };
+  xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == Texture2D::FormatCount);
+
+  D3D11_TEXTURE2D_DESC desc;
+  desc.Width = width;
+  desc.Height = height;
+  desc.MipLevels = 1;
+  desc.ArraySize = 1;
+  desc.Format = formatMap[format].format;
+  desc.SampleDesc.Count = 1;
+  desc.SampleDesc.Quality = 0;
+  desc.Usage = D3D11_USAGE_IMMUTABLE;
+  desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+  desc.CPUAccessFlags = 0;
+  desc.MiscFlags = 0;
+
+  D3D11_SUBRESOURCE_DATA data;
+  data.pSysMem = inp;
+  data.SysMemPitch = width * formatMap[format].bpp;
+  data.SysMemSlicePitch = 0;
+
+  if(failedCheck(dev->CreateTexture2D(&desc, &data, &resource)))
+    {
+    return false;
+    }
+
+  D3D11_SHADER_RESOURCE_VIEW_DESC rscDesc;
+  rscDesc.Format = desc.Format;
+  rscDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+  rscDesc.Texture2D.MipLevels = -1;
+  rscDesc.Texture2D.MostDetailedMip = 0;
+
+  return XD3DShaderResourceImpl::create(dev, &rscDesc);
+  }
+
+bool XD3DSamplerImpl::create(ID3D11Device *dev)
+  {
+  D3D11_SAMPLER_DESC desc;
+
+  desc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+  desc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
+  desc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
+  desc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
+  desc.MipLODBias = 0;
+  desc.MaxAnisotropy = 16;
+  desc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+  desc.BorderColor[0] = 0.0f;
+  desc.BorderColor[1] = 0.0f;
+  desc.BorderColor[2] = 0.0f;
+  desc.BorderColor[3] = 0.0f;
+  desc.MinLOD = 0.0f;
+  desc.MaxLOD = D3D11_FLOAT32_MAX;
+
+  if(failedCheck(dev->CreateSamplerState(&desc, &_sampler)))
+    {
+    return false;
+    }
+
   return true;
   }
 
