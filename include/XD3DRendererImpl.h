@@ -55,20 +55,10 @@ public:
   ComPtr<ID3D11RasterizerState1> _state;
   };
 
-class XD3DFrameBufferImpl
-  {
-public:
-  void discard();
-  bool create(ID3D11Device1 *context, IDXGISwapChain1 *swapChain);
-
-  ComPtr<ID3D11Texture2D> colour;
-  ComPtr<ID3D11Texture2D> depthStencil;
-  };
-
 class XD3DRenderTargetImpl
   {
 public:
-  bool create(ID3D11Device1 *context, XD3DFrameBufferImpl *fb);
+  bool create(ID3D11Device1 *context, ID3D11Texture2D *col, ID3D11Texture2D *depSte);
   void clear(ID3D11DeviceContext1 *context,
              bool clearColour, bool clearDepth,
              const float *col,
@@ -78,6 +68,16 @@ public:
 
   ComPtr<ID3D11RenderTargetView> renderTargetView;
   ComPtr<ID3D11DepthStencilView> depthStencilView;
+  };
+
+class XD3DFrameBufferImpl : public XD3DRenderTargetImpl
+  {
+public:
+  void discard();
+  bool create(ID3D11Device1 *context, IDXGISwapChain1 *swapChain);
+
+  ComPtr<ID3D11Texture2D> colour;
+  ComPtr<ID3D11Texture2D> depthStencil;
   };
 
 class XD3DBufferImpl
@@ -138,7 +138,7 @@ public:
   T data;
   };
 
-class XD3DSwapChainImpl : public XD3DRenderTargetImpl
+class XD3DSwapChainImpl : public XD3DFrameBufferImpl
   {
 public:
   void present(ID3D11DeviceContext1 *context, bool *lostDevice);
@@ -146,7 +146,6 @@ public:
   void discard();
 
   ComPtr<IDXGISwapChain1> swapChain;
-  XD3DFrameBufferImpl framebuffer;
   IUnknown *window;
   };
 
@@ -168,8 +167,6 @@ public:
   ComPtr<ID3D11DeviceContext1> _d3dContext;
   IUnknown *_window;
 
-  XD3DSwapChainImpl _renderTarget;
-
   Eks::Colour _clearColour;
 
   struct WorldTransformData
@@ -187,7 +184,7 @@ public:
   void setRenderTarget(XD3DRenderTargetImpl *target);
   void clearRenderTarget();
   bool createResources();
-  bool resize(xuint32 w, xuint32 h, int rotation);
+  bool resize(XD3DSwapChainImpl *impl, xuint32 w, xuint32 h, xuint32 rotation);
   };
 
 bool failedCheck(HRESULT res);

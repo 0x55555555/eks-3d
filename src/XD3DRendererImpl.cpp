@@ -163,6 +163,8 @@ bool XD3DRasteriserStateImpl::create(ID3D11Device1 *device, const D3D11_RASTERIZ
 
 void XD3DFrameBufferImpl::discard()
   {
+  XD3DRenderTargetImpl::discard();
+
   colour = nullptr;
   depthStencil = nullptr;
   }
@@ -206,10 +208,10 @@ bool XD3DFrameBufferImpl::create(ID3D11Device1 *dev, IDXGISwapChain1 *swapChain)
   return true;
   }
 
-bool XD3DRenderTargetImpl::create(ID3D11Device1 *dev, XD3DFrameBufferImpl *fb)
+bool XD3DRenderTargetImpl::create(ID3D11Device1 *dev, ID3D11Texture2D *col, ID3D11Texture2D *depSte)
   {
   if(failedCheck(dev->CreateRenderTargetView(
-          fb->colour.Get(),
+          col,
           nullptr,
           &renderTargetView
           )))
@@ -221,7 +223,7 @@ bool XD3DRenderTargetImpl::create(ID3D11Device1 *dev, XD3DFrameBufferImpl *fb)
 
   CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
   if(failedCheck(dev->CreateDepthStencilView(
-          fb->depthStencil.Get(),
+          depSte,
           &depthStencilViewDesc,
           &depthStencilView
           )))
@@ -423,12 +425,12 @@ bool XD3DSwapChainImpl::resize(
     return false;
     }
 
-  if(!framebuffer.create(dev, swapChain.Get()))
+  if(!XD3DFrameBufferImpl::create(dev, swapChain.Get()))
     {
     return false;
     }
 
-  if(!create(dev, &framebuffer))
+  if(!XD3DRenderTargetImpl::create(dev, colour.Get(), depthStencil.Get()))
     {
     return false;
     }
@@ -438,18 +440,17 @@ bool XD3DSwapChainImpl::resize(
 
 void XD3DSwapChainImpl::discard()
   {
-  XD3DRenderTargetImpl::discard();
-  framebuffer.discard();
+  XD3DFrameBufferImpl::discard();
   }
 
-bool D3DRendererImpl::resize(xuint32 w, xuint32 h, int rotation)
+bool D3DRendererImpl::resize(XD3DSwapChainImpl *impl, xuint32 w, xuint32 h, xuint32 rotation)
   {
   // clear the state.
   clearRenderTarget();
   _d3dContext->ClearState();
   _d3dContext->Flush();
 
-  _renderTarget.resize(_d3dDevice.Get(), _window, w, h, rotation);
+  impl->resize(_d3dDevice.Get(), _window, w, h, rotation);
 
   // Set the rendering viewport to target the entire window.
   CD3D11_VIEWPORT viewport(

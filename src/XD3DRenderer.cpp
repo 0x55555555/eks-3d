@@ -3,6 +3,7 @@
 #include <DirectXMath.h>
 #include "XD3DRenderer.h"
 #include "XGeometry.h"
+#include "XFramebuffer.h"
 #include "XTexture.h"
 #include "XD3DRendererImpl.h"
 #include "XRenderer.h"
@@ -17,36 +18,45 @@ namespace Eks
 
 #define D3D(r) static_cast<D3DRendererImpl*>(r)
 
-void clear(Renderer *r, int clear)
+void clear(Renderer *r, FrameBuffer *buffer, xuint32 clear)
   {
-  D3D(r)->_renderTarget.clear(
+  XD3DFrameBufferImpl *fb = buffer->data<XD3DFrameBufferImpl>();
+  fb->clear(
         D3D(r)->_d3dContext.Get(),
-        (clear&ClearColour) != 0,
-        (clear&ClearDepth) != 0,
+        (clear&FrameBuffer::ClearColour) != 0,
+        (clear&FrameBuffer::ClearDepth) != 0,
         D3D(r)->_clearColour.data(),
         1.0f,
         0);
   }
 
-void beginFrame(Renderer *r)
+void beginFrame(Renderer *r, FrameBuffer *buffer)
   {
   if(D3D(r)->_updateWorldTransformData)
     {
     D3D(r)->_worldTransformData.update(D3D(r)->_d3dContext.Get());
     }
 
-  clear(r, ClearColour|ClearDepth);
-  D3D(r)->setRenderTarget(&D3D(r)->_renderTarget);
+  XD3DFrameBufferImpl* framebuffer = buffer->data<XD3DFrameBufferImpl>();
+
+  clear(r, buffer, FrameBuffer::ClearColour|FrameBuffer::ClearDepth);
+  D3D(r)->setRenderTarget(framebuffer);
   }
 
-void endFrame(Renderer *r, bool *deviceListOptional)
+void endFrame(Renderer *, FrameBuffer *)
   {
-  D3D(r)->_renderTarget.present(D3D(r)->_d3dContext.Get(), deviceListOptional);
   }
 
-bool resize(Renderer *r, xuint32 w, xuint32 h, RendererRotation rotation)
+void present(Renderer *r, ScreenFrameBuffer *screenBuffer, bool *deviceListOptional)
   {
-  return D3D(r)->resize(w, h, rotation);
+  XD3DSwapChainImpl *swap = screenBuffer->data<XD3DSwapChainImpl>();
+  swap->present(D3D(r)->_d3dContext.Get(), deviceListOptional);
+  }
+
+bool resize(Renderer *r, ScreenFrameBuffer *screenBuffer, xuint32 w, xuint32 h, xuint32 rotation)
+  {
+  XD3DSwapChainImpl *swap = screenBuffer->data<XD3DSwapChainImpl>();
+  return D3D(r)->resize(swap, w, h, rotation);
   }
 
 void setTransform(Renderer *r, const Transform &tr)
@@ -58,6 +68,18 @@ void setTransform(Renderer *r, const Transform &tr)
 void setClearColour(Renderer *r, const Colour &col)
   {
   D3D(r)->_clearColour = col;
+  }
+
+bool createFramebuffer(
+    Renderer *r,
+    FrameBuffer *buffer,
+    xuint32 w,
+    xuint32 h,
+    xuint32 colourFormat,
+    xuint32 depthFormat)
+  {
+  xAssertFail();
+  return false;
   }
 
 bool createShader(Renderer *, Shader *s, ShaderVertexComponent *v, ShaderFragmentComponent *f)
@@ -342,10 +364,12 @@ void drawIndexedTriangles(Renderer *r, const IndexGeometry *indices, const Geome
     );
   }
 
-template <typename T, typename U> void destroy(Renderer *, T *g )
+template <typename T, typename U> void destroy(Renderer *, T *g)
   {
-  U *geo = g->data<U>();
-  geo->~U();
+  if(g->isValid())
+    {
+    g->destroy<U>();
+    }
   }
 
 void setViewTransform(Renderer *r, const Transform &v)
@@ -477,15 +501,12 @@ void setRasteriserState(Renderer *r, const RasteriserState *s)
   D3D(r)->_d3dContext->RSSetState(ras->_state.Get());
   }
 
-void setFramebuffer(Renderer *, const Framebuffer *)
-  {
-  }
-
-Renderer *D3DRenderer::createD3DRenderer(IUnknown *window)
+Renderer *D3DRenderer::createD3DRenderer(IUnknown *window, ScreenFrameBuffer *buffer)
   {
   detail::RendererFunctions fns =
   {
     {
+      createFramebuffer,
       createGeometry,
       createIndexGeometry,
       createTexture,
@@ -496,6 +517,7 @@ Renderer *D3DRenderer::createD3DRenderer(IUnknown *window)
       createShaderConstantData
     },
     {
+      destroy<FrameBuffer, XD3DFrameBufferImpl>,
       destroy<Geometry, XD3DVertexBufferImpl>,
       destroy<IndexGeometry, XD3DIndexBufferImpl>,
       destroy<Texture2D, XD3DTexture2DImpl>,
@@ -517,27 +539,37 @@ Renderer *D3DRenderer::createD3DRenderer(IUnknown *window)
       setVertexShaderResource,
       setShader,
       setRasteriserState,
-      setFramebuffer,
       setTransform
     },
     {
       drawIndexedTriangles,
-      drawTriangles
+      drawTriangles,
+      debugRenderLocator
     },
-    clear,
-    resize,
-    beginFrame,
-    endFrame,
-    debugRenderLocator
+    {
+      clear,
+      resize,
+      beginFrame,
+      endFrame,
+      present
+    }
   };
 
   D3DRendererImpl *r = new D3DRendererImpl(window, fns);
 
+  xAssert(!buffer->isValid());
+  XD3DSwapChainImpl *frame = buffer->data<XD3DSwapChainImpl>();
+  new(frame) XD3DSwapChainImpl();
+  buffer->setRenderer(r);
+
+
   return r;
   }
 
-void D3DRenderer::destroyD3DRenderer(Renderer *r)
+void D3DRenderer::destroyD3DRenderer(Renderer *r, ScreenFrameBuffer *buffer)
   {
+  buffer->setRenderer(0);
+  destroy<ScreenFrameBuffer, XD3DSwapChainImpl>(r, buffer);
   delete D3D(r);
   }
 

@@ -4,78 +4,81 @@
 namespace Eks
 {
 
-XAbstractFramebuffer::~XAbstractFramebuffer()
+FrameBuffer::FrameBuffer(
+    Renderer *r,
+    xuint32 width,
+    xuint32 height,
+    ColourFormat colour,
+    DepthStencilFormat dsF)
   {
-  }
-
-XFramebuffer::XFramebuffer( )
-    : _width( 0 ), _height( 0 ), _options( Colour|Depth ), _colourFormat( RGBA|Byte ), _depthFormat( Byte ), _internal( 0 ), _renderer( 0 )
-  {
-  }
-
-XFramebuffer::XFramebuffer( int c, int d )
-    : _width( 0 ), _height( 0 ), _options( Colour|Depth ), _colourFormat( c ), _depthFormat( d ), _internal( 0 ), _renderer( 0 )
-  {
-  }
-
-XFramebuffer::XFramebuffer( int options, int c, int d )
-    : _width( 0 ), _height( 0 ), _options( options ), _colourFormat( c ), _depthFormat( d ), _internal( 0 ), _renderer( 0 )
-  {
-  }
-
-XFramebuffer::~XFramebuffer()
-  {
-  clean();
-  }
-
-void XFramebuffer::clean() const
-  {
-  if( _internal )
+  if(r)
     {
-    xAssert(_renderer);
-    //_renderer->destroyFramebuffer(_internal);
-    _internal = 0;
+    delayedCreate(*this, r, width, height, colour, dsF);
     }
   }
 
-
-void XFramebuffer::setOptions( int o )
+FrameBuffer::~FrameBuffer()
   {
-  clean();
-  _options = o;
-  }
-
-void XFramebuffer::setColourFormat( int f )
-  {
-  clean();
-  _colourFormat = f;
-  }
-
-void XFramebuffer::setDepthFormat( int f )
-  {
-  clean();
-  _depthFormat = f;
-  }
-
-void XFramebuffer::setSize( xuint32 w, xuint32 h )
-  {
-  clean();
-  _width = w;
-  _height = h;
-  }
-
-XAbstractFramebuffer *XFramebuffer::internal() const
-  {
-  return _internal;
-  }
-
-void XFramebuffer::prepareInternal( Renderer *r )const
-  {
-  if( !_internal )
+  if(_renderer)
     {
-    _renderer = r;
-    //_internal = r->getFramebuffer( _options, _colourFormat, _depthFormat, _width, _height );
+    _renderer->functions().destroy.framebuffer(_renderer, this);
     }
   }
 
+bool FrameBuffer::delayedCreate(
+    FrameBuffer &ths,
+    Renderer *r,
+    xuint32 width,
+    xuint32 height,
+    ColourFormat colour,
+    DepthStencilFormat dsF)
+  {
+  xAssert(width > 0);
+  xAssert(height > 0);
+  ths._renderer = r;
+  return r->functions().create.framebuffer(r, &ths, width, height, colour, dsF);
+  }
+
+void FrameBuffer::clear(xuint32 mode)
+  {
+  xAssert(_renderer);
+  _renderer->functions().frame.clear(_renderer, this, mode);
+  }
+
+ScreenFrameBuffer::ScreenFrameBuffer()
+  {
+  }
+
+ScreenFrameBuffer::~ScreenFrameBuffer()
+  {
+  xAssert(!isValid());
+  }
+
+void ScreenFrameBuffer::setRenderer(Renderer *r)
+  {
+  _renderer = r;
+  }
+
+void ScreenFrameBuffer::present(bool *deviceLost)
+  {
+  return _renderer->functions().frame.present(_renderer, this, deviceLost);
+  }
+
+bool ScreenFrameBuffer::resize(xuint32 w, xuint32 h, Rotation rotation)
+  {
+  xAssert(_renderer)
+  return _renderer->functions().frame.resize(_renderer, this, w, h, rotation);
+  }
+
+FrameBufferRenderFrame::FrameBufferRenderFrame(Renderer *r, FrameBuffer *buffer)
+    : _renderer(r),
+      _framebuffer(buffer)
+  {
+  _renderer->functions().frame.begin(_renderer, _framebuffer);
+  }
+
+FrameBufferRenderFrame::~FrameBufferRenderFrame()
+  {
+  _renderer->functions().frame.end(_renderer, _framebuffer);
+  }
 }

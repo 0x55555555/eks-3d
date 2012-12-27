@@ -16,7 +16,8 @@ class Geometry;
 class IndexGeometry;
 class ShaderVertexLayout;
 class ShaderVertexLayoutDescription;
-class Framebuffer;
+class FrameBuffer;
+class ScreenFrameBuffer;
 class ShaderVertexComponent;
 class ShaderFragmentComponent;
 class Geometry;
@@ -32,26 +33,20 @@ enum RendererDebugLocatorMode
   DebugLocatorClearShader=1
   };
 
-enum RendererRotation
-  {
-  RotateNone,
-  Rotate90,
-  Rotate180,
-  Rotate270
-  };
-
-enum RendererClearMode
-  {
-  ClearColour = 1,
-  ClearDepth = 2
-  };
-
 namespace detail
 {
 
 // creation for types
 struct RendererCreateFunctions
   {
+  bool (*framebuffer)(
+      Renderer *r,
+      FrameBuffer *b,
+      xuint32 w,
+      xuint32 h,
+      xuint32 colourFormat,
+      xuint32 depthFormat);
+
   bool (*geometry)(
       Renderer *r,
       Geometry *g,
@@ -110,6 +105,7 @@ struct RendererCreateFunctions
 // destroy types
 struct RendererDestroyFunctions
   {
+  void (*framebuffer)(Renderer *r, FrameBuffer* s);
   void (*geometry)(Renderer *r, Geometry *);
   void (*indexGeometry)(Renderer *r, IndexGeometry *);
   void (*texture2D)(Renderer *r, Texture2D* s);
@@ -164,9 +160,6 @@ struct RendererSetFunctions
   // set rasteriser
   void (*rasteriserState)(Renderer *r, const RasteriserState *state);
 
-  // bind the given framebuffer for drawing
-  void (*framebuffer)(Renderer *r, const Framebuffer *);
-
   void (*transform)(Renderer *r, const Transform &);
   };
 
@@ -175,6 +168,16 @@ struct RendererDrawFunctions
   // draw the given geometry
   void (*indexedTriangles)(Renderer *r, const IndexGeometry *indices, const Geometry *vert);
   void (*triangles)(Renderer *r, const Geometry *vert);
+  void (*drawDebugLocator)(Renderer *r, RendererDebugLocatorMode);
+  };
+
+struct RendererFramebufferFunctions
+  {
+  void (*clear)(Renderer *r, FrameBuffer *buffer, xuint32 mode);
+  bool (*resize)(Renderer *r, ScreenFrameBuffer *buffer, xuint32 w, xuint32 h, xuint32 rotation);
+  void (*begin)(Renderer *r, FrameBuffer *buffer);
+  void (*end)(Renderer *r, FrameBuffer *buffer);
+  void (*present)(Renderer *r, ScreenFrameBuffer *buffer, bool *deviceLost);
   };
 
 struct RendererFunctions
@@ -183,33 +186,15 @@ struct RendererFunctions
   RendererDestroyFunctions destroy;
   RendererSetFunctions set;
   RendererDrawFunctions draw;
-
-  void (*clear)(Renderer *r, int);
-  bool (*resize)(Renderer *r, xuint32 w, xuint32 h, RendererRotation rotation);
-  void (*beginFrame)(Renderer *r);
-  void (*endFrame)(Renderer *r, bool *deviceLost);
-
-  void (*debugRenderLocator)(Renderer *r, RendererDebugLocatorMode);
+  RendererFramebufferFunctions frame;
   };
 
 }
-
-class RendererRenderFrame
-  {
-public:
-  RendererRenderFrame(Renderer *r, bool *deviceLost);
-  ~RendererRenderFrame();
-
-private:
-  Renderer *_renderer;
-  bool *_deviceLost;
-  };
 
 class EKS3D_EXPORT Renderer
   {
 public:
   typedef RendererStackTransform StackTransform;
-  typedef RendererRenderFrame RenderFrame;
 
   void setProjectionTransform(const ComplexTransform &tr)
     {
@@ -251,11 +236,6 @@ public:
     functions().draw.indexedTriangles(this, i, g);
     }
 
-  void resize(xuint32 w, xuint32 h, RendererRotation rotation)
-    {
-    functions().resize(this, w, h, rotation);
-    }
-
 XProperties:
   XRORefProperty(detail::RendererFunctions, functions);
 
@@ -263,18 +243,6 @@ protected:
   ~Renderer() { }
   XWriteProperty(detail::RendererFunctions, functions, setFunctions)
   };
-
-
-inline RendererRenderFrame::RendererRenderFrame(Renderer *r, bool *deviceLost)
-    : _renderer(r), _deviceLost(deviceLost)
-  {
-  _renderer->functions().beginFrame(_renderer);
-  }
-
-inline RendererRenderFrame::~RendererRenderFrame()
-  {
-  _renderer->functions().endFrame(_renderer, _deviceLost);
-  }
 
 }
 

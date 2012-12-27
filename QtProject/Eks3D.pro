@@ -22,14 +22,14 @@ SOURCES += \
     ../src/XPlane.cpp \
     ../src/XLine.cpp \
     ../src/XTriangle.cpp \
-    ../src/XFramebuffer.cpp \
     ../src/XAbstractCanvas.cpp \
     ../src/X2DCanvas.cpp \
     ../src/XAbstractRenderModel.cpp \
     ../src/XAbstractCanvasController.cpp \
     ../src/XCameraCanvasController.cpp \
     ../src/XObjLoader.cpp \
-    ../src/XRasteriserState.cpp
+    ../src/XRasteriserState.cpp \
+    ../src/XFrameBuffer.cpp
 
 HEADERS += \
     ../include/X3DGlobal.h \
@@ -45,7 +45,6 @@ HEADERS += \
     ../include/XPlane.h \
     ../include/XLine.h \
     ../include/XTriangle.h \
-    ../include/XFramebuffer.h \
     ../include/XAbstractCanvas.h \
     ../include/X2DCanvas.h \
     ../include/XAbstractRenderModel.h \
@@ -53,7 +52,8 @@ HEADERS += \
     ../include/XAbstractCanvasController.h \
     ../include/XCameraCanvasController.h \
     ../include/XObjLoader.h \
-    ../include/XRasteriserState.h
+    ../include/XRasteriserState.h \
+    ../include/XFrameBuffer.h
 
 
 INCLUDEPATH += ../include/ \
