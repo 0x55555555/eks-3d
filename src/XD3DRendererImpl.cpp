@@ -171,7 +171,6 @@ bool XD3DFrameBufferImpl::create(ID3D11Device1 *dev, IDXGISwapChain1 *swapChain)
   {
   xAssert(swapChain);
 
-
   // Create a render target view of the swap chain back buffer.
   if(failedCheck(swapChain->GetBuffer(
           0,

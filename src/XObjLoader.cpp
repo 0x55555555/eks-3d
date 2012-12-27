@@ -77,17 +77,101 @@ void readVector(
 
 struct ObjLoader::ObjElement
   {
+  ShaderVertexLayoutDescription::Semantic semantic;
   const char* name;
   xsize components;
-  void (*read)(Eks::String &scratch, const ObjLoader::LineCache &line, xsize index, Vector<ElementVector>* data);
-  void (*write)(const ElementVector &elem, Vector<xuint8> *data);
+  void (*read)(
+      Eks::String &scratch,
+      const ObjLoader::LineCache &line,
+      xsize index,
+      Vector<ElementVector>* data);
+  void (*write)(
+      const ElementVector &elem,
+      Vector<xuint8> *data);
+  void (*compute)(
+      ObjLoader::ElementData *elements,
+      xsize itemCount,
+      Vector<VectorI3D> *triangles,
+      xsize i);
   };
+
+namespace
+{
+
+void computeNull(
+    ObjLoader::ElementData *elements,
+    xsize,
+    Vector<VectorI3D> *triangles,
+    xsize i)
+  {
+  xAssertFail();
+  ObjLoader::ElementData &el = elements[i];
+
+  el.data.clear();
+  el.data << ObjLoader::ElementVector::Zero();
+
+  for(xsize triIndex = 0, s = triangles->size(); triIndex < s; ++triIndex)
+    {
+    VectorI3D &tri = triangles->at(triIndex);
+    tri[i] = 0;
+    }
+  }
+
+void computeNormal(
+    ObjLoader::ElementData *elements,
+    xsize itemCount,
+    Vector<VectorI3D> *triangles,
+    xsize elIdx)
+  {
+  xsize posIdx = X_SIZE_SENTINEL;
+  ObjLoader::ElementData *position = 0;
+  for(xsize i = 0; i < itemCount; ++i)
+    {
+    ObjLoader::ElementData *data = &elements[i];
+    if(data->desc->semantic == ShaderVertexLayoutDescription::Position)
+      {
+      posIdx = i;
+      position = data;
+      }
+    }
+
+  if(!position)
+    {
+    xAssertFail();
+    return;
+    }
+
+  ObjLoader::ElementData &el = elements[elIdx];
+
+  el.data.clear();
+
+  xAssert((triangles->size() % 3) == 0);
+  for(xsize triIndex = 0, s = triangles->size(); triIndex < s; triIndex+=3)
+    {
+    VectorI3D &triA = triangles->at(triIndex);
+    VectorI3D &triB = triangles->at(triIndex+1);
+    VectorI3D &triC = triangles->at(triIndex+2);
+
+    xsize newNorm = el.data.size();
+
+    Vector3D a = position->data[triA[posIdx]];
+    Vector3D b = position->data[triB[posIdx]];
+    Vector3D c = position->data[triC[posIdx]];
+
+    el.data << (b-a).cross(c-a).normalized();
+
+    triA[elIdx] = newNorm;
+    triB[elIdx] = newNorm;
+    triC[elIdx] = newNorm;
+    }
+  }
+}
 
 const ObjLoader::ObjElement elementDescriptionsImpl[] =
   {
-    { "v", 3, readVector<3>, writeVector<3>  },
-    { "n", 3, readVector<3>, writeVector<3> },
-    { "vt", 2, readVector<2>, writeVector<2>  },
+    { ShaderVertexLayoutDescription::Position, "v", 3, readVector<3>, writeVector<3>, computeNull  },
+    { ShaderVertexLayoutDescription::Normal, "n", 3, readVector<3>, writeVector<3>, computeNormal },
+    { ShaderVertexLayoutDescription::TextureCoordinate, "vt", 2, readVector<2>, writeVector<2>, computeNull },
   };
 
 const ObjLoader::ObjElement *elementDescriptions[] =
@@ -120,18 +204,32 @@ void ObjLoader::bake(
   {
   for(int i = 0, s = unbakedTriangles.size(); i < s; ++i)
     {
-    const VectorI3D idx = unbakedTriangles[i];
+    const VectorI3D &idx = unbakedTriangles[i];
 
     for(xsize elIdx = 0; elIdx < elementCount; ++elIdx)
       {
       const ElementData &element(elements[elIdx]);
-      element.desc->write(element.data[idx(elIdx)], bakedData);
+      xsize index = idx(elIdx);
+      element.desc->write(element.data[index], bakedData);
       }
     }
   }
 
-bool ObjLoader::readIndices(const LineCache &arr, xsize start, xsize *end, VectorI3D &indices)
+bool ObjLoader::readIndices(
+    const LineCache &arr,
+    xsize start,
+    xsize *end,
+    VectorI3D &indices,
+    const ElementData *elementData,
+    xsize elementCount)
   {
+  const ShaderVertexLayoutDescription::Semantic SemanticMap[] =
+    {
+    ShaderVertexLayoutDescription::Position,
+    ShaderVertexLayoutDescription::TextureCoordinate,
+    ShaderVertexLayoutDescription::Normal
+    };
+
   indices = VectorI3D::Zero();
 
   xsize firstSpace = start;
@@ -144,13 +242,35 @@ bool ObjLoader::readIndices(const LineCache &arr, xsize start, xsize *end, Vecto
   xsize count = 0;
   xsize pos = start;
   xsize sepEnd = start;
-  while((sepEnd = arr.indexOf(separator, sepEnd+1)) != X_SIZE_SENTINEL && count < 3 && sepEnd < nextSpace)
+  bool doneLast = false;
+  while(((sepEnd = arr.indexOf(separator, sepEnd+1)) != X_SIZE_SENTINEL && count < 3 && sepEnd < nextSpace) || !doneLast)
     {
+    if(sepEnd >= nextSpace)
+      {
+      doneLast = true;
+      sepEnd = firstSpace;
+      }
     _scratchString.mid(arr, pos, sepEnd - pos);
+
+    ShaderVertexLayoutDescription::Semantic semantic = SemanticMap[count++];
+    xsize index = X_SIZE_SENTINEL;
+    for(xsize i = 0; i < elementCount; ++i)
+      {
+      if(elementData[i].desc->semantic == semantic)
+        {
+        index = i;
+        break;
+        }
+      }
+
+    if(index >= elementCount)
+      {
+      continue;
+      }
 
     bool ok = true;
     int val = _scratchString.toType<int>(&ok);
-    indices(count++) = ok ? (val - 1) : 0;
+    indices(index) = ok ? (val - 1) : 0;
 
     pos = sepEnd + 1;
     }
@@ -159,12 +279,6 @@ bool ObjLoader::readIndices(const LineCache &arr, xsize start, xsize *end, Vecto
     {
     return false;
     }
-
-  _scratchString.mid(arr, pos, firstSpace - pos);
-  
-  bool ok = true;
-  int val = _scratchString.toType<int>(&ok);
-  indices(count++) = ok ? (val - 1) : 0;
 
   *end = nextSpace;
   return true;
@@ -204,7 +318,6 @@ void ObjLoader::load(
   xAssert(tris);
   xAssert(vertexSize);
   xAssert(elementData);
-  xAssert(itemCount <= MaxElements);
 
   LineCache line(ExpectedLineLength, ' ', _allocator);
 
@@ -285,7 +398,7 @@ void ObjLoader::load(
       VectorI3D indices;
       while(
           pos < line.length() &&
-          (valid = readIndices(line, pos, &pos, indices)) == true &&
+          (valid = readIndices(line, pos, &pos, indices, elementData, itemCount)) == true &&
           valid)
         {
         tempPoly << indices;
@@ -296,6 +409,23 @@ void ObjLoader::load(
         (*tris) << tempPoly[0] << tempPoly[i+1] << tempPoly[i+2];
         }
       }
+    }
+  }
+
+void ObjLoader::computeUnusedElements(
+    ObjLoader::ElementData *elements,
+    xsize itemCount,
+    Vector<VectorI3D> *triangles)
+  {
+  for(xsize i = 0; i < itemCount; ++i)
+    {
+    ObjLoader::ElementData &el = elements[i];
+    if(el.data.size() != 0)
+      {
+      continue;
+      }
+
+    el.desc->compute(elements, itemCount, triangles, i);
     }
   }
 

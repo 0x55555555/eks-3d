@@ -21,8 +21,7 @@ public:
     ExpectedVertices = 1024,
     ExpectedLineLength = 512,
     ExpectedFloatLength = 32,
-    MaxComponent = 3,
-    MaxElements = 2
+    MaxComponent = 3
     };
 
   typedef Vector<XChar, ExpectedLineLength> LineCache;
@@ -41,8 +40,13 @@ public:
     xsize dataSize,
     const ShaderVertexLayoutDescription::Semantic *items,
     xsize itemCount,
-    Vector<VectorI3D> *triangles, xsize *vertexSize,
+    Vector<VectorI3D> *triangles,
+    xsize *vertexSize,
     ElementData *elements);
+
+  void computeUnusedElements(ElementData *elements,
+      xsize itemCount,
+      Vector<VectorI3D> *triangles);
 
   void bake(const Vector<VectorI3D> &triangles,
     const ElementData *elementData,
@@ -58,7 +62,13 @@ private:
     xsize itemCount,
     xsize *foundItem);
 
-  bool readIndices(const LineCache &, xsize start, xsize *end, VectorI3D &indices);
+  bool readIndices(
+    const LineCache &,
+    xsize start,
+    xsize *end,
+    VectorI3D &indices,
+    const ElementData *elementData,
+    xsize elementCount);
 
   Eks::AllocatorBase *_allocator;
   Eks::String _scratchString;
