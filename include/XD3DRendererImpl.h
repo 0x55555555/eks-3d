@@ -58,7 +58,7 @@ public:
 class XD3DRenderTargetImpl
   {
 public:
-  bool create(ID3D11Device1 *context, ID3D11Texture2D *col, ID3D11Texture2D *depSte);
+  bool create(ID3D11Device1 *context, Texture2D *col, Texture2D *depSte);
   void clear(ID3D11DeviceContext1 *context,
              bool clearColour, bool clearDepth,
              const float *col,
@@ -73,11 +73,10 @@ public:
 class XD3DFrameBufferImpl : public XD3DRenderTargetImpl
   {
 public:
-  void discard();
   bool create(ID3D11Device1 *context, IDXGISwapChain1 *swapChain);
 
-  ComPtr<ID3D11Texture2D> colour;
-  ComPtr<ID3D11Texture2D> depthStencil;
+  Texture2D colour;
+  Texture2D depthStencil;
   };
 
 class XD3DBufferImpl
@@ -99,14 +98,23 @@ class XD3DShaderResourceImpl
   {
 public:
   bool create(ID3D11Device1 *dev, const D3D11_SHADER_RESOURCE_VIEW_DESC *desc);
-  Microsoft::WRL::ComPtr<ID3D11Texture2D> resource;
+  Microsoft::WRL::ComPtr<ID3D11Resource> resource;
   Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> view;
   };
 
 class XD3DTexture2DImpl : public XD3DShaderResourceImpl
   {
 public:
-  bool create(ID3D11Device1 *dev, xsize width, xsize height, xuint32 format, void *data);
+  bool create(ID3D11Device1 *dev,
+    xsize width,
+    xsize height,
+    DXGI_FORMAT format,
+    void *data,
+    xuint8 bpp,
+    UINT bindFlags = D3D11_BIND_SHADER_RESOURCE,
+    D3D11_USAGE usage = D3D11_USAGE_IMMUTABLE);
+
+  bool create(ID3D11Device1 *dev, IDXGISwapChain1 *swapChain);
   };
 
 class XD3DVertexBufferImpl : public XD3DBufferImpl

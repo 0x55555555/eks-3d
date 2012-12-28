@@ -30,6 +30,22 @@ void clear(Renderer *r, FrameBuffer *buffer, xuint32 clear)
         0);
   }
 
+Texture2D *getFramebufferTexture(Renderer *, FrameBuffer *f, xuint32 mode)
+  {
+  XD3DFrameBufferImpl *fb = f->data<XD3DFrameBufferImpl>();
+
+  if(mode == FrameBuffer::TextureColour)
+    {
+    return &fb->colour;
+    }
+  else if(mode == FrameBuffer::TextureDepthStencil)
+    {
+    return &fb->colour;
+    }
+
+  return 0;
+  }
+
 void beginFrame(Renderer *r, FrameBuffer *buffer)
   {
   if(D3D(r)->_updateWorldTransformData)
@@ -87,8 +103,7 @@ bool createShader(Renderer *, Shader *s, ShaderVertexComponent *v, ShaderFragmen
   XD3DFragmentShaderImpl *frag = f->data<XD3DFragmentShaderImpl>();
   XD3DVertexShaderImpl *vert = v->data<XD3DVertexShaderImpl>();
 
-  XD3DSurfaceShaderImpl* shd = s->data<XD3DSurfaceShaderImpl>();
-  new(shd) XD3DSurfaceShaderImpl();
+  XD3DSurfaceShaderImpl* shd = s->create<XD3DSurfaceShaderImpl>();
 
   shd->_pixelShader = frag->_pixelShader;
   shd->_vertexShader = vert->_vertexShader;
@@ -105,8 +120,7 @@ bool createVertexShaderComponent(
     xsize vertexItemCount,
     ShaderVertexLayout *layout)
   {
-  XD3DVertexShaderImpl *vert = v->data<XD3DVertexShaderImpl>();
-  new(vert) XD3DVertexShaderImpl();
+  XD3DVertexShaderImpl *vert = v->create<XD3DVertexShaderImpl>();
 
   if(!vert->create(D3D(r)->_d3dDevice.Get(), s, l))
     {
@@ -157,8 +171,7 @@ bool createVertexShaderComponent(
       }
 
     xAssert(!layout->isValid());
-    XD3DShaderInputLayout *lay = layout->data<XD3DShaderInputLayout>();
-    new(lay) XD3DShaderInputLayout();
+    XD3DShaderInputLayout *lay = layout->create<XD3DShaderInputLayout>();
     if(failedCheck(
       D3D(r)->_d3dDevice->CreateInputLayout(
         vertexDesc,
@@ -177,8 +190,7 @@ bool createVertexShaderComponent(
 
 bool createFragmentShaderComponent(Renderer *r, ShaderFragmentComponent *f, const char *s, xsize l)
   {
-  XD3DFragmentShaderImpl *frag = f->data<XD3DFragmentShaderImpl>();
-  new(frag) XD3DFragmentShaderImpl();
+  XD3DFragmentShaderImpl *frag = f->create<XD3DFragmentShaderImpl>();
   return frag->create(D3D(r)->_d3dDevice.Get(), s, l);
   }
 
@@ -189,8 +201,7 @@ bool createGeometry(
     xsize elementSize,
     xsize elementCount)
   {
-  XD3DVertexBufferImpl *geo = g->data<XD3DVertexBufferImpl>();
-  new(geo) XD3DVertexBufferImpl();
+  XD3DVertexBufferImpl *geo = g->create<XD3DVertexBufferImpl>();
 
   xsize dataSize = elementSize * elementCount;
 
@@ -209,8 +220,7 @@ bool createIndexGeometry(
     const void *index,
     xsize indexCount)
   {
-  XD3DIndexBufferImpl *geo = g->data<XD3DIndexBufferImpl>();
-  new(geo) XD3DIndexBufferImpl();
+  XD3DIndexBufferImpl *geo = g->create<XD3DIndexBufferImpl>();
 
   struct Format
     {
@@ -242,11 +252,28 @@ bool createTexture(
     xuint32 format,
     void *data)
   {
-  XD3DTexture2DImpl *tex = t->data<XD3DTexture2DImpl>();
+  XD3DTexture2DImpl *tex = t->create<XD3DTexture2DImpl>();
 
-  new(tex) XD3DTexture2DImpl();
+  struct Format
+    {
+    DXGI_FORMAT format;
+    xuint8 bpp;
+    };
 
-  return tex->create(D3D(r)->_d3dDevice.Get(), width, height, format, data);
+  Format formatMap[] =
+    {
+    { DXGI_FORMAT_R8G8B8A8_UNORM, sizeof(xuint8) * 4 }
+    };
+  xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == Texture2D::FormatCount);
+
+
+  return tex->create(
+        D3D(r)->_d3dDevice.Get(),
+        width,
+        height,
+        formatMap[format].format,
+        data,
+        formatMap[format].bpp);
   }
 
 bool createRasteriserState(
@@ -254,9 +281,7 @@ bool createRasteriserState(
     RasteriserState *s,
     xuint32 cull)
   {
-  XD3DRasteriserStateImpl *ras = s->data<XD3DRasteriserStateImpl>();
-
-  new(ras) XD3DRasteriserStateImpl();
+  XD3DRasteriserStateImpl *ras = s->create<XD3DRasteriserStateImpl>();
 
   D3D11_RASTERIZER_DESC1 desc;
 
@@ -289,7 +314,7 @@ bool createShaderConstantData(
     xsize size,
     void *data)
   {
-  XD3DBufferImpl *b = s->data<XD3DBufferImpl>();
+  XD3DBufferImpl *b = s->create<XD3DBufferImpl>();
 
   enum
     {
@@ -298,7 +323,6 @@ bool createShaderConstantData(
 
   xAssert((size % SizeAlignment) == 0)
 
-  new(b) XD3DBufferImpl();
   return b->create(D3D(r)->_d3dDevice.Get(), data, size, D3D11_BIND_CONSTANT_BUFFER);
   }
 
@@ -551,15 +575,15 @@ Renderer *D3DRenderer::createD3DRenderer(IUnknown *window, ScreenFrameBuffer *bu
       resize,
       beginFrame,
       endFrame,
-      present
+      present,
+      getFramebufferTexture
     }
   };
 
   D3DRendererImpl *r = new D3DRendererImpl(window, fns);
 
   xAssert(!buffer->isValid());
-  XD3DSwapChainImpl *frame = buffer->data<XD3DSwapChainImpl>();
-  new(frame) XD3DSwapChainImpl();
+  buffer->create<XD3DSwapChainImpl>();
   buffer->setRenderer(r);
 
 

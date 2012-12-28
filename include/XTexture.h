@@ -12,6 +12,11 @@ class Renderer;
 
 class Resource : public PrivateImpl<sizeof(void *) * 2>
   {
+protected:
+  Resource();
+
+private:
+  X_DISABLE_COPY(Resource)
   };
 
 class Texture2D : public Resource
@@ -41,6 +46,8 @@ public:
         void *data);
 
 private:
+  X_DISABLE_COPY(Texture2D)
+
   Renderer *_renderer;
   };
 

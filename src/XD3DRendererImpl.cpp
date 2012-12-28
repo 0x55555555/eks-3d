@@ -161,57 +161,37 @@ bool XD3DRasteriserStateImpl::create(ID3D11Device1 *device, const D3D11_RASTERIZ
   return device->CreateRasterizerState1( &m, &_state );
   }
 
-void XD3DFrameBufferImpl::discard()
-  {
-  XD3DRenderTargetImpl::discard();
-
-  colour = nullptr;
-  depthStencil = nullptr;
-  }
-
 bool XD3DFrameBufferImpl::create(ID3D11Device1 *dev, IDXGISwapChain1 *swapChain)
   {
   xAssert(swapChain);
 
-  // Create a render target view of the swap chain back buffer.
-  if(failedCheck(swapChain->GetBuffer(
-          0,
-          __uuidof(ID3D11Texture2D),
-          &colour
-          )))
-    {
-    return false;
-    }
+  XD3DTexture2DImpl *colImpl = colour.create<XD3DTexture2DImpl>();
+  XD3DTexture2DImpl *depthImpl = depthStencil.create<XD3DTexture2DImpl>();
+
+  colImpl->create(dev, swapChain);
 
   DXGI_SWAP_CHAIN_DESC1 swapDesc;
   swapChain->GetDesc1(&swapDesc);
 
-  // Create a depth stencil view.
-  CD3D11_TEXTURE2D_DESC depthStencilDesc(
-        DXGI_FORMAT_D24_UNORM_S8_UINT,
+  depthImpl->create(
+        dev,
         swapDesc.Width,
         swapDesc.Height,
-        1,
-        1,
-        D3D11_BIND_DEPTH_STENCIL
-        );
-
-  if(failedCheck(dev->CreateTexture2D(
-          &depthStencilDesc,
-          nullptr,
-          &depthStencil
-          )))
-    {
-    return false;
-    }
+        DXGI_FORMAT_D24_UNORM_S8_UINT,
+        0,
+        32,
+        D3D11_BIND_DEPTH_STENCIL,
+        D3D11_USAGE_DEFAULT);
 
   return true;
   }
 
-bool XD3DRenderTargetImpl::create(ID3D11Device1 *dev, ID3D11Texture2D *col, ID3D11Texture2D *depSte)
+bool XD3DRenderTargetImpl::create(ID3D11Device1 *dev, Texture2D *col, Texture2D *depSte)
   {
+  XD3DTexture2DImpl *colT = col->data<XD3DTexture2DImpl>();
+  XD3DTexture2DImpl *depSteT = depSte->data<XD3DTexture2DImpl>();
   if(failedCheck(dev->CreateRenderTargetView(
-          col,
+          colT->resource.Get(),
           nullptr,
           &renderTargetView
           )))
@@ -223,7 +203,7 @@ bool XD3DRenderTargetImpl::create(ID3D11Device1 *dev, ID3D11Texture2D *col, ID3D
 
   CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
   if(failedCheck(dev->CreateDepthStencilView(
-          depSte,
+          depSteT->resource.Get(),
           &depthStencilViewDesc,
           &depthStencilView
           )))
@@ -430,7 +410,7 @@ bool XD3DSwapChainImpl::resize(
     return false;
     }
 
-  if(!XD3DRenderTargetImpl::create(dev, colour.Get(), depthStencil.Get()))
+  if(!XD3DRenderTargetImpl::create(dev, &colour, &depthStencil))
     {
     return false;
     }
@@ -441,6 +421,22 @@ bool XD3DSwapChainImpl::resize(
 void XD3DSwapChainImpl::discard()
   {
   XD3DFrameBufferImpl::discard();
+
+  if(colour.isValid())
+    {
+    XD3DTexture2DImpl *colImpl = colour.data<XD3DTexture2DImpl>();
+    
+    colImpl->resource = nullptr;
+    xAssert(colImpl->view == nullptr);
+    }
+
+  if(depthStencil.isValid())
+    {
+    XD3DTexture2DImpl *depthImpl = depthStencil.data<XD3DTexture2DImpl>();
+
+    depthImpl->resource = nullptr;
+    xAssert(depthImpl->view == nullptr);
+    }
   }
 
 bool D3DRendererImpl::resize(XD3DSwapChainImpl *impl, xuint32 w, xuint32 h, xuint32 rotation)
@@ -474,50 +470,74 @@ bool XD3DShaderResourceImpl::create(ID3D11Device1 *dev, const D3D11_SHADER_RESOU
   return true;
   }
 
-bool XD3DTexture2DImpl::create(ID3D11Device1 *dev, xsize width, xsize height, xuint32 format, void *inp)
+bool XD3DTexture2DImpl::create(
+    ID3D11Device1 *,
+    IDXGISwapChain1 *swapChain)
   {
-  struct Format
-    {
-    DXGI_FORMAT format;
-    xuint8 bpp;
-    };
+  ID3D11Texture2D *col = 0;
 
-  Format formatMap[] =
+  // Create a render target view of the swap chain back buffer.
+  if(failedCheck(swapChain->GetBuffer(
+          0,
+          __uuidof(ID3D11Texture2D),
+          (void **)&col
+          )))
     {
-    { DXGI_FORMAT_R8G8B8A8_UNORM, sizeof(xuint8) * 4 }
-    };
-  xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == Texture2D::FormatCount);
+    return false;
+    }
 
+  resource = col;
+  return true;
+  }
+
+bool XD3DTexture2DImpl::create(
+    ID3D11Device1 *dev,
+    xsize width,
+    xsize height,
+    DXGI_FORMAT format,
+    void *inp,
+    xuint8 bpp,
+    UINT bindFlags,
+    D3D11_USAGE usage)
+  {
   D3D11_TEXTURE2D_DESC desc;
   desc.Width = width;
   desc.Height = height;
   desc.MipLevels = 1;
   desc.ArraySize = 1;
-  desc.Format = formatMap[format].format;
+  desc.Format = format;
   desc.SampleDesc.Count = 1;
   desc.SampleDesc.Quality = 0;
-  desc.Usage = D3D11_USAGE_IMMUTABLE;
-  desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+  desc.Usage = usage;
+  desc.BindFlags = bindFlags;
   desc.CPUAccessFlags = 0;
   desc.MiscFlags = 0;
 
   D3D11_SUBRESOURCE_DATA data;
   data.pSysMem = inp;
-  data.SysMemPitch = width * formatMap[format].bpp;
+  data.SysMemPitch = width * bpp;
   data.SysMemSlicePitch = 0;
 
-  if(failedCheck(dev->CreateTexture2D(&desc, &data, &resource)))
+  ID3D11Texture2D *tex = 0;
+  if(failedCheck(dev->CreateTexture2D(&desc, inp ? &data : 0, &tex)))
     {
     return false;
     }
+  resource = tex;
 
-  D3D11_SHADER_RESOURCE_VIEW_DESC rscDesc;
-  rscDesc.Format = desc.Format;
-  rscDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-  rscDesc.Texture2D.MipLevels = -1;
-  rscDesc.Texture2D.MostDetailedMip = 0;
+  bool result = true;
+  if((bindFlags&D3D11_BIND_SHADER_RESOURCE) != 0)
+    {
+    D3D11_SHADER_RESOURCE_VIEW_DESC rscDesc;
+    rscDesc.Format = desc.Format;
+    rscDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    rscDesc.Texture2D.MipLevels = -1;
+    rscDesc.Texture2D.MostDetailedMip = 0;
 
-  return XD3DShaderResourceImpl::create(dev, &rscDesc);
+    result = XD3DShaderResourceImpl::create(dev, &rscDesc);
+    }
+
+  return result;
   }
 
 bool XD3DSamplerImpl::create(ID3D11Device *dev)

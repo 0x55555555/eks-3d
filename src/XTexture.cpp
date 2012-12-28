@@ -3,6 +3,9 @@
 
 namespace Eks
 {
+Resource::Resource()
+  {
+  }
 
 Texture2D::Texture2D(
     Renderer *r,

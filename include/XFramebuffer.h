@@ -8,13 +8,22 @@
 namespace Eks
 {
 
+class Texture2D;
 class Renderer;
 class FrameBufferRenderFrame;
 
-class FrameBuffer : public PrivateImpl<sizeof(void *) * 6>
+class FrameBuffer : public PrivateImpl<sizeof(void *) * 12>
   {
 public:
   typedef FrameBufferRenderFrame RenderFrame;
+
+  enum TextureId
+    {
+    TextureColour,
+    TextureDepthStencil,
+
+    TextureIdCount
+    };
 
   enum ColourFormat
     {
@@ -54,6 +63,8 @@ public:
     };
 
   void clear(xuint32 mode);
+
+  Texture2D *getTexture(TextureId id);
 
 protected:
   Renderer *_renderer;
@@ -97,6 +108,23 @@ private:
   FrameBuffer *_framebuffer;
   Renderer *_renderer;
   };
+}
+
+#include "XRenderer.h"
+
+namespace Eks
+{
+
+inline void FrameBuffer::clear(xuint32 mode)
+  {
+  xAssert(_renderer);
+  _renderer->functions().frame.clear(_renderer, this, mode);
+  }
+
+inline Texture2D *FrameBuffer::getTexture(TextureId tex)
+  {
+  return _renderer->functions().frame.getTexture(_renderer, this, tex);
+  }
 
 }
 

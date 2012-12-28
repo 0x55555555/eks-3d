@@ -178,6 +178,7 @@ struct RendererFramebufferFunctions
   void (*begin)(Renderer *r, FrameBuffer *buffer);
   void (*end)(Renderer *r, FrameBuffer *buffer);
   void (*present)(Renderer *r, ScreenFrameBuffer *buffer, bool *deviceLost);
+  Texture2D *(*getTexture)(Renderer *r, FrameBuffer *buffer, xuint32 mode);
   };
 
 struct RendererFunctions

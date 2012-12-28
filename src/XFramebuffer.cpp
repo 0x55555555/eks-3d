@@ -39,12 +39,6 @@ bool FrameBuffer::delayedCreate(
   return r->functions().create.framebuffer(r, &ths, width, height, colour, dsF);
   }
 
-void FrameBuffer::clear(xuint32 mode)
-  {
-  xAssert(_renderer);
-  _renderer->functions().frame.clear(_renderer, this, mode);
-  }
-
 ScreenFrameBuffer::ScreenFrameBuffer()
   {
   }
