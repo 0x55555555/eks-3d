@@ -75,6 +75,18 @@ void readVector(
   }
 }
 
+void readAndFlipYVector2(
+    Eks::String &scratch,
+    const ObjLoader::LineCache &arr,
+    xsize start,
+    Vector<ObjLoader::ElementVector>* data)
+  {
+  readVector<2>(scratch, arr, start, data);
+  ObjLoader::ElementVector& toFlip = data->back();
+  toFlip.y() = 1.0f + (-1.0f * toFlip.y());
+
+  }
+
 struct ObjLoader::ObjElement
   {
   ShaderVertexLayoutDescription::Semantic semantic;
@@ -171,7 +183,7 @@ const ObjLoader::ObjElement elementDescriptionsImpl[] =
   {
     { ShaderVertexLayoutDescription::Position, "v", 3, readVector<3>, writeVector<3>, computeNull  },
     { ShaderVertexLayoutDescription::Normal, "n", 3, readVector<3>, writeVector<3>, computeNormal },
-    { ShaderVertexLayoutDescription::TextureCoordinate, "vt", 2, readVector<2>, writeVector<2>, computeNull },
+    { ShaderVertexLayoutDescription::TextureCoordinate, "vt", 2, readAndFlipYVector2, writeVector<2>, computeNull },
   };
 
 const ObjLoader::ObjElement *elementDescriptions[] =
