@@ -58,12 +58,13 @@ public:
 class XD3DRenderTargetImpl
   {
 public:
-  bool create(ID3D11Device1 *context, Texture2D *col, Texture2D *depSte);
-  void clear(ID3D11DeviceContext1 *context,
-             bool clearColour, bool clearDepth,
-             const float *col,
-             float depthVal,
-             xuint8 stencilVal);
+  bool create(ID3D11Device1 *context, Texture2D *col, Texture2D *depSte, DXGI_FORMAT depthRenderFormat);
+  void clear(
+      ID3D11DeviceContext1 *context,
+      bool clearColour, bool clearDepth,
+      const float *col,
+      float depthVal,
+      xuint8 stencilVal);
   void discard();
 
   ComPtr<ID3D11RenderTargetView> renderTargetView;
@@ -73,7 +74,17 @@ public:
 class XD3DFrameBufferImpl : public XD3DRenderTargetImpl
   {
 public:
-  bool create(ID3D11Device1 *context, IDXGISwapChain1 *swapChain);
+  bool create(Renderer *r, ID3D11Device1 *context, IDXGISwapChain1 *swapChain);
+  bool create(Renderer *r,
+      ID3D11Device1 *context,
+      xuint32 width,
+      xuint32 height,
+      DXGI_FORMAT colourFormat,
+      xuint8 colourBpp,
+      DXGI_FORMAT depthFormat,
+      DXGI_FORMAT depthRenderFormat,
+      DXGI_FORMAT depthShaderFormat,
+      xuint8 depthBpp);
 
   Texture2D colour;
   Texture2D depthStencil;
@@ -109,6 +120,7 @@ public:
     xsize width,
     xsize height,
     DXGI_FORMAT format,
+    DXGI_FORMAT shader,
     void *data,
     xuint8 bpp,
     UINT bindFlags = D3D11_BIND_SHADER_RESOURCE,
@@ -150,7 +162,13 @@ class XD3DSwapChainImpl : public XD3DFrameBufferImpl
   {
 public:
   void present(ID3D11DeviceContext1 *context, bool *lostDevice);
-  bool resize(ID3D11Device1 *dev, IUnknown *window, xuint32 w, xuint32 h, int rotation);
+  bool resize(
+    Renderer *renderer,
+    ID3D11Device1 *dev,
+    IUnknown *window,
+    xuint32 w,
+    xuint32 h,
+    int rotation);
   void discard();
 
   ComPtr<IDXGISwapChain1> swapChain;
@@ -192,7 +210,7 @@ public:
   void setRenderTarget(XD3DRenderTargetImpl *target);
   void clearRenderTarget();
   bool createResources();
-  bool resize(XD3DSwapChainImpl *impl, xuint32 w, xuint32 h, xuint32 rotation);
+  bool resize(Renderer *renderer, XD3DSwapChainImpl *impl, xuint32 w, xuint32 h, xuint32 rotation);
   };
 
 bool failedCheck(HRESULT res);

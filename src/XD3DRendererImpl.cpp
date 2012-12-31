@@ -161,9 +161,12 @@ bool XD3DRasteriserStateImpl::create(ID3D11Device1 *device, const D3D11_RASTERIZ
   return device->CreateRasterizerState1( &m, &_state );
   }
 
-bool XD3DFrameBufferImpl::create(ID3D11Device1 *dev, IDXGISwapChain1 *swapChain)
+bool XD3DFrameBufferImpl::create(Renderer *r, ID3D11Device1 *dev, IDXGISwapChain1 *swapChain)
   {
   xAssert(swapChain);
+
+  colour.setRenderer(r);
+  depthStencil.setRenderer(r);
 
   XD3DTexture2DImpl *colImpl = colour.create<XD3DTexture2DImpl>();
   XD3DTexture2DImpl *depthImpl = depthStencil.create<XD3DTexture2DImpl>();
@@ -178,15 +181,65 @@ bool XD3DFrameBufferImpl::create(ID3D11Device1 *dev, IDXGISwapChain1 *swapChain)
         swapDesc.Width,
         swapDesc.Height,
         DXGI_FORMAT_D24_UNORM_S8_UINT,
+        DXGI_FORMAT_UNKNOWN,
         0,
         32,
         D3D11_BIND_DEPTH_STENCIL,
         D3D11_USAGE_DEFAULT);
 
-  return true;
+
+  return XD3DRenderTargetImpl::create(dev, &colour, &depthStencil, DXGI_FORMAT_D24_UNORM_S8_UINT);
   }
 
-bool XD3DRenderTargetImpl::create(ID3D11Device1 *dev, Texture2D *col, Texture2D *depSte)
+bool XD3DFrameBufferImpl::create(
+  Renderer *r,
+    ID3D11Device1 *dev,
+    xuint32 width,
+    xuint32 height,
+    DXGI_FORMAT colourFormat,
+    xuint8 colourBpp,
+    DXGI_FORMAT depthFormat,
+    DXGI_FORMAT depthRenderFormat,
+    DXGI_FORMAT depthShaderFormat,
+    xuint8 depthBpp)
+  {
+
+  colour.setRenderer(r);
+  depthStencil.setRenderer(r);
+
+  XD3DTexture2DImpl *colImpl = colour.create<XD3DTexture2DImpl>();
+  XD3DTexture2DImpl *depthImpl = depthStencil.create<XD3DTexture2DImpl>();
+
+  colImpl->create(
+        dev,
+        width,
+        height,
+        colourFormat,
+        colourFormat,
+        0,
+        colourBpp,
+        D3D11_BIND_RENDER_TARGET|D3D11_BIND_SHADER_RESOURCE,
+        D3D11_USAGE_DEFAULT);
+
+  depthImpl->create(
+        dev,
+        width,
+        height,
+        depthFormat,
+        depthShaderFormat,
+        0,
+        depthBpp,
+        D3D11_BIND_DEPTH_STENCIL|D3D11_BIND_SHADER_RESOURCE,
+        D3D11_USAGE_DEFAULT);
+
+  return XD3DRenderTargetImpl::create(dev, &colour, &depthStencil, depthRenderFormat);
+  }
+
+bool XD3DRenderTargetImpl::create(
+    ID3D11Device1 *dev,
+    Texture2D *col,
+    Texture2D *depSte,
+    DXGI_FORMAT depthRenderFormat)
   {
   XD3DTexture2DImpl *colT = col->data<XD3DTexture2DImpl>();
   XD3DTexture2DImpl *depSteT = depSte->data<XD3DTexture2DImpl>();
@@ -201,7 +254,14 @@ bool XD3DRenderTargetImpl::create(ID3D11Device1 *dev, Texture2D *col, Texture2D 
   xAssert(renderTargetView);
 
 
-  CD3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc(D3D11_DSV_DIMENSION_TEXTURE2D);
+  D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilViewDesc =
+  {
+    depthRenderFormat,
+    D3D11_DSV_DIMENSION_TEXTURE2D,
+    0
+  };
+  depthStencilViewDesc.Texture2D.MipSlice = 0;
+
   if(failedCheck(dev->CreateDepthStencilView(
           depSteT->resource.Get(),
           &depthStencilViewDesc,
@@ -323,6 +383,7 @@ void XD3DSwapChainImpl::present(ID3D11DeviceContext1 *context, bool *deviceListO
   }
 
 bool XD3DSwapChainImpl::resize(
+    Renderer *renderer,
     ID3D11Device1 *dev,
     IUnknown *window,
     xuint32 w,
@@ -405,12 +466,7 @@ bool XD3DSwapChainImpl::resize(
     return false;
     }
 
-  if(!XD3DFrameBufferImpl::create(dev, swapChain.Get()))
-    {
-    return false;
-    }
-
-  if(!XD3DRenderTargetImpl::create(dev, &colour, &depthStencil))
+  if(!XD3DFrameBufferImpl::create(renderer, dev, swapChain.Get()))
     {
     return false;
     }
@@ -424,29 +480,28 @@ void XD3DSwapChainImpl::discard()
 
   if(colour.isValid())
     {
-    XD3DTexture2DImpl *colImpl = colour.data<XD3DTexture2DImpl>();
-    
-    colImpl->resource = nullptr;
-    xAssert(colImpl->view == nullptr);
+    colour.destroy<XD3DTexture2DImpl>();
     }
 
   if(depthStencil.isValid())
     {
-    XD3DTexture2DImpl *depthImpl = depthStencil.data<XD3DTexture2DImpl>();
-
-    depthImpl->resource = nullptr;
-    xAssert(depthImpl->view == nullptr);
+    depthStencil.destroy<XD3DTexture2DImpl>();
     }
   }
 
-bool D3DRendererImpl::resize(XD3DSwapChainImpl *impl, xuint32 w, xuint32 h, xuint32 rotation)
+bool D3DRendererImpl::resize(
+    Renderer *renderer,
+    XD3DSwapChainImpl *impl,
+    xuint32 w,
+    xuint32 h,
+    xuint32 rotation)
   {
   // clear the state.
   clearRenderTarget();
   _d3dContext->ClearState();
   _d3dContext->Flush();
 
-  impl->resize(_d3dDevice.Get(), _window, w, h, rotation);
+  impl->resize(renderer, _d3dDevice.Get(), _window, w, h, rotation);
 
   // Set the rendering viewport to target the entire window.
   CD3D11_VIEWPORT viewport(
@@ -474,9 +529,8 @@ bool XD3DTexture2DImpl::create(
     ID3D11Device1 *,
     IDXGISwapChain1 *swapChain)
   {
-  ID3D11Texture2D *col = 0;
-
   // Create a render target view of the swap chain back buffer.
+  ComPtr<ID3D11Texture2D> col;
   if(failedCheck(swapChain->GetBuffer(
           0,
           __uuidof(ID3D11Texture2D),
@@ -495,6 +549,7 @@ bool XD3DTexture2DImpl::create(
     xsize width,
     xsize height,
     DXGI_FORMAT format,
+    DXGI_FORMAT readFormat,
     void *inp,
     xuint8 bpp,
     UINT bindFlags,
@@ -529,7 +584,7 @@ bool XD3DTexture2DImpl::create(
   if((bindFlags&D3D11_BIND_SHADER_RESOURCE) != 0)
     {
     D3D11_SHADER_RESOURCE_VIEW_DESC rscDesc;
-    rscDesc.Format = desc.Format;
+    rscDesc.Format = readFormat;
     rscDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
     rscDesc.Texture2D.MipLevels = -1;
     rscDesc.Texture2D.MostDetailedMip = 0;

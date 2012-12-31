@@ -16,6 +16,12 @@ using namespace DirectX;
 namespace Eks
 {
 
+struct FormatBpp
+  {
+  DXGI_FORMAT format;
+  xuint8 bpp;
+  };
+
 #define D3D(r) static_cast<D3DRendererImpl*>(r)
 
 void clear(Renderer *r, FrameBuffer *buffer, xuint32 clear)
@@ -40,7 +46,7 @@ Texture2D *getFramebufferTexture(Renderer *, FrameBuffer *f, xuint32 mode)
     }
   else if(mode == FrameBuffer::TextureDepthStencil)
     {
-    return &fb->colour;
+    return &fb->depthStencil;
     }
 
   return 0;
@@ -72,7 +78,7 @@ void present(Renderer *r, ScreenFrameBuffer *screenBuffer, bool *deviceListOptio
 bool resize(Renderer *r, ScreenFrameBuffer *screenBuffer, xuint32 w, xuint32 h, xuint32 rotation)
   {
   XD3DSwapChainImpl *swap = screenBuffer->data<XD3DSwapChainImpl>();
-  return D3D(r)->resize(swap, w, h, rotation);
+  return D3D(r)->resize(r, swap, w, h, rotation);
   }
 
 void setTransform(Renderer *r, const Transform &tr)
@@ -94,8 +100,41 @@ bool createFramebuffer(
     xuint32 colourFormat,
     xuint32 depthFormat)
   {
-  xAssertFail();
-  return false;
+  FormatBpp colFormatMap[] =
+  {
+    { DXGI_FORMAT_R8G8B8A8_UNORM, 24 },
+  };
+  xCompileTimeAssert(X_ARRAY_COUNT(colFormatMap) == FrameBuffer::ColourFormatCount);
+
+  struct DepthFormatBpp
+    {
+    FormatBpp format;
+    DXGI_FORMAT renderFormat;
+    DXGI_FORMAT shaderFormat;
+    };
+  DepthFormatBpp depthFormatMap[] =
+  {
+    {
+      { DXGI_FORMAT_R24G8_TYPELESS, 32 },
+      DXGI_FORMAT_D24_UNORM_S8_UINT,
+      DXGI_FORMAT_R24_UNORM_X8_TYPELESS
+    }
+  };
+  xCompileTimeAssert(X_ARRAY_COUNT(depthFormatMap) == FrameBuffer::DepthStencilFormatCount);
+
+
+  XD3DFrameBufferImpl *fb = buffer->create<XD3DFrameBufferImpl>();
+  return fb->create(
+    r,
+    D3D(r)->_d3dDevice.Get(),
+    w,
+    h,
+    colFormatMap[colourFormat].format,
+    colFormatMap[colourFormat].bpp,
+    depthFormatMap[depthFormat].format.format,
+    depthFormatMap[depthFormat].renderFormat,
+    depthFormatMap[depthFormat].shaderFormat,
+    depthFormatMap[depthFormat].format.bpp);
   }
 
 bool createShader(Renderer *, Shader *s, ShaderVertexComponent *v, ShaderFragmentComponent *f)
@@ -254,13 +293,7 @@ bool createTexture(
   {
   XD3DTexture2DImpl *tex = t->create<XD3DTexture2DImpl>();
 
-  struct Format
-    {
-    DXGI_FORMAT format;
-    xuint8 bpp;
-    };
-
-  Format formatMap[] =
+  FormatBpp formatMap[] =
     {
     { DXGI_FORMAT_R8G8B8A8_UNORM, sizeof(xuint8) * 4 }
     };
@@ -271,6 +304,7 @@ bool createTexture(
         D3D(r)->_d3dDevice.Get(),
         width,
         height,
+        formatMap[format].format,
         formatMap[format].format,
         data,
         formatMap[format].bpp);
@@ -461,8 +495,15 @@ void setFragmentShaderResource(
     (ID3D11ShaderResourceView **)alloca(sizeof(ID3D11ShaderResourceView *) * num);
   for(xsize i = 0; i < num; ++i)
     {
-    const XD3DShaderResourceImpl *b = s[i]->data<XD3DShaderResourceImpl>();
-    buffers[i] = b->view.Get();
+    if(s[i])
+      {
+      const XD3DShaderResourceImpl *b = s[i]->data<XD3DShaderResourceImpl>();
+      buffers[i] = b->view.Get();
+      }
+    else
+      {
+      buffers[i] = 0;
+      }
     }
 
   D3D(r)->_d3dContext->PSSetShaderResources(

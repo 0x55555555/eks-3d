@@ -33,8 +33,6 @@ public:
 
   enum DepthStencilFormat
     {
-    DepthNoneStencilNone,
-    Depth24StencilNone,
     Depth24Stencil8,
 
     DepthStencilFormatCount

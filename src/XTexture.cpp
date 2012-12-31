@@ -40,4 +40,9 @@ bool Texture2D::delayedCreate(
   return r->functions().create.texture2D(r, &ths, width, height, fmt, data);
   }
 
+void Texture2D::setRenderer(Renderer *r)
+  {
+  _renderer = r;
+  }
+
 }

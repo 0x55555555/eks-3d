@@ -45,6 +45,8 @@ public:
         Format fmt,
         void *data);
 
+  void setRenderer(Renderer *r);
+
 private:
   X_DISABLE_COPY(Texture2D)
 
