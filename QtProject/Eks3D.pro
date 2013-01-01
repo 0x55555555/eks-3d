@@ -5,10 +5,9 @@
 TARGET = Eks3D
 TEMPLATE = lib
 
-include("../../EksCore/GeneralOptions.pri")
+QT += widgets
 
-QT += opengl \
-    xml
+include("../../EksCore/GeneralOptions.pri")
 
 SOURCES += \
     ../src/XCuboid.cpp \
@@ -29,7 +28,8 @@ SOURCES += \
     ../src/XCameraCanvasController.cpp \
     ../src/XObjLoader.cpp \
     ../src/XRasteriserState.cpp \
-    ../src/XFrameBuffer.cpp
+    ../src/XFrameBuffer.cpp \
+    ../src/X3DCanvas.cpp
 
 HEADERS += \
     ../include/X3DGlobal.h \
@@ -53,14 +53,15 @@ HEADERS += \
     ../include/XCameraCanvasController.h \
     ../include/XObjLoader.h \
     ../include/XRasteriserState.h \
-    ../include/XFrameBuffer.h
+    ../include/XFrameBuffer.h \
+    ../include/X3DCanvas.h
 
 
 INCLUDEPATH += ../include/ \
     $$ROOT/Eks/EksCore/
 
 
-win32-arm-msvc2012 {
+win32-arm-msvc2012|win32-msvc2012 {
   SOURCES += ../src/XD3DRenderer.cpp \
     ../src/XD3DRendererImpl.cpp
 
@@ -71,14 +72,15 @@ win32-arm-msvc2012 {
 
   LIBS += -ld2d1 -ld3d11 -ldxgi -lwindowscodecs -ldwrite
 } else {
+  QT += opengl \
+    xml
+
   INCLUDEPATH += ../3rdParty
   DEFINES += GLEW_STATIC
   SOURCES += ../3rdParty/GL/glew.c \
-             ../src/XGLRenderer.cpp \
-             ../src/X3DCanvas.cpp
+             ../src/XGLRenderer.cpp
 
-  HEADERS += ../include/XGLRenderer.h \
-             ../include/X3DCanvas.h
+  HEADERS += ../include/XGLRenderer.h
 
   RESOURCES += \
     ../GLResources.qrc

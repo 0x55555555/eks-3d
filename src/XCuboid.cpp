@@ -131,7 +131,7 @@ bool Cuboid::intersects( const Cuboid &in ) const
   {
   if( this == &in )
     {
-    return TRUE;
+    return true;
     }
   return in.maximum().x() < _minimum.x() && in.minimum().x() > _maximum.x() &&
       in.maximum().y() < _minimum.y() && in.minimum().y() > _maximum.y() &&
@@ -204,21 +204,6 @@ void Cuboid::expand(float amount)
 
   _minimum -= vec;
   _maximum += vec;
-  }
-
-
-QDataStream &operator<<(QDataStream &stream, const Cuboid &cuboid)
-  {
-  return stream << cuboid._isValid
-                << cuboid._maximum
-                << cuboid._minimum;
-  }
-
-QDataStream &operator>>(QDataStream &stream, Cuboid &cuboid)
-  {
-  return stream >> cuboid._isValid
-                >> cuboid._maximum
-                >> cuboid._minimum;
   }
 
 QTextStream &operator<<(QTextStream& str, const Cuboid& cub)

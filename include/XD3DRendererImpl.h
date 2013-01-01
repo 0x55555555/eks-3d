@@ -1,13 +1,17 @@
 #ifndef XD3DRENDERERIMPL_H
 #define XD3DRENDERERIMPL_H
 
+#include "XRenderer.h"
+
+#if X_ENABLE_DX_RENDERER
+
 #include "XMathMatrix"
 #include "XColour"
 #include <d3d11_1.h>
 #include <DXGI1_2.h>
 #include <DirectXMath.h>
 #include "wrl/client.h"
-#include "XRenderer.h"
+
 #include "XTexture.h"
 #include "XRasteriserState.h"
 
@@ -166,6 +170,7 @@ public:
     Renderer *renderer,
     ID3D11Device1 *dev,
     IUnknown *window,
+    HWND handle,
     xuint32 w,
     xuint32 h,
     int rotation);
@@ -178,7 +183,7 @@ public:
 class D3DRendererImpl : public Renderer
   {
 public:
-  D3DRendererImpl(IUnknown *w, const detail::RendererFunctions &fn);
+  D3DRendererImpl(IUnknown *w, HWND handle, const detail::RendererFunctions &fn);
   ~D3DRendererImpl();
 
   enum
@@ -191,6 +196,8 @@ public:
   D3D_FEATURE_LEVEL _featureLevel;
   ComPtr<ID3D11Device1> _d3dDevice;
   ComPtr<ID3D11DeviceContext1> _d3dContext;
+
+  HWND _handle;
   IUnknown *_window;
 
   Eks::Colour _clearColour;
@@ -216,5 +223,7 @@ public:
 bool failedCheck(HRESULT res);
 
 }
+
+#endif
 
 #endif // XD3DRENDERERIMPL_H

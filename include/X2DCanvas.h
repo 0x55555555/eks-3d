@@ -2,18 +2,17 @@
 #define X2DCANVAS_H
 
 #include "X3DGlobal.h"
-#include "QWidget"
 #include "XAbstractCanvas.h"
 #include "XCameraCanvasController.h"
-#include "QMouseEvent"
+
+#include "QtWidgets/QWidget"
+#include "QtGui/QMouseEvent"
 
 
 class QPainter;
 
 class EKS3D_EXPORT X2DCanvas : public QWidget, public Eks::AbstractCanvas
   {
-  Q_OBJECT
-
 XProperties:
   XProperty(QColor, backgroundColour, setBackgroundColour);
   XROProperty(QPainter *, currentPainter);

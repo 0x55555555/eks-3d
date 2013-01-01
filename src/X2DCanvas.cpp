@@ -1,7 +1,7 @@
 #include "X2DCanvas.h"
-#include "QPainter"
-#include "QPaintEvent"
-#include "QApplication"
+#include "QtGui/QPainter"
+#include "QtGui/QPaintEvent"
+#include "QtWidgets/QApplication"
 #include "XAbstractCanvasController.h"
 #include "QDebug"
 

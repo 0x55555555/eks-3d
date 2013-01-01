@@ -1,6 +1,6 @@
 #include "XGLRenderer.h"
 
-#ifndef X_ARCH_ARM
+#ifndef X_ENABLE_GL_RENDERER
 
 #include "GL/glew.h"
 #include "XFramebuffer.h"
@@ -312,7 +312,7 @@ void XGLRenderer::setProjectionTransform( const XComplexTransform &trans )
   glMatrixMode( GL_MODELVIEW ) GLE;
   }
 
-QDebug operator<<( QDebug dbg, XVector2D v )
+QDebug operator<<( QDebug dbg, Eks::Vector2D v )
   {
   return dbg << "Vertex2D(" << v.x() << "," << v.y() << ")";
   }
@@ -792,7 +792,7 @@ void XGLShaderVariable::setValue( const Colour &value )
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, toQt(value) ) GLE;
   }
 
-void XGLShaderVariable::setValue( const XVector2D &value )
+void XGLShaderVariable::setValue( const Eks::Vector2D &value )
   {
   clear();
   bindShader();
@@ -806,7 +806,7 @@ void XGLShaderVariable::setValue( const Eks::Vector3D &value )
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, toQt(value) ) GLE;
   }
 
-void XGLShaderVariable::setValue( const XVector4D &value )
+void XGLShaderVariable::setValue( const Eks::Vector4D &value )
   {
   clear();
   bindShader();
@@ -909,7 +909,7 @@ void XGLShaderVariable::setValueArray( const XVector<Colour> &values )
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, values.front().data(), values.size(), 4 ) GLE;
   }
 
-void XGLShaderVariable::setValueArray( const XVector<XVector2D> &values )
+void XGLShaderVariable::setValueArray( const XVector<Eks::Vector2D> &values )
   {
   clear();
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, values.front().data(), values.size(), 2 ) GLE;
@@ -921,7 +921,7 @@ void XGLShaderVariable::setValueArray( const XVector<Eks::Vector3D> &values )
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, values.front().data(), values.size(), 3 ) GLE;
   }
 
-void XGLShaderVariable::setValueArray( const XVector<XVector4D> &values )
+void XGLShaderVariable::setValueArray( const XVector<Eks::Vector4D> &values )
   {
   clear();
   GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, values.front().data(), values.size(), 4 ) GLE;
@@ -1138,7 +1138,7 @@ void XGLGeometryCache::setAttribute( QString name, const XVector<Real> &attr )
   glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
   }
 
-void XGLGeometryCache::setAttribute( QString name, const XVector<XVector2D> &attr )
+void XGLGeometryCache::setAttribute( QString name, const XVector<Eks::Vector2D> &attr )
   {
   int offset( getCacheOffset( name, 2, attr.size() ) );
 
@@ -1158,7 +1158,7 @@ void XGLGeometryCache::setAttribute( QString name, const XVector<Eks::Vector3D> 
   glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
   }
 
-void XGLGeometryCache::setAttribute( QString name, const XVector<XVector4D> &attr )
+void XGLGeometryCache::setAttribute( QString name, const XVector<Eks::Vector4D> &attr )
   {
   int offset( getCacheOffset( name, 4, attr.size() ) );
 

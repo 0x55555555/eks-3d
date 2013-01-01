@@ -25,16 +25,12 @@
 #define X3DDataModelFunction XProfileFunctionBase(X3DDataModelProfileScope)
 #define X3DDataModelFunctionScopedBlock(mess) XProfileScopedBlockBase(X3DDataModelProfileScope, mess)
 
-typedef xuint64 XEnvironmentID;
-
-enum TextureFormat
-  {
-  RGB = 1,
-  RGBA = 2,
-  Byte = 4,
-  Short = 8,
-  Half = 16,
-  Float = 32,
-  };
+#ifdef Q_CC_MSVC
+# define X_ENABLE_GL_RENDERER 0
+# define X_ENABLE_DX_RENDERER 1
+#else
+# define X_ENABLE_GL_RENDERER 1
+# define X_ENABLE_DX_RENDERER 0
+#endif
 
 #endif // X3DGLOBAL_H

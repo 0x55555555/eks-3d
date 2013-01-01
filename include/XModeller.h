@@ -28,9 +28,9 @@ public:
     inline void vertex( Real, Real, Real );
     void normal( const Eks::Vector3D & );
     inline void normal( Real, Real, Real );
-    void texture( const XVector2D & );
+    void texture( const Eks::Vector2D & );
     inline void texture( Real, Real );
-    void colour( const XVector4D & );
+    void colour( const Eks::Vector4D & );
     inline void colour( Real, Real, Real, Real = 1.0 );
 
     void setNormalsAutomatic( bool=true );
@@ -69,22 +69,22 @@ private:
     XVector <xuint32> _linIndices;
     XVector <xuint32> _poiIndices;
     XVector <Eks::Vector3D> _vertex;
-    XVector <XVector2D> _texture;
+    XVector <Eks::Vector2D> _texture;
     XVector <Eks::Vector3D> _normals;
-    XVector <XVector4D> _colours;
+    XVector <Eks::Vector4D> _colours;
 
     struct State
         {
         State() : normal(Eks::Vector3D::Zero()),
-            texture(XVector2D::Zero()),
+            texture(Eks::Vector2D::Zero()),
             colour(0.0f, 0.0f, 0.0f, 0.0f),
             type( None ),
             normalsAutomatic( false )
           {
           }
         Eks::Vector3D normal;
-        XVector2D texture;
-        XVector4D colour;
+        Eks::Vector2D texture;
+        Eks::Vector4D colour;
         Type type;
         bool normalsAutomatic;
         };
@@ -101,10 +101,10 @@ void XModeller::normal( Real x, Real y, Real z )
     { normal( Eks::Vector3D(x,y,z) ); }
 
 void XModeller::texture( Real x, Real y )
-    { texture( XVector2D(x,y) ); }
+    { texture( Eks::Vector2D(x,y) ); }
 
 void XModeller::colour( Real x, Real y, Real z, Real w )
-    { colour( XVector4D(x,y,z,w) ); }
+    { colour( Eks::Vector4D(x,y,z,w) ); }
 
 #endif
 

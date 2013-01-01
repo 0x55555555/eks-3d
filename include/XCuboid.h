@@ -50,8 +50,6 @@ public:
   bool intersects( const Cuboid & ) const;
   bool intersects( const Line &, float &distance ) const;
 
-  friend EKS3D_EXPORT QDataStream &operator<<(QDataStream &stream, const Cuboid &itemRequest);
-  friend EKS3D_EXPORT QDataStream &operator>>(QDataStream &stream, Cuboid &itemRequest);
   friend EKS3D_EXPORT QTextStream &operator<<(QTextStream &stream, const Cuboid &itemRequest);
   friend EKS3D_EXPORT QTextStream &operator>>(QTextStream &stream, Cuboid &itemRequest);
   };

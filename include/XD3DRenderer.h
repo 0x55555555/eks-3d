@@ -3,6 +3,8 @@
 
 #include "X3DGlobal.h"
 
+#if X_ENABLE_DX_RENDERER
+
 struct IUnknown;
 
 namespace Eks
@@ -14,6 +16,7 @@ class Renderer;
 class EKS3D_EXPORT D3DRenderer
   {
 public:
+  static Renderer *createD3DRenderer(void *hwnd, ScreenFrameBuffer *buffer);
   static Renderer *createD3DRenderer(IUnknown *window, ScreenFrameBuffer *buffer);
   static void destroyD3DRenderer(Renderer *, ScreenFrameBuffer *buffer);
 
@@ -21,6 +24,8 @@ private:
   X_DISABLE_COPY(D3DRenderer);
 
   };
+
+#endif
 
 }
 

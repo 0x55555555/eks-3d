@@ -1,4 +1,7 @@
 #include "XD3DRendererImpl.h"
+
+#if X_ENABLE_DX_RENDERER
+
 #include <comdef.h>
 #include "XAssert"
 #include "XOptional"
@@ -20,13 +23,14 @@ bool failedCheck(HRESULT res)
   return true;
   }
 
-D3DRendererImpl::D3DRendererImpl(IUnknown *w, const detail::RendererFunctions& fns)
+D3DRendererImpl::D3DRendererImpl(IUnknown *w, HWND hwnd, const detail::RendererFunctions& fns)
   {
   setFunctions(fns);
   _featureLevel = D3D_FEATURE_LEVEL_9_1;
 
   _clearColour = Colour::Zero();
   _window = w;
+  _handle = hwnd;
   createResources();
   }
 
@@ -386,6 +390,7 @@ bool XD3DSwapChainImpl::resize(
     Renderer *renderer,
     ID3D11Device1 *dev,
     IUnknown *window,
+    HWND handle,
     xuint32 w,
     xuint32 h,
     int rotation)
@@ -441,16 +446,38 @@ bool XD3DSwapChainImpl::resize(
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL; // All Windows Store apps must use this SwapEffect.
     swapChainDesc.Flags = 0;
 
-    if(failedCheck(dxgiFactory->CreateSwapChainForCoreWindow(
-                dev,
-                window,
-                &swapChainDesc,
-                nullptr, // Allow on all displays.
-                &swapChain
-                )))
+    if(window)
+      {
+      if(failedCheck(dxgiFactory->CreateSwapChainForCoreWindow(
+                  dev,
+                  window,
+                  &swapChainDesc,
+                  nullptr, // Allow on all displays.
+                  &swapChain
+                  )))
+        {
+        return false;
+        }
+      }
+    else if(handle)
+      {
+      if(failedCheck(dxgiFactory->CreateSwapChainForHwnd(
+                     dev,
+                     handle,
+                     &swapChainDesc,
+                     0,
+                     0,
+                     &swapChain
+                     )))
+        {
+        return false;
+        }
+      }
+    else
       {
       return false;
       }
+
 
     // Ensure that DXGI does not queue more than one frame at a time. This both reduces latency and
     // ensures that the application will only render after each VSync, minimizing power consumption.
@@ -501,7 +528,7 @@ bool D3DRendererImpl::resize(
   _d3dContext->ClearState();
   _d3dContext->Flush();
 
-  impl->resize(renderer, _d3dDevice.Get(), _window, w, h, rotation);
+  impl->resize(renderer, _d3dDevice.Get(), _window, _handle, w, h, rotation);
 
   // Set the rendering viewport to target the entire window.
   CD3D11_VIEWPORT viewport(
@@ -622,3 +649,5 @@ bool XD3DSamplerImpl::create(ID3D11Device *dev)
   }
 
 }
+
+#endif

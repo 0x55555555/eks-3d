@@ -1,11 +1,11 @@
 #ifndef XGLRENDERER_H
 #define XGLRENDERER_H
 
-#include "XGlobal"
+#include "X3DGlobal.h"
 
-#ifndef X_ARCH_ARM
+#if X_ENABLE_GL_RENDERER
 
-#include "Renderer.h"
+#include "XRenderer.h"
 #include "QSize"
 
 class QGLContext;

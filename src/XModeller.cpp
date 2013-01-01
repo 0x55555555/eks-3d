@@ -66,7 +66,7 @@ void XModeller::vertex( const Eks::Vector3D &vec )
     {
     while( _texture.size() < _vertex.size() )
       {
-      _texture << XVector2D();
+      _texture << Eks::Vector2D();
       }
     _texture << _states.back().texture;
     }
@@ -75,7 +75,7 @@ void XModeller::vertex( const Eks::Vector3D &vec )
     {
     while( _colours.size() < _vertex.size() )
       {
-      _colours << XVector4D();
+      _colours << Eks::Vector4D();
       }
     _colours << _states.back().colour;
     }
@@ -146,12 +146,12 @@ void XModeller::normal( const Eks::Vector3D &norm )
   _states.back().normal = norm;
   }
 
-void XModeller::texture( const XVector2D &tex )
+void XModeller::texture( const Eks::Vector2D &tex )
   {
   _states.back().texture = tex;
   }
 
-void XModeller::colour( const XVector4D &col )
+void XModeller::colour( const Eks::Vector4D &col )
   {
   _states.back().colour = col;
   }
@@ -187,7 +187,7 @@ void XModeller::drawWireCube( const XCuboid &cube )
           << min + Eks::Vector3D(0.0f, size.y(), size.z());
 
   Eks::Vector3D n;
-  XVector2D t;
+  Eks::Vector2D t;
   _normals << n << n << n << n << n << n << n << n;
   _texture << t << t << t << t << t << t << t << t;
   _linIndices << sI << sI+1
@@ -219,7 +219,7 @@ void XModeller::drawCone(const Eks::Vector3D &point, const Eks::Vector3D &direct
   _vertex << transformPoint(point + dirNorm * length);
   _normals << transformNormal(dirNorm);
 
-  XVector2D t = XVector2D::Zero();
+  Eks::Vector2D t = Eks::Vector2D::Zero();
 
   Eks::Vector3D up = Eks::Vector3D(0.0f, 1.0f, 0.0f);
   if(up.dot(dirNorm) > 0.98f)
@@ -327,7 +327,7 @@ void XModeller::drawCube( Eks::Vector3D h, Eks::Vector3D v, Eks::Vector3D d, flo
   _triIndices << begin << begin + 1 << begin + 2 << begin + 2 << begin + 1 << begin + 3;
 
   _normals << n1 << n1 << n1 << n1;
-  _texture << XVector2D(1.0/3.0,pY) << XVector2D(1.0/3.0,0.5-pY) << XVector2D(pX,pY) << XVector2D(pX,0.5-pY);
+  _texture << Eks::Vector2D(1.0/3.0,pY) << Eks::Vector2D(1.0/3.0,0.5-pY) << Eks::Vector2D(pX,pY) << Eks::Vector2D(pX,0.5-pY);
   _vertex << p3 << p4 << p7 << p8;
   }
 
@@ -337,7 +337,7 @@ void XModeller::drawCube( Eks::Vector3D h, Eks::Vector3D v, Eks::Vector3D d, flo
   _triIndices << begin << begin + 1 << begin + 2 << begin + 2 << begin + 1 << begin + 3;
 
   _normals << n5 << n5 << n5 << n5;
-  _texture << XVector2D(2.0/3.0,pY) << XVector2D(2.0/3.0,0.5-pY) << XVector2D(1.0/3.0,pY) << XVector2D(1.0/3.0,0.5-pY);
+  _texture << Eks::Vector2D(2.0/3.0,pY) << Eks::Vector2D(2.0/3.0,0.5-pY) << Eks::Vector2D(1.0/3.0,pY) << Eks::Vector2D(1.0/3.0,0.5-pY);
   _vertex << p2 << p1 << p3 << p4;
   }
 
@@ -347,7 +347,7 @@ void XModeller::drawCube( Eks::Vector3D h, Eks::Vector3D v, Eks::Vector3D d, flo
   _triIndices << begin << begin + 1 << begin + 2 << begin + 2 << begin + 1 << begin + 3;
 
   _normals << n2 << n2 << n2 << n2;
-  _texture << XVector2D(2.0/3.0,0.5-pY) << XVector2D(2.0/3.0,pY) << XVector2D(1-pX,0.5-pY) << XVector2D(1-pX,pY);
+  _texture << Eks::Vector2D(2.0/3.0,0.5-pY) << Eks::Vector2D(2.0/3.0,pY) << Eks::Vector2D(1-pX,0.5-pY) << Eks::Vector2D(1-pX,pY);
   _vertex << p1 << p2 << p5 << p6;
   }
 
@@ -357,7 +357,7 @@ void XModeller::drawCube( Eks::Vector3D h, Eks::Vector3D v, Eks::Vector3D d, flo
   _triIndices << begin << begin + 1 << begin + 2 << begin + 2 << begin + 1 << begin + 3;
 
   _normals << n3 << n3 << n3 << n3;
-  _texture << XVector2D(1-pX,0.5+pY) << XVector2D(1-pX,1-pY) << XVector2D(2.0/3.0,0.5+pY) << XVector2D(2.0/3.0,1-pY);
+  _texture << Eks::Vector2D(1-pX,0.5+pY) << Eks::Vector2D(1-pX,1-pY) << Eks::Vector2D(2.0/3.0,0.5+pY) << Eks::Vector2D(2.0/3.0,1-pY);
   _vertex << p2 << p3 << p6 << p7;
   }
 
@@ -367,7 +367,7 @@ void XModeller::drawCube( Eks::Vector3D h, Eks::Vector3D v, Eks::Vector3D d, flo
   _triIndices << begin << begin + 1 << begin + 2 << begin + 2 << begin + 1 << begin + 3;
 
   _normals << n6 << n6 << n6 << n6;
-  _texture << XVector2D(1.0/3.0,0.5+pY) << XVector2D(2.0/3.0,0.5+pY) << XVector2D(1.0/3.0,1-pY) << XVector2D(2.0/3.0,1-pY);
+  _texture << Eks::Vector2D(1.0/3.0,0.5+pY) << Eks::Vector2D(2.0/3.0,0.5+pY) << Eks::Vector2D(1.0/3.0,1-pY) << Eks::Vector2D(2.0/3.0,1-pY);
   _vertex << p5 << p6 << p8 << p7;
   }
 
@@ -377,7 +377,7 @@ void XModeller::drawCube( Eks::Vector3D h, Eks::Vector3D v, Eks::Vector3D d, flo
   _triIndices << begin << begin + 1 << begin + 2 << begin + 2 << begin + 1 << begin + 3;
 
   _normals << n4 << n4 << n4 << n4;
-  _texture << XVector2D(pX,1-pY) << XVector2D(pX,0.5+pY) << XVector2D(1.0/3.0,1-pY) << XVector2D(1.0/3.0,0.5+pY);
+  _texture << Eks::Vector2D(pX,1-pY) << Eks::Vector2D(pX,0.5+pY) << Eks::Vector2D(1.0/3.0,1-pY) << Eks::Vector2D(1.0/3.0,0.5+pY);
   _vertex << p4 << p1 << p8 << p5;
   }
   }
@@ -389,7 +389,7 @@ void XModeller::drawQuad( Eks::Vector3D h, Eks::Vector3D v )
   unsigned int begin( _vertex.size() );
   _triIndices << begin << begin + 1 << begin + 2 << begin << begin + 2 << begin + 3;
   _vertex << transformPoint( -h - v ) << transformPoint( h - v ) << transformPoint( h + v ) << transformPoint( -h + v );
-  _texture << XVector2D(0,0) << XVector2D(1,0) << XVector2D(1,1) << XVector2D(0,1);
+  _texture << Eks::Vector2D(0,0) << Eks::Vector2D(1,0) << Eks::Vector2D(1,1) << Eks::Vector2D(0,1);
 
   Eks::Vector3D norm( transformNormal( h.cross(v).normalized() ) );
   _normals << norm << norm << norm << norm;
@@ -456,7 +456,7 @@ void XModeller::drawLocator( XSize size, Eks::Vector3D center )
           << transformPoint( center + Eks::Vector3D( 0, 0, -size.z() ) )
           << transformPoint( center + Eks::Vector3D( 0, 0, size.z() ) );
 
-  _texture << XVector2D() << XVector2D() << XVector2D() << XVector2D() << XVector2D() << XVector2D();
+  _texture << Eks::Vector2D() << Eks::Vector2D() << Eks::Vector2D() << Eks::Vector2D() << Eks::Vector2D() << Eks::Vector2D();
   _normals << Eks::Vector3D() << Eks::Vector3D() << Eks::Vector3D() << Eks::Vector3D() << Eks::Vector3D() << Eks::Vector3D();
   }
 
@@ -547,7 +547,7 @@ void XModeller::drawCurve( const XAbstractCurve <Eks::Vector3D> &curve, xsize se
   int begin( _vertex.size() );
 
   _vertex << transformPoint( curve.sample( start ) );
-  _texture << XVector2D();
+  _texture << Eks::Vector2D();
   _normals << Eks::Vector3D();
 
   for( xsize x=1; x<segments; x++ )
@@ -556,7 +556,7 @@ void XModeller::drawCurve( const XAbstractCurve <Eks::Vector3D> &curve, xsize se
 
     _vertex << transformPoint( curve.sample( start + ( x * inc ) ) );
 
-    _texture << XVector2D();
+    _texture << Eks::Vector2D();
     _normals << Eks::Vector3D();
     }
   }

@@ -1,7 +1,11 @@
+#include "XD3DRenderer.h"
+
+#if X_ENABLE_DX_RENDERER
+
 #include <d3d11.h>
 #include <DXGI1_2.h>
 #include <DirectXMath.h>
-#include "XD3DRenderer.h"
+
 #include "XGeometry.h"
 #include "XFramebuffer.h"
 #include "XTexture.h"
@@ -566,9 +570,7 @@ void setRasteriserState(Renderer *r, const RasteriserState *s)
   D3D(r)->_d3dContext->RSSetState(ras->_state.Get());
   }
 
-Renderer *D3DRenderer::createD3DRenderer(IUnknown *window, ScreenFrameBuffer *buffer)
-  {
-  detail::RendererFunctions fns =
+detail::RendererFunctions fns =
   {
     {
       createFramebuffer,
@@ -621,12 +623,25 @@ Renderer *D3DRenderer::createD3DRenderer(IUnknown *window, ScreenFrameBuffer *bu
     }
   };
 
-  D3DRendererImpl *r = new D3DRendererImpl(window, fns);
+Renderer *D3DRenderer::createD3DRenderer(IUnknown *window, ScreenFrameBuffer *buffer)
+  {
+  D3DRendererImpl *r = new D3DRendererImpl(window, 0, fns);
 
   xAssert(!buffer->isValid());
   buffer->create<XD3DSwapChainImpl>();
   buffer->setRenderer(r);
 
+  return r;
+  }
+
+Renderer *D3DRenderer::createD3DRenderer(void *handle, ScreenFrameBuffer *buffer)
+  {
+  D3DRendererImpl *r = new D3DRendererImpl(0, (HWND)handle, fns);
+
+  xAssert(!buffer->isValid());
+  buffer->create<XD3DSwapChainImpl>();
+
+  buffer->setRenderer(r);
 
   return r;
   }
@@ -639,3 +654,5 @@ void D3DRenderer::destroyD3DRenderer(Renderer *r, ScreenFrameBuffer *buffer)
   }
 
 }
+
+#endif
