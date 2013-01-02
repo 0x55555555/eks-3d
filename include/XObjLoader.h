@@ -24,7 +24,7 @@ public:
     MaxComponent = 3
     };
 
-  typedef Vector<XChar, ExpectedLineLength> LineCache;
+  typedef Vector<Char, ExpectedLineLength> LineCache;
 
   struct ObjElement;
   typedef Eigen::Matrix<Real, MaxComponent, 1> ElementVector;
