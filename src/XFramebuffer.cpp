@@ -65,8 +65,8 @@ bool ScreenFrameBuffer::resize(xuint32 w, xuint32 h, Rotation rotation)
   }
 
 FrameBufferRenderFrame::FrameBufferRenderFrame(Renderer *r, FrameBuffer *buffer)
-    : _renderer(r),
-      _framebuffer(buffer)
+    : _framebuffer(buffer),
+    _renderer(r)
   {
   _renderer->functions().frame.begin(_renderer, _framebuffer);
   }

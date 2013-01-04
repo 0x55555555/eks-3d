@@ -7,23 +7,11 @@ namespace Eks
 
 #if X_ENABLE_GL_RENDERER
 
-X3DCanvas::X3DCanvas(QWidget *parent) : QGLWidget(parent)
+GL3DCanvas::GL3DCanvas(QWidget *parent) : QGLWidget(parent)
   {
   }
 
-void X3DCanvas::paintGL()
-  {
-  paint();
-  }
-
-void X3DCanvas::update(XAbstractRenderModel::UpdateMode c)
-  {
-  X3DDataModelFunction
-  XAbstractCanvas::update(c);
-  QGLWidget::updateGL();
-  }
-
-bool X3DCanvas::isShown()
+bool GL3DCanvas::isShown()
   {
   return !isHidden() && hasFocus();
   }
@@ -56,6 +44,6 @@ void D3D3DCanvas::resizeEvent(QResizeEvent* evt)
   _buffer->resize(evt->size().width(), evt->size().height(), ScreenFrameBuffer::RotateNone);
   }
 
-}
-
 #endif
+
+}

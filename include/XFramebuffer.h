@@ -89,7 +89,7 @@ public:
 
 private:
   // trying to hide the parent method
-  static bool delayedCreate() { }
+  static void delayedCreate() { }
 
   X_DISABLE_COPY(ScreenFrameBuffer)
   };

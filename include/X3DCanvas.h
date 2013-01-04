@@ -9,10 +9,13 @@
 
 #include "QGLWidget"
 
-class EKS3D_EXPORT X3DGLCanvas : public QGLWidget, public XAbstractCanvas
+namespace Eks
+{
+
+class EKS3D_EXPORT GL3DCanvas : public QGLWidget
   {
 public:
-  X3DCanvas(QWidget *parent=0);
+  GL3DCanvas(QWidget *parent=0);
 
   virtual void paintGL() X_OVERRIDE
     {
@@ -22,6 +25,8 @@ public:
 
   virtual bool isShown();
   };
+
+}
 
 #endif
 
@@ -73,9 +78,9 @@ namespace Eks
 class Canvas3D : public
 #if X_ENABLE_DX_RENDERER
     D3D3DCanvas
-#else
+#elif X_ENABLE_GL_RENDERER
     GL3DCanvas
-#endif X_ENABLE_GL_RENDERER
+#endif
     , public AbstractCanvas
   {
 public:

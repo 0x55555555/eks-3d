@@ -9,13 +9,17 @@
 #include "QSize"
 
 class QGLContext;
+
+namespace Eks
+{
+
 class XGLShader;
 class XGLFramebuffer;
 
-class EKS3D_EXPORT XGLRenderer : public Renderer
+class EKS3D_EXPORT GLRenderer : public Renderer
     {
 public:
-    XGLRenderer();
+    GLRenderer();
 
     void setContext(QGLContext *ctx);
 

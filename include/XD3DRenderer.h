@@ -25,8 +25,9 @@ private:
 
   };
 
+}
+
 #endif
 
-}
 
 #endif // XD3DRENDERER_H
