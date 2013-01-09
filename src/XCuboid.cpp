@@ -225,4 +225,24 @@ QTextStream &operator>>(QTextStream& str, Cuboid& cub)
   return str;
   }
 
+
+QDataStream &operator<<(QDataStream& str, const Cuboid& cub)
+  {
+  return str << (xuint32)cub.isValid() << cub.minimum() << cub.maximum();
+  }
+
+QDataStream &operator>>(QDataStream& str, Cuboid& cub)
+  {
+  cub = Cuboid();
+  xuint32 valid = false;
+  Vector3D min, max;
+  str >> valid >> min >> max;
+  if(valid)
+    {
+    cub.setMinimum(min);
+    cub.setMaximum(max);
+    }
+  return str;
+  }
+
 }

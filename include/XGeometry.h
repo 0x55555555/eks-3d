@@ -18,6 +18,8 @@ public:
   static bool delayedCreate(Geometry &ths, Renderer *r, const void *data, xsize size, xsize count);
 
 private:
+  X_DISABLE_COPY(Geometry);
+
   Renderer *_renderer;
   };
 
@@ -42,6 +44,8 @@ public:
     xsize indexCount);
 
 private:
+  X_DISABLE_COPY(IndexGeometry);
+
   Renderer *_renderer;
   };
 
