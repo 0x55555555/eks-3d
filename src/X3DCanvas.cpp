@@ -1,4 +1,7 @@
 #include "X3DCanvas.h"
+
+#if X_QT_INTEROP
+
 #include "XD3DRenderer.h"
 #include "XFramebuffer.h"
 
@@ -47,3 +50,5 @@ void D3D3DCanvas::resizeEvent(QResizeEvent* evt)
 #endif
 
 }
+
+#endif

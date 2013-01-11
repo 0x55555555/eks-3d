@@ -5,6 +5,8 @@
 #include "XAbstractCanvas.h"
 #include "XCameraCanvasController.h"
 
+#if X_QT_INTEROP
+
 #include "QtWidgets/QWidget"
 #include "QtGui/QMouseEvent"
 
@@ -47,5 +49,7 @@ public:
   virtual void dolly(float x, float y);
   virtual void pan(float x, float y);
   };
+
+#endif
 
 #endif // X2DCANVAS_H

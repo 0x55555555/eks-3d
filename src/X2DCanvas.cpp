@@ -1,4 +1,7 @@
 #include "X2DCanvas.h"
+
+#if X_QT_INTEROP
+
 #include "QtGui/QPainter"
 #include "QtGui/QPaintEvent"
 #include "QtWidgets/QApplication"
@@ -82,3 +85,5 @@ void XSimple2DCanvasController::pan(float x, float y)
   {
   qDebug() << "pan" << x << y;
   }
+
+#endif

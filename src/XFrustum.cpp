@@ -15,8 +15,8 @@ Frustum::Frustum( const Vector3D &point, const Vector3D &look, const Vector3D &a
   Vector3D lookNorm = look.normalized();
   Vector3D acrossNorm = across.normalized();
   Vector3D upNorm = up.normalized();
-  float fovUpY = tan(X_DEGTORAD(viewAngle)/2.0f);
-  float fovUpX = tan(X_DEGTORAD(viewAngle*aspect)/2.0f);
+  float fovUpY = tan(Eks::degreesToRadians(viewAngle)/2.0f);
+  float fovUpX = tan(Eks::degreesToRadians(viewAngle*aspect)/2.0f);
 
   // near plane
   _planes[NearPlane] = Plane(point+(lookNorm*nearPlane), -lookNorm);

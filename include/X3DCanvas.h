@@ -3,6 +3,9 @@
 
 #include "XAbstractCanvas.h"
 #include "XAbstractCanvasController.h"
+
+#if X_QT_INTEROP
+
 #include "QMouseEvent"
 
 #if X_ENABLE_GL_RENDERER
@@ -90,5 +93,7 @@ public:
   };
 
 }
+
+#endif
 
 #endif // X3DCANVAS_H
