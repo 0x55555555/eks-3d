@@ -29,7 +29,8 @@ SOURCES += \
     ../src/XObjLoader.cpp \
     ../src/XRasteriserState.cpp \
     ../src/XFrameBuffer.cpp \
-    ../src/X3DCanvas.cpp
+    ../src/X3DCanvas.cpp \
+    ../src/XShaderManager.cpp
 
 HEADERS += \
     ../include/X3DGlobal.h \
@@ -54,7 +55,8 @@ HEADERS += \
     ../include/XObjLoader.h \
     ../include/XRasteriserState.h \
     ../include/XFrameBuffer.h \
-    ../include/X3DCanvas.h
+    ../include/X3DCanvas.h \
+    ../include/XShaderManager.h
 
 
 INCLUDEPATH += ../include/ \
