@@ -451,7 +451,7 @@ void setFragmentShaderConstantBuffer(
     Shader *,
     xsize index,
     xsize num,
-    const ShaderConstantData **s)
+    const ShaderConstantData * const*s)
   {
   ID3D11Buffer **buffers = (ID3D11Buffer **)alloca(sizeof(ID3D11Buffer *) * num);
   for(xsize i = 0; i < num; ++i)
@@ -472,7 +472,7 @@ void setVertexShaderConstantBuffer(
     Shader *,
     xsize index,
     xsize num,
-    const ShaderConstantData **s)
+    const ShaderConstantData * const*s)
   {
   ID3D11Buffer **buffers = (ID3D11Buffer **)alloca(sizeof(ID3D11Buffer *) * num);
   for(xsize i = 0; i < num; ++i)
@@ -493,7 +493,7 @@ void setFragmentShaderResource(
     Shader *,
     xsize index,
     xsize num,
-    const Resource **s)
+    const Resource * const*s)
   {
   ID3D11ShaderResourceView **buffers =
     (ID3D11ShaderResourceView **)alloca(sizeof(ID3D11ShaderResourceView *) * num);
@@ -522,7 +522,7 @@ void setVertexShaderResource(
     Shader *,
     xsize index,
     xsize num,
-    const Resource **s)
+    const Resource * const*s)
   {
   ID3D11ShaderResourceView **buffers =
     (ID3D11ShaderResourceView **)alloca(sizeof(ID3D11ShaderResourceView *) * num);

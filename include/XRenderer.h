@@ -131,28 +131,28 @@ struct RendererSetFunctions
     Shader *shader,
     xsize index,
     xsize count,
-    const ShaderConstantData **data);
+    const ShaderConstantData * const*data);
 
   void (*vertexShaderConstantBuffer)(
     Renderer *r,
     Shader *shader,
     xsize index,
     xsize count,
-    const ShaderConstantData **data);
+    const ShaderConstantData * const*data);
 
   void (*fragmentShaderResource)(
     Renderer *r,
     Shader *shader,
     xsize index,
     xsize count,
-    const Resource **data);
+    const Resource * const*data);
 
   void (*vertexShaderResource)(
     Renderer *r,
     Shader *shader,
     xsize index,
     xsize count,
-    const Resource **data);
+    const Resource * const*data);
 
   // set the current shader
   void (*shader)(Renderer *r, const Shader *, const ShaderVertexLayout *layout);
