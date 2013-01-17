@@ -350,7 +350,7 @@ void XD3DBufferImpl::update(ID3D11DeviceContext1 *context, const void *data)
 
 void XD3DSwapChainImpl::present(ID3D11DeviceContext1 *context, bool *deviceListOptional)
   {
-  XOptional<bool> deviceLost(deviceListOptional);
+  Optional<bool> deviceLost(deviceListOptional);
   deviceLost = false;
 
   // The application may optionally specify "dirty" or "scroll"

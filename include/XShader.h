@@ -67,7 +67,7 @@ public:
   Slot slot;
   };
 
-class ShaderVertexLayout : public PrivateImpl<sizeof(void*)>
+class EKS3D_EXPORT ShaderVertexLayout : public PrivateImpl<sizeof(void*)>
   {
 public:
   typedef ShaderVertexLayoutDescription Description;
@@ -81,7 +81,7 @@ private:
   Renderer *_renderer;
   };
 
-class ShaderConstantData : public PrivateImpl<sizeof(void*)>
+class EKS3D_EXPORT ShaderConstantData : public PrivateImpl<sizeof(void*)>
   {
 public:
   ShaderConstantData(Renderer *r=0, xsize sizeOfData=0, void *data=0);

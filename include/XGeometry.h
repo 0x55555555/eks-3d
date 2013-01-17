@@ -1,6 +1,7 @@
 #ifndef XGEOMETRY_H
 #define XGEOMETRY_H
 
+#include "X3DGlobal.h"
 #include "XMathVector"
 #include "XPrivateImpl"
 
@@ -9,7 +10,7 @@ namespace Eks
 
 class Renderer;
 
-class Geometry : public PrivateImpl<sizeof(void*) * 3>
+class EKS3D_EXPORT Geometry : public PrivateImpl<sizeof(void*) * 3>
   {
 public:
   Geometry(Renderer *r=0, const void *data=0, xsize elementSize=0, xsize elementCount=0);
@@ -23,7 +24,7 @@ private:
   Renderer *_renderer;
   };
 
-class IndexGeometry: public PrivateImpl<sizeof(void*) * 3>
+class EKS3D_EXPORT IndexGeometry : public PrivateImpl<sizeof(void*) * 3>
   {
 public:
   enum Type

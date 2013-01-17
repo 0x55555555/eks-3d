@@ -10,7 +10,7 @@ namespace Eks
 
 class Renderer;
 
-class Resource : public PrivateImpl<sizeof(void *) * 2>
+class EKS3D_EXPORT Resource : public PrivateImpl<sizeof(void *) * 2>
   {
 protected:
   Resource();
@@ -19,7 +19,7 @@ private:
   X_DISABLE_COPY(Resource)
   };
 
-class Texture2D : public Resource
+class EKS3D_EXPORT Texture2D : public Resource
   {
 public:
   enum Format
