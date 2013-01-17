@@ -1,7 +1,7 @@
 #ifndef XSHADERMANAGER_H
 #define XSHADERMANAGER_H
 
-#include "X3DGlobal.h"D"
+#include "X3DGlobal.h"
 
 namespace Eks
 {

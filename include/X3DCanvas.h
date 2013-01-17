@@ -10,7 +10,7 @@
 
 #if X_ENABLE_GL_RENDERER
 
-#include "QGLWidget"
+#include "QtOpenGL/QGLWidget"
 
 namespace Eks
 {

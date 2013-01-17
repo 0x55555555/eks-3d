@@ -62,7 +62,6 @@ HEADERS += \
 INCLUDEPATH += ../include/ \
     $$ROOT/Eks/EksCore/
 
-
 win32-arm-msvc2012|win32-msvc2012 {
   SOURCES += ../src/XD3DRenderer.cpp \
     ../src/XD3DRendererImpl.cpp
@@ -73,7 +72,9 @@ win32-arm-msvc2012|win32-msvc2012 {
     ../include/XD3DRendererImpl.h
 
   LIBS += -ld2d1 -ld3d11 -ldxgi -lwindowscodecs -ldwrite
-} else {
+}
+
+!win32-arm-msvc2012 {
   QT += opengl \
     xml
 
