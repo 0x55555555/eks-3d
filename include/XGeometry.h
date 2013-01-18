@@ -34,7 +34,7 @@ public:
     TypeCount
     };
 
-  IndexGeometry(Renderer *r=0, Type type=Unsigned16, const void *data=0, xsize dataSize=0);
+  IndexGeometry(Renderer *r=0, Type type=Unsigned16, const void *data=0, xsize indexCount=0);
   ~IndexGeometry();
 
   static bool delayedCreate(

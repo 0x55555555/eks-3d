@@ -232,7 +232,7 @@ public:
     functions().draw.triangles(this, g);
     }
 
-  void drawTriangles(IndexGeometry *i, Geometry *g)
+  void drawTriangles(const IndexGeometry *i, const Geometry *g)
     {
     functions().draw.indexedTriangles(this, i, g);
     }
