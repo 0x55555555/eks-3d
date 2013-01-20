@@ -1,12 +1,18 @@
 #ifndef X3DCANVAS_H
 #define X3DCANVAS_H
 
+#include "X3DGlobal.h"
 #include "XAbstractCanvas.h"
 #include "XAbstractCanvasController.h"
 
 #if X_QT_INTEROP
 
-#include "QMouseEvent"
+#include "QtGui/QMouseEvent"
+
+namespace Eks
+{
+class FrameBuffer;
+}
 
 #if X_ENABLE_GL_RENDERER
 
@@ -59,12 +65,11 @@ public:
 
 protected:
   void resizeEvent(QResizeEvent* evt) X_OVERRIDE;
-  void paintEvent(QPaintEvent*) X_OVERRIDE
-    {
-    paint3D();
-    }
+  void paintEvent(QPaintEvent*) X_OVERRIDE;
 
-  virtual void paint3D() = 0;
+  virtual void initialise3D(Eks::Renderer *r) = 0;
+  virtual void paint3D(Eks::Renderer *r, Eks::FrameBuffer *buffer) = 0;
+  virtual void resize3D(Eks::Renderer *r, xuint32 w, xuint32 h) = 0;
 
 private:
   Renderer *_renderer;
@@ -78,7 +83,7 @@ private:
 namespace Eks
 {
 
-class Canvas3D : public
+class EKS3D_EXPORT Canvas3D : public
 #if X_ENABLE_DX_RENDERER
     D3D3DCanvas
 #elif X_ENABLE_GL_RENDERER
@@ -87,9 +92,21 @@ class Canvas3D : public
     , public AbstractCanvas
   {
 public:
+  typedef
+#if X_ENABLE_DX_RENDERER
+      D3D3DCanvas
+#elif X_ENABLE_GL_RENDERER
+      GL3DCanvas
+#endif
+    Base;
+
+  Canvas3D(QWidget *w);
+
   X_CANVAS_GENERAL_MOUSEHANDLERS()
 
   virtual void update(AbstractRenderModel::UpdateMode);
+
+  bool isShown() X_OVERRIDE;
   };
 
 }

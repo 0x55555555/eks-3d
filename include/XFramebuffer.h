@@ -12,7 +12,7 @@ class Texture2D;
 class Renderer;
 class FrameBufferRenderFrame;
 
-class FrameBuffer : public PrivateImpl<sizeof(void *) * 12>
+class EKS3D_EXPORT FrameBuffer : public PrivateImpl<sizeof(void *) * 12>
   {
 public:
   typedef FrameBufferRenderFrame RenderFrame;
@@ -68,7 +68,7 @@ protected:
   Renderer *_renderer;
   };
 
-class ScreenFrameBuffer : public FrameBuffer
+class EKS3D_EXPORT ScreenFrameBuffer : public FrameBuffer
   {
 public:
   ScreenFrameBuffer();
@@ -94,7 +94,7 @@ private:
   X_DISABLE_COPY(ScreenFrameBuffer)
   };
 
-class FrameBufferRenderFrame
+class EKS3D_EXPORT FrameBufferRenderFrame
   {
 public:
   FrameBufferRenderFrame(Renderer *r, FrameBuffer *buffer);

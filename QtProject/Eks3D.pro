@@ -78,6 +78,8 @@ win32-arm-msvc2012|win32-msvc2012 {
   QT += opengl \
     xml
 
+  LIBS += -lOpenGL32
+
   INCLUDEPATH += ../3rdParty
   DEFINES += GLEW_STATIC
   SOURCES += ../3rdParty/GL/glew.c \

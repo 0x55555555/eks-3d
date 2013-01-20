@@ -47,7 +47,26 @@ void D3D3DCanvas::resizeEvent(QResizeEvent* evt)
   _buffer->resize(evt->size().width(), evt->size().height(), ScreenFrameBuffer::RotateNone);
   }
 
+void D3D3DCanvas::paintEvent(QPaintEvent *)
+  {
+  paint3D(_renderer, _buffer);
+  }
+
 #endif
+
+
+Canvas3D::Canvas3D(QWidget *w) : Base(w)
+  {
+  }
+
+bool Canvas3D::isShown()
+  {
+  return isVisible();
+  }
+
+void Canvas3D::update(AbstractRenderModel::UpdateMode)
+  {
+  }
 
 }
 

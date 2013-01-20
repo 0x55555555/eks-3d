@@ -3,8 +3,8 @@
 
 #include "X3DGlobal.h"
 #include "XProperty"
-#include "QEvent"
-#include "QPoint"
+#include "QtCore/QEvent"
+#include "QtCore/QPoint"
 #include "XFlags"
 
 #define X_IMPLEMENT_MOUSEHANDLER(function, type, update) \
