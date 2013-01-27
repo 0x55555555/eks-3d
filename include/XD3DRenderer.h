@@ -16,9 +16,9 @@ class Renderer;
 class EKS3D_EXPORT D3DRenderer
   {
 public:
-  static Renderer *createD3DRenderer(void *hwnd, ScreenFrameBuffer *buffer);
-  static Renderer *createD3DRenderer(IUnknown *window, ScreenFrameBuffer *buffer);
-  static void destroyD3DRenderer(Renderer *, ScreenFrameBuffer *buffer);
+  static Renderer *createD3DRenderer(void *hwnd, ScreenFrameBuffer *buffer, Eks::AllocatorBase *);
+  static Renderer *createD3DRenderer(IUnknown *window, ScreenFrameBuffer *buffer, Eks::AllocatorBase *);
+  static void destroyD3DRenderer(Renderer *, ScreenFrameBuffer *buffer, Eks::AllocatorBase *);
 
 private:
   X_DISABLE_COPY(D3DRenderer);

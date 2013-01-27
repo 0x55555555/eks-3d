@@ -623,9 +623,9 @@ detail::RendererFunctions fns =
     }
   };
 
-Renderer *D3DRenderer::createD3DRenderer(IUnknown *window, ScreenFrameBuffer *buffer)
+Renderer *D3DRenderer::createD3DRenderer(IUnknown *window, ScreenFrameBuffer *buffer, Eks::AllocatorBase *a)
   {
-  D3DRendererImpl *r = new D3DRendererImpl(window, 0, fns);
+  D3DRendererImpl *r = a->createWithAlignment<D3DRendererImpl>(window, nullptr, fns, X_ALIGN_BYTE_COUNT);
 
   xAssert(!buffer->isValid());
   buffer->create<XD3DSwapChainImpl>();
@@ -634,9 +634,9 @@ Renderer *D3DRenderer::createD3DRenderer(IUnknown *window, ScreenFrameBuffer *bu
   return r;
   }
 
-Renderer *D3DRenderer::createD3DRenderer(void *handle, ScreenFrameBuffer *buffer)
+Renderer *D3DRenderer::createD3DRenderer(void *handle, ScreenFrameBuffer *buffer, Eks::AllocatorBase *a)
   {
-  D3DRendererImpl *r = new D3DRendererImpl(0, (HWND)handle, fns);
+  D3DRendererImpl *r = a->createWithAlignment<D3DRendererImpl>(nullptr, (HWND)handle, fns, X_ALIGN_BYTE_COUNT);
 
   xAssert(!buffer->isValid());
   buffer->create<XD3DSwapChainImpl>();
@@ -646,11 +646,11 @@ Renderer *D3DRenderer::createD3DRenderer(void *handle, ScreenFrameBuffer *buffer
   return r;
   }
 
-void D3DRenderer::destroyD3DRenderer(Renderer *r, ScreenFrameBuffer *buffer)
+void D3DRenderer::destroyD3DRenderer(Renderer *r, ScreenFrameBuffer *buffer, Eks::AllocatorBase *a)
   {
   buffer->setRenderer(0);
   destroy<ScreenFrameBuffer, XD3DSwapChainImpl>(r, buffer);
-  delete D3D(r);
+  a->destroy(D3D(r));
   }
 
 }

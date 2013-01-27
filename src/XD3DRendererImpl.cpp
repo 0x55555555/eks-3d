@@ -28,6 +28,7 @@ D3DRendererImpl::D3DRendererImpl(IUnknown *w, HWND hwnd, const detail::RendererF
   setFunctions(fns);
   _featureLevel = D3D_FEATURE_LEVEL_9_1;
 
+  xAssertIsAligned(&_clearColour);
   _clearColour = Colour::Zero();
   _window = w;
   _handle = hwnd;

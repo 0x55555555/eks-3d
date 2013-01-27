@@ -32,12 +32,12 @@ D3D3DCanvas::D3D3DCanvas(QWidget* parent)
   WId handle = winId();
 
   _buffer = new ScreenFrameBuffer();
-  _renderer = Eks::D3DRenderer::createD3DRenderer((void*)handle, _buffer);
+  _renderer = Eks::D3DRenderer::createD3DRenderer((void*)handle, _buffer, Eks::GlobalAllocator::instance());
   }
 
 D3D3DCanvas::~D3D3DCanvas()
   {
-  Eks::D3DRenderer::destroyD3DRenderer(_renderer, _buffer);
+  Eks::D3DRenderer::destroyD3DRenderer(_renderer, _buffer, Eks::GlobalAllocator::instance());
   delete _buffer;
   _buffer = 0;
   }
