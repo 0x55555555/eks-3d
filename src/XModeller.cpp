@@ -2,62 +2,145 @@
 #include "XGeometry.h"
 #include "XMathCurve"
 #include "XCuboid.h"
+#include "XShader.h"
+#include "XGeometry.h"
 
-#if 0
+namespace Eks
+{
 
-XModeller::XModeller( Geometry *g, xsize initialSize ) : _geo( g ), _transform(XTransform::Identity())
+Modeller::Modeller(AllocatorBase *a, xsize initialSize )
+  : _allocator(a),
+    _vertex(a),
+    _texture(a),
+    _normals(a),
+    _colours(a),
+    _triIndices(a),
+    _linIndices(a),
+    _states(a),
+    _transform(Transform::Identity())
   {
   _vertex.reserve(initialSize);
   _texture.reserve(initialSize);
   _normals.reserve(initialSize);
   _colours.reserve(initialSize);
+
+  _areLineIndicesSequential = _areTriangleIndicesSequential = true;
+
   save( );
   }
 
-XModeller::~XModeller( )
+Modeller::~Modeller( )
   {
-  flush( );
   }
 
-void XModeller::flush( )
+class Utils
   {
-  _geo->setTriangles( _triIndices );
-  _geo->setLines(  _linIndices );
-  _geo->setPoints( _poiIndices );
-  _geo->setAttribute( "vertex", _vertex );
-  if( _texture.size() )
+public:
+  template <typename T>
+      static void bakeArray(Vector<xuint8> &data, xsize offset, xsize stride, const Vector<T> &dataIn)
     {
-    _geo->setAttribute( "textureData", _texture );
+    xsize count = dataIn.size();
+
+    xAssert((offset + (stride * count)) < data.size());
+    xuint8 *dataOut = data.data();
+    for(xsize i = 0; i < count; ++i)
+      {
+      xuint8 *d = dataOut + offset + (stride * i);
+      memcpy(d, dataIn[i].data(), sizeof(T));
+      }
     }
-  if( _normals.size() )
+  };
+
+void Modeller::bakeTriangles(
+    Renderer *r,
+    xuint32 *semanticOrder,
+    xsize semanticCount,
+    IndexGeometry *index,
+    Geometry *geo)
+  {
+  Vector<xuint8> data(_allocator);
+
+  xsize semanticSizes[] =
     {
-    _geo->setAttribute( "normalData", _normals );
+    3,
+    4,
+    2,
+    3,
+    };
+  xCompileTimeAssert(X_ARRAY_COUNT(semanticSizes) == ShaderVertexLayoutDescription::SemanticCount);
+
+  xsize vertSize = 0;
+  for(xsize i = 0; i < semanticCount; ++i)
+    {
+    vertSize += semanticSizes[semanticOrder[i]];
     }
-  if( _colours.size() )
+  vertSize *= sizeof(float);
+
+  data.resize(_vertex.size() * vertSize);
+
+  xsize offset = 0;
+  for(xsize i = 0; i < semanticCount; ++i)
     {
-    _geo->setAttribute( "colour", _colours );
+    xuint32 semantic = semanticOrder[i];
+    if(semantic == ShaderVertexLayoutDescription::Position)
+      {
+      Utils::bakeArray(data, offset, vertSize, _vertex);
+      offset += sizeof(float) * semanticSizes[semantic];
+      }
+    else if(semantic == ShaderVertexLayoutDescription::Normal)
+      {
+      Utils::bakeArray(data, offset, vertSize, _normals);
+      offset += sizeof(float) * semanticSizes[semantic];
+      }
+    else if(semantic == ShaderVertexLayoutDescription::Colour)
+      {
+      Utils::bakeArray(data, offset, vertSize, _colours);
+      offset += sizeof(float) * semanticSizes[semantic];
+      }
+    else if(semantic == ShaderVertexLayoutDescription::TextureCoordinate)
+      {
+      Utils::bakeArray(data, offset, vertSize, _texture);
+      offset += sizeof(float) * semanticSizes[semantic];
+      }
+    }
+
+  xsize elementCount = data.size() / vertSize;
+  xAssert((data.size() % vertSize) == 0);
+
+  Geometry::delayedCreate(*geo, r, data.data(), vertSize, elementCount);
+
+  if(index)
+    {
+    xAssert(_triIndices.size() < X_UINT16_SENTINEL);
+
+    IndexGeometry::delayedCreate(
+      *index,
+      r,
+      IndexGeometry::Unsigned16,
+      _triIndices.data(),
+      _triIndices.size());
     }
   }
 
 
-void XModeller::begin( Type type )
+void Modeller::begin( Type type )
   {
   _quadCount = 0;
   _states.back().type = type;
   }
 
-void XModeller::end( )
+void Modeller::end( )
   {
   _states.back().type = None;
   }
 
-void XModeller::vertex( const Eks::Vector3D &vec )
+void Modeller::vertex( const Vector3D &vec )
   {
   if( _normals.size() || !_states.back().normal.isZero() )
     {
     while( _normals.size() < _vertex.size() )
       {
-      _normals << Eks::Vector3D();
+      _normals << Vector3D::Zero();
       }
     _normals << transformNormal( _states.back().normal );
     }
@@ -66,7 +149,7 @@ void XModeller::vertex( const Eks::Vector3D &vec )
     {
     while( _texture.size() < _vertex.size() )
       {
-      _texture << Eks::Vector2D();
+      _texture << Eks::Vector2D::Zero();
       }
     _texture << _states.back().texture;
     }
@@ -75,36 +158,35 @@ void XModeller::vertex( const Eks::Vector3D &vec )
     {
     while( _colours.size() < _vertex.size() )
       {
-      _colours << Eks::Vector4D();
+      _colours << Eks::Vector4D::Zero();
       }
     _colours << _states.back().colour;
     }
 
   _vertex << transformPoint( vec );
 
-  if( _states.back().type == Points )
+  if( _states.back().type == Lines )
     {
-    _poiIndices << _vertex.size() - 1;
-    }
-  else if( _states.back().type == Lines )
-    {
+    _areLineIndicesSequential |= _linIndices.size() == _vertex.size();
     _linIndices << _vertex.size() - 1;
     }
   else if( _states.back().type == Triangles )
     {
+    _areTriangleIndicesSequential |= _triIndices.size() == _vertex.size();
     _triIndices << _vertex.size() - 1;
 
     if( _states.back().normalsAutomatic && ( _triIndices.size() % 3 ) == 0 )
       {
+      _areTriangleIndicesSequential = false;
       int i1( _vertex.size() - 3 );
       int i2( _vertex.size() - 2 );
       int i3( _vertex.size() - 1 );
       while( _normals.size() < _vertex.size() )
         {
-        _normals << Eks::Vector3D();
+        _normals << Vector3D::Zero();
         }
-      Eks::Vector3D vec1(_vertex[i2] - _vertex[i1]);
-      Eks::Vector3D vec2(_vertex[i3] - _vertex[i1]);
+      Vector3D vec1(_vertex[i2] - _vertex[i1]);
+      Vector3D vec2(_vertex[i3] - _vertex[i1]);
 
       _normals[i1] = _normals[i2] = _normals[i3] = vec1.cross(vec2).normalized();
       }
@@ -112,6 +194,7 @@ void XModeller::vertex( const Eks::Vector3D &vec )
   else if( _states.back().type == Quads )
     {
     _quadCount++;
+    _areTriangleIndicesSequential = false;
     _triIndices << _vertex.size() - 1;
 
     if( _quadCount == 4 )
@@ -124,10 +207,10 @@ void XModeller::vertex( const Eks::Vector3D &vec )
         int i4( _vertex.size() - 1 );
         while( _normals.size() < _vertex.size() )
           {
-          _normals << Eks::Vector3D();
+          _normals << Vector3D::Zero();
           }
-        Eks::Vector3D vec1( _vertex[i2] - _vertex[i1]);
-        Eks::Vector3D vec2( _vertex[i3] - _vertex[i1]);
+        Vector3D vec1( _vertex[i2] - _vertex[i1]);
+        Vector3D vec2( _vertex[i3] - _vertex[i1]);
 
         _normals[i1] = _normals[i2] = _normals[i3] = _normals[i4] = vec1.cross(vec2).normalized();
         }
@@ -141,52 +224,54 @@ void XModeller::vertex( const Eks::Vector3D &vec )
     }
   }
 
-void XModeller::normal( const Eks::Vector3D &norm )
+void Modeller::normal( const Vector3D &norm )
   {
   _states.back().normal = norm;
   }
 
-void XModeller::texture( const Eks::Vector2D &tex )
+void Modeller::texture( const Eks::Vector2D &tex )
   {
   _states.back().texture = tex;
   }
 
-void XModeller::colour( const Eks::Vector4D &col )
+void Modeller::colour( const Eks::Vector4D &col )
   {
   _states.back().colour = col;
   }
 
-void XModeller::setNormalsAutomatic( bool nAuto )
+void Modeller::setNormalsAutomatic( bool nAuto )
   {
   _states.back().normalsAutomatic = nAuto;
   if( nAuto )
     {
-    _states.back().normal = Eks::Vector3D();
+    _states.back().normal = Vector3D::Zero();
     }
   }
 
-bool XModeller::normalsAutomatic( ) const
+bool Modeller::normalsAutomatic( ) const
   {
   return _states.back().normalsAutomatic;
   }
 
-void XModeller::drawWireCube( const XCuboid &cube )
+void Modeller::drawWireCube( const Cuboid &cube )
   {
-  XSize size = cube.size();
-  Eks::Vector3D min = cube.minimum();
+  _areLineIndicesSequential = false;
+
+  Vector3D size = cube.size();
+  Vector3D min = cube.minimum();
 
   int sI = _vertex.size();
 
   _vertex << min
-          << min + Eks::Vector3D(size.x(), 0.0f, 0.0f)
-          << min + Eks::Vector3D(size.x(), size.y(), 0.0f)
-          << min + Eks::Vector3D(0.0f, size.y(), 0.0f)
-          << min + Eks::Vector3D(0.0f, 0.0f, size.z())
-          << min + Eks::Vector3D(size.x(), 0.0f, size.z())
+          << min + Vector3D(size.x(), 0.0f, 0.0f)
+          << min + Vector3D(size.x(), size.y(), 0.0f)
+          << min + Vector3D(0.0f, size.y(), 0.0f)
+          << min + Vector3D(0.0f, 0.0f, size.z())
+          << min + Vector3D(size.x(), 0.0f, size.z())
           << min + size
-          << min + Eks::Vector3D(0.0f, size.y(), size.z());
+          << min + Vector3D(0.0f, size.y(), size.z());
 
-  Eks::Vector3D n;
+  Vector3D n;
   Eks::Vector2D t;
   _normals << n << n << n << n << n << n << n << n;
   _texture << t << t << t << t << t << t << t << t;
@@ -206,9 +291,10 @@ void XModeller::drawWireCube( const XCuboid &cube )
               << sI+7 << sI+3;
   }
 
-void XModeller::drawCone(const Eks::Vector3D &point, const Eks::Vector3D &direction, float length, float radius, xuint32 divs)
+void Modeller::drawCone(const Vector3D &point, const Vector3D &direction, float length, float radius, xuint32 divs)
   {
-  Eks::Vector3D dirNorm = direction.normalized();
+  _areTriangleIndicesSequential = false;
+  Vector3D dirNorm = direction.normalized();
 
   _vertex.reserve(1 + divs);
   _normals.reserve(1 + divs);
@@ -221,12 +307,12 @@ void XModeller::drawCone(const Eks::Vector3D &point, const Eks::Vector3D &direct
 
   Eks::Vector2D t = Eks::Vector2D::Zero();
 
-  Eks::Vector3D up = Eks::Vector3D(0.0f, 1.0f, 0.0f);
+  Vector3D up = Vector3D(0.0f, 1.0f, 0.0f);
   if(up.dot(dirNorm) > 0.98f)
     {
-    up = Eks::Vector3D(1.0f, 0.0f, 0.0f);
+    up = Vector3D(1.0f, 0.0f, 0.0f);
     }
-  Eks::Vector3D across = dirNorm.cross(up).normalized();
+  Vector3D across = dirNorm.cross(up).normalized();
 
   for(xuint32 i=0; i<divs; ++i)
     {
@@ -234,7 +320,7 @@ void XModeller::drawCone(const Eks::Vector3D &point, const Eks::Vector3D &direct
     float c = cos(percent);
     float s = sin(percent);
 
-    Eks::Vector3D ptDir = (up * s) + (across * c);
+    Vector3D ptDir = (up * s) + (across * c);
 
     _vertex << transformPoint(point + (ptDir * radius));
     _normals << transformNormal(ptDir);
@@ -251,7 +337,7 @@ void XModeller::drawCone(const Eks::Vector3D &point, const Eks::Vector3D &direct
     }
   }
 
-void XModeller::drawSphere(float r, int lats, int longs)
+void Modeller::drawSphere(float r, int lats, int longs)
   {
   int i, j;
   for(i = 0; i <= lats; i++)
@@ -301,11 +387,20 @@ void XModeller::drawSphere(float r, int lats, int longs)
     }
   }
 
-void XModeller::drawCube( Eks::Vector3D h, Eks::Vector3D v, Eks::Vector3D d, float pX, float pY )
+void Modeller::drawCube(
+    const Vector3D &hor,
+    const Vector3D &ver,
+    const Vector3D &dep,
+    float pX,
+    float pY)
   {
-  h *= 0.5; v *= 0.5; d *= 0.5;
+  _areTriangleIndicesSequential = false;
 
-  Eks::Vector3D p1( transformPoint( -h-v-d ) ),
+  Vector3D h = hor * 0.5f;
+  Vector3D v = ver * 0.5f;
+  Vector3D d = dep * 0.5f;
+
+  Vector3D p1( transformPoint( -h-v-d ) ),
       p2( transformPoint( h-v-d ) ),
       p3( transformPoint( h+v-d ) ),
       p4( transformPoint( -h+v-d ) ),
@@ -314,12 +409,12 @@ void XModeller::drawCube( Eks::Vector3D h, Eks::Vector3D v, Eks::Vector3D d, flo
       p7( transformPoint( h+v+d ) ),
       p8( transformPoint( -h+v+d ) );
 
-  Eks::Vector3D n1( transformNormal( Eks::Vector3D(0,1,0) ) ),
-      n2( transformNormal( Eks::Vector3D(0,-1,0) ) ),
-      n3( transformNormal( Eks::Vector3D(1,0,0) ) ),
-      n4( transformNormal( Eks::Vector3D(-1,0,0) ) ),
-      n5( transformNormal( Eks::Vector3D(0,0,-1) ) ),
-      n6( transformNormal( Eks::Vector3D(0,0,1) ) );
+  Vector3D n1( transformNormal( Vector3D(0,1,0) ) ),
+      n2( transformNormal( Vector3D(0,-1,0) ) ),
+      n3( transformNormal( Vector3D(1,0,0) ) ),
+      n4( transformNormal( Vector3D(-1,0,0) ) ),
+      n5( transformNormal( Vector3D(0,0,-1) ) ),
+      n6( transformNormal( Vector3D(0,0,1) ) );
 
   // Top Face BL
   {
@@ -382,164 +477,113 @@ void XModeller::drawCube( Eks::Vector3D h, Eks::Vector3D v, Eks::Vector3D d, flo
   }
   }
 
-void XModeller::drawQuad( Eks::Vector3D h, Eks::Vector3D v )
+void Modeller::drawQuad(const Vector3D &hor, const Vector3D &ver)
   {
-  h /= 2.0; v /= 2.0;
+  _areTriangleIndicesSequential = false;
+  Vector3D h = hor / 2.0;
+  Vector3D v = ver / 2.0;
 
   unsigned int begin( _vertex.size() );
   _triIndices << begin << begin + 1 << begin + 2 << begin << begin + 2 << begin + 3;
   _vertex << transformPoint( -h - v ) << transformPoint( h - v ) << transformPoint( h + v ) << transformPoint( -h + v );
   _texture << Eks::Vector2D(0,0) << Eks::Vector2D(1,0) << Eks::Vector2D(1,1) << Eks::Vector2D(0,1);
 
-  Eks::Vector3D norm( transformNormal( h.cross(v).normalized() ) );
+  Vector3D norm( transformNormal( h.cross(v).normalized() ) );
   _normals << norm << norm << norm << norm;
   }
 
-void XModeller::drawGeometry( const Geometry &geo, bool normaliseNormals )
-  {
-  unsigned int begin( _vertex.size() );
-
-  _vertex << transformPoints( geo.attributes3D()["vertex"] );
-  _texture << geo.attributes2D()["textureData"];
-  _normals << transformNormals( geo.attributes3D()["normalData"], normaliseNormals );
-
-  Q_FOREACH( const unsigned int &i, geo.triangles() )
-    {
-    _triIndices << begin + i;
-    }
-  Q_FOREACH( const unsigned int &i, geo.lines() )
-    {
-    _linIndices << begin + i;
-    }
-  Q_FOREACH( const unsigned int &i, geo.points() )
-    {
-    _poiIndices << begin + i;
-    }
-  }
-
-void XModeller::drawGeometry(XList <Eks::Vector3D> positions, const Geometry &geo, bool normaliseNormals)
-  {
-  Q_FOREACH( const Eks::Vector3D &pos, positions )
-    {
-    unsigned int begin( _vertex.size() );
-    Q_FOREACH( const Eks::Vector3D &curPos, geo.attributes3D()["vertex"] )
-      {
-      _vertex << transformPoint(curPos + pos);
-      }
-    _texture << geo.attributes2D()["texture"];
-    _normals << transformNormals( geo.attributes3D()["normalData"], normaliseNormals );
-
-    Q_FOREACH( const unsigned int &i, geo.triangles() )
-      {
-      _triIndices << begin + i;
-      }
-    Q_FOREACH( const unsigned int &i, geo.lines() )
-      {
-      _linIndices << begin + i;
-      }
-    Q_FOREACH( const unsigned int &i, geo.points() )
-      {
-      _poiIndices << begin + i;
-      }
-    }
-  }
-
-void XModeller::drawLocator( XSize size, Eks::Vector3D center )
+void Modeller::drawLocator(const Vector3D &size, const Vector3D &center)
   {
   int begin( _vertex.size() );
   _linIndices << begin << begin + 1 << begin + 2 << begin + 3 << begin + 4 << begin + 5;
 
-  _vertex << transformPoint( center + Eks::Vector3D( -size.x(), 0, 0 ) )
-          << transformPoint( center + Eks::Vector3D( size.x(), 0, 0 ) )
-          << transformPoint( center + Eks::Vector3D( 0, -size.y(), 0 ) )
-          << transformPoint( center + Eks::Vector3D( 0, size.y(), 0 ) )
-          << transformPoint( center + Eks::Vector3D( 0, 0, -size.z() ) )
-          << transformPoint( center + Eks::Vector3D( 0, 0, size.z() ) );
+  _vertex << transformPoint( center + Vector3D( -size.x(), 0, 0 ) )
+          << transformPoint( center + Vector3D( size.x(), 0, 0 ) )
+          << transformPoint( center + Vector3D( 0, -size.y(), 0 ) )
+          << transformPoint( center + Vector3D( 0, size.y(), 0 ) )
+          << transformPoint( center + Vector3D( 0, 0, -size.z() ) )
+          << transformPoint( center + Vector3D( 0, 0, size.z() ) );
 
   _texture << Eks::Vector2D() << Eks::Vector2D() << Eks::Vector2D() << Eks::Vector2D() << Eks::Vector2D() << Eks::Vector2D();
-  _normals << Eks::Vector3D() << Eks::Vector3D() << Eks::Vector3D() << Eks::Vector3D() << Eks::Vector3D() << Eks::Vector3D();
+  _normals << Vector3D() << Vector3D() << Vector3D() << Vector3D() << Vector3D() << Vector3D();
   }
 
-void XModeller::setTransform( const XTransform &t )
+void Modeller::setTransform( const Transform &t )
   {
   _transform = t;
   }
 
-XTransform XModeller::transform( ) const
+Transform Modeller::transform( ) const
   {
   return _transform;
   }
 
-void XModeller::save()
+void Modeller::save()
   {
   _states << State();
   }
 
-void XModeller::restore()
+void Modeller::restore()
   {
   if( _states.size() > 1 )
     {
-    _states.pop_back();
+    _states.popBack();
     }
   }
 
-Eks::Vector3D XModeller::transformPoint( const Eks::Vector3D &in )
+Vector3D Modeller::transformPoint( const Vector3D &in )
   {
   return _transform * in;
   }
 
-XVector <Eks::Vector3D> XModeller::transformPoints( const XVector <Eks::Vector3D> &list )
+void Modeller::transformPoints(Vector <Vector3D> &list)
   {
-  if( _transform.isApprox(XTransform::Identity()) )
+  if( _transform.isApprox(Transform::Identity()) )
     {
-    return list;
+    return;
     }
 
-  XVector <Eks::Vector3D> ret;
-  ret.reserve(list.size());
-
-  Q_FOREACH( const Eks::Vector3D &v, list )
+  for(xsize i = 0, s = list.size(); i < s; ++i)
     {
-    ret << _transform * v;
+    Vector3D& v = list[i];
+    Vector3D tr = _transform * v;
+    v = tr;
     }
-
-  return ret;
   }
 
-Eks::Vector3D XModeller::transformNormal( Eks::Vector3D in )
+Vector3D Modeller::transformNormal( Vector3D in )
   {
   return _transform.linear() * in;
   }
 
-XVector <Eks::Vector3D> XModeller::transformNormals( const XVector <Eks::Vector3D> &list, bool reNormalize )
+void Modeller::transformNormals( Vector <Vector3D> &list, bool reNormalize )
   {
-  if( _transform.isApprox(XTransform::Identity()) )
+  if( _transform.isApprox(Transform::Identity()) )
     {
-    return list;
+    return;
     }
-
-  XVector <Eks::Vector3D> ret;
-  ret.reserve(list.size());
 
   if(reNormalize)
     {
-    Q_FOREACH( const Eks::Vector3D &v, list )
+    for(xsize i = 0, s = list.size(); i < s; ++i)
       {
-      ret << (_transform.linear() * v).normalized();
+      Vector3D& v = list[i];
+      Vector3D tr = (_transform.linear() * v).normalized();
+      v = tr;
       }
     }
   else
     {
-    Q_FOREACH( const Eks::Vector3D &v, list )
+    for(xsize i = 0, s = list.size(); i < s; ++i)
       {
-      ret << _transform.linear() * v;
+      Vector3D& v = list[i];
+      Vector3D tr = _transform.linear() * v;
+      v = tr;
       }
     }
-
-  return ret;
   }
 
-void XModeller::drawCurve( const XAbstractCurve <Eks::Vector3D> &curve, xsize segments )
+void Modeller::drawCurve(const AbstractCurve <Vector3D> &curve, xsize segments )
   {
   Real start( curve.minimumT() );
   Real inc( ( curve.maximumT() - curve.minimumT() ) / (segments-1) );
@@ -548,7 +592,7 @@ void XModeller::drawCurve( const XAbstractCurve <Eks::Vector3D> &curve, xsize se
 
   _vertex << transformPoint( curve.sample( start ) );
   _texture << Eks::Vector2D();
-  _normals << Eks::Vector3D();
+  _normals << Vector3D();
 
   for( xsize x=1; x<segments; x++ )
     {
@@ -557,8 +601,8 @@ void XModeller::drawCurve( const XAbstractCurve <Eks::Vector3D> &curve, xsize se
     _vertex << transformPoint( curve.sample( start + ( x * inc ) ) );
 
     _texture << Eks::Vector2D();
-    _normals << Eks::Vector3D();
+    _normals << Vector3D();
     }
   }
 
-#endif
+}

@@ -34,7 +34,7 @@ public:
     const ObjLoader::ObjElement *desc;
     };
 
-  ObjLoader(AllocatorBase *allocator=GlobalAllocator::instance());
+  ObjLoader(AllocatorBase *allocator);
 
   void load(const char *data,
     xsize dataSize,
