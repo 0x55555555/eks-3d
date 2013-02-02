@@ -51,9 +51,8 @@ public:
     }
   };
 
-void Modeller::bakeTriangles(
-    Renderer *r,
-    xuint32 *semanticOrder,
+void Modeller::bakeTriangles(Renderer *r,
+    ShaderVertexLayoutDescription::Semantic *semanticOrder,
     xsize semanticCount,
     IndexGeometry *index,
     Geometry *geo)
@@ -81,7 +80,7 @@ void Modeller::bakeTriangles(
   xsize offset = 0;
   for(xsize i = 0; i < semanticCount; ++i)
     {
-    xuint32 semantic = semanticOrder[i];
+    ShaderVertexLayoutDescription::Semantic semantic = semanticOrder[i];
     if(semantic == ShaderVertexLayoutDescription::Position)
       {
       Utils::bakeArray(data, offset, vertSize, _vertex);

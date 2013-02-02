@@ -7,6 +7,7 @@
 #include "XGeometry.h"
 #include "XColour"
 #include "XTransform.h"
+#include "XShader.h"
 
 namespace Eks
 {
@@ -26,7 +27,7 @@ public:
   ~Modeller();
 
   void bakeTriangles(Renderer *r,
-      xuint32 *semanticOrder,
+      ShaderVertexLayoutDescription::Semantic *semanticOrder,
       xsize semanticCount,
       IndexGeometry *index,
       Geometry *geo);
@@ -51,7 +52,12 @@ public:
   // Draw Functions
   void drawWireCube( const Cuboid &cube );
 
-  void drawCone(const Vector3D &point, const Vector3D &direction, float length, float radius, xuint32 divs=6);
+  void drawCone(
+      const Vector3D &point,
+      const Vector3D &direction,
+      float length,
+      float radius,
+      xuint32 divs=6);
 
   void drawSphere(float radius, int lats = 8, int longs = 12);
   void drawCube(

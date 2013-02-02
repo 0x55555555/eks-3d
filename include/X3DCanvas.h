@@ -63,6 +63,8 @@ public:
     return 0;
     }
 
+  Renderer *renderer() { return _renderer; }
+
 protected:
   void resizeEvent(QResizeEvent* evt) X_OVERRIDE;
   void paintEvent(QPaintEvent*) X_OVERRIDE;
