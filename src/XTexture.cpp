@@ -12,7 +12,7 @@ Texture2D::Texture2D(
     xsize width,
     xsize height,
     Format fmt,
-    void *data)
+    const void *data)
   {
   if(r)
     {
@@ -34,7 +34,7 @@ bool Texture2D::delayedCreate(
     xsize width,
     xsize height,
     Format fmt,
-    void *data)
+    const void *data)
   {
   ths._renderer = r;
   return r->functions().create.texture2D(r, &ths, width, height, fmt, data);

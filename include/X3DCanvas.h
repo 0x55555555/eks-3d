@@ -54,7 +54,6 @@ class Renderer;
 class EKS3D_EXPORT D3D3DCanvas : public QWidget
   {
 public:
-
   D3D3DCanvas(QWidget* parent = 0);
   ~D3D3DCanvas();
 
@@ -64,6 +63,7 @@ public:
     }
 
   Renderer *renderer() { return _renderer; }
+  ScreenFrameBuffer *buffer() { return _buffer; }
 
 protected:
   void resizeEvent(QResizeEvent* evt) X_OVERRIDE;
@@ -93,6 +93,8 @@ class EKS3D_EXPORT Canvas3D : public
 #endif
     , public AbstractCanvas
   {
+  Q_OBJECT
+
 public:
   typedef
 #if X_ENABLE_DX_RENDERER
@@ -109,6 +111,9 @@ public:
   virtual void update(AbstractRenderModel::UpdateMode);
 
   bool isShown() X_OVERRIDE;
+
+public slots:
+  void update3D();
   };
 
 }

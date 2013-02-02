@@ -293,7 +293,7 @@ bool createTexture(
     xsize width,
     xsize height,
     xuint32 format,
-    void *data)
+    const void *data)
   {
   XD3DTexture2DImpl *tex = t->create<XD3DTexture2DImpl>();
 

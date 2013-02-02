@@ -578,7 +578,7 @@ bool XD3DTexture2DImpl::create(
     xsize height,
     DXGI_FORMAT format,
     DXGI_FORMAT readFormat,
-    void *inp,
+    const void *inp,
     xuint8 bpp,
     UINT bindFlags,
     D3D11_USAGE usage)

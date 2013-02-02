@@ -29,12 +29,11 @@ public:
     FormatCount
     };
 
-  Texture2D(
-        Renderer *r=0,
+  Texture2D(Renderer *r=0,
         xsize width=0,
         xsize height=0,
         Format fmt=FormatCount,
-        void *data=0);
+        const void *data=0);
   ~Texture2D();
 
   static bool delayedCreate(
@@ -43,7 +42,7 @@ public:
         xsize width,
         xsize height,
         Format fmt,
-        void *data);
+        const void *data);
 
   void setRenderer(Renderer *r);
 

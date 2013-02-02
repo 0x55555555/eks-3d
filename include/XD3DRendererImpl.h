@@ -125,7 +125,7 @@ public:
     xsize height,
     DXGI_FORMAT format,
     DXGI_FORMAT shader,
-    void *data,
+    const void *data,
     xuint8 bpp,
     UINT bindFlags = D3D11_BIND_SHADER_RESOURCE,
     D3D11_USAGE usage = D3D11_USAGE_IMMUTABLE);

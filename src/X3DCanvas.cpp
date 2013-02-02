@@ -68,6 +68,11 @@ void Canvas3D::update(AbstractRenderModel::UpdateMode)
   {
   }
 
+void Canvas3D::update3D()
+  {
+  paint3D(renderer(), buffer());
+  }
+
 }
 
 #endif

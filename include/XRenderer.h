@@ -67,7 +67,7 @@ struct RendererCreateFunctions
       xsize width,
       xsize height,
       xuint32 format,
-      void *data);
+      const void *data);
 
   bool (*shader)(
       Renderer *r,
