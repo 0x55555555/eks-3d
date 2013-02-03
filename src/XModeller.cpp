@@ -41,7 +41,7 @@ public:
     {
     xsize count = dataIn.size();
 
-    xAssert((offset + (stride * count)) < data.size());
+    xAssert((offset + (stride * (count-1))) <= data.size());
     xuint8 *dataOut = data.data();
     for(xsize i = 0; i < count; ++i)
       {
