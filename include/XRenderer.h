@@ -227,7 +227,7 @@ public:
     functions().set.rasteriserState(this, s);
     }
 
-  void drawTriangles(Geometry *g)
+  void drawTriangles(const Geometry *g)
     {
     functions().draw.triangles(this, g);
     }

@@ -601,6 +601,12 @@ bool XD3DTexture2DImpl::create(
   data.SysMemPitch = width * bpp;
   data.SysMemSlicePitch = 0;
 
+#ifdef X_DEBUG
+  const xsize dataSize = width * height * bpp;
+  const void *dataEnd = Eks::offsetBy(inp, dataSize);
+  (void)dataEnd;
+#endif
+
   ID3D11Texture2D *tex = 0;
   if(failedCheck(dev->CreateTexture2D(&desc, inp ? &data : 0, &tex)))
     {
