@@ -43,7 +43,7 @@ public:
 
   enum OffsetPack
     {
-    OffsetPackTight = X_SIZE_SENTINEL
+    OffsetPackTight = X_UINT32_SENTINEL
     };
 
   enum Semantic

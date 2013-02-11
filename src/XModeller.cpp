@@ -167,19 +167,19 @@ void Modeller::vertex( const Vector3D &vec )
   if( _states.back().type == Lines )
     {
     _areLineIndicesSequential |= _linIndices.size() == _vertex.size();
-    _linIndices << _vertex.size() - 1;
+    _linIndices << (xuint16)(_vertex.size() - 1);
     }
   else if( _states.back().type == Triangles )
     {
     _areTriangleIndicesSequential |= _triIndices.size() == _vertex.size();
-    _triIndices << _vertex.size() - 1;
+    _triIndices << (xuint16)(_vertex.size() - 1);
 
     if( _states.back().normalsAutomatic && ( _triIndices.size() % 3 ) == 0 )
       {
       _areTriangleIndicesSequential = false;
-      int i1( _vertex.size() - 3 );
-      int i2( _vertex.size() - 2 );
-      int i3( _vertex.size() - 1 );
+      xsize i1( _vertex.size() - 3 );
+      xsize i2( _vertex.size() - 2 );
+      xsize i3( _vertex.size() - 1 );
       while( _normals.size() < _vertex.size() )
         {
         _normals << Vector3D::Zero();
@@ -194,16 +194,16 @@ void Modeller::vertex( const Vector3D &vec )
     {
     _quadCount++;
     _areTriangleIndicesSequential = false;
-    _triIndices << _vertex.size() - 1;
+    _triIndices << (xuint16)(_vertex.size() - 1);
 
     if( _quadCount == 4 )
       {
       if( _states.back().normalsAutomatic )
         {
-        int i1( _vertex.size() - 4 );
-        int i2( _vertex.size() - 3 );
-        int i3( _vertex.size() - 2 );
-        int i4( _vertex.size() - 1 );
+        xsize i1( _vertex.size() - 4 );
+        xsize i2( _vertex.size() - 3 );
+        xsize i3( _vertex.size() - 2 );
+        xsize i4( _vertex.size() - 1 );
         while( _normals.size() < _vertex.size() )
           {
           _normals << Vector3D::Zero();
@@ -213,7 +213,7 @@ void Modeller::vertex( const Vector3D &vec )
 
         _normals[i1] = _normals[i2] = _normals[i3] = _normals[i4] = vec1.cross(vec2).normalized();
         }
-      
+
       xsize idxA = _triIndices.size()-4;
       xsize idxB = _triIndices.size()-2;
       _triIndices << _triIndices[idxA];
@@ -259,7 +259,7 @@ void Modeller::drawWireCube( const Cuboid &cube )
   Vector3D size = cube.size();
   Vector3D min = cube.minimum();
 
-  int sI = _vertex.size();
+  xuint16 sI = (xuint16)_vertex.size();
 
   _vertex << min
           << min + Vector3D(size.x(), 0.0f, 0.0f)
@@ -300,7 +300,7 @@ void Modeller::drawCone(const Vector3D &point, const Vector3D &direction, float 
   _texture.reserve(1 + divs);
   _triIndices.reserve(3 * divs);
 
-  xuint32 eIndex = _vertex.size();
+  xuint16 eIndex = (xuint16)(_vertex.size());
   _vertex << transformPoint(point + dirNorm * length);
   _normals << transformNormal(dirNorm);
 
@@ -417,7 +417,7 @@ void Modeller::drawCube(
 
   // Top Face BL
   {
-  unsigned int begin( _vertex.size() );
+  xuint16 begin = (xuint16)_vertex.size();
   _triIndices << begin << begin + 1 << begin + 2 << begin + 2 << begin + 1 << begin + 3;
 
   _normals << n1 << n1 << n1 << n1;
@@ -427,7 +427,7 @@ void Modeller::drawCube(
 
   // Back Face BM
   {
-  unsigned int begin( _vertex.size() );
+  xuint16 begin = (xuint16) _vertex.size();
   _triIndices << begin << begin + 1 << begin + 2 << begin + 2 << begin + 1 << begin + 3;
 
   _normals << n5 << n5 << n5 << n5;
@@ -437,7 +437,7 @@ void Modeller::drawCube(
 
   // Bottom Face BR
   {
-  unsigned int begin( _vertex.size() );
+  xuint16 begin = (xuint16)_vertex.size();
   _triIndices << begin << begin + 1 << begin + 2 << begin + 2 << begin + 1 << begin + 3;
 
   _normals << n2 << n2 << n2 << n2;
@@ -447,7 +447,7 @@ void Modeller::drawCube(
 
   // Left Face TL
   {
-  unsigned int begin( _vertex.size() );
+  xuint16 begin = (xuint16)_vertex.size();
   _triIndices << begin << begin + 1 << begin + 2 << begin + 2 << begin + 1 << begin + 3;
 
   _normals << n3 << n3 << n3 << n3;
@@ -457,7 +457,7 @@ void Modeller::drawCube(
 
   // Front Face TM
   {
-  unsigned int begin( _vertex.size() );
+  xuint16 begin = (xuint16)_vertex.size();
   _triIndices << begin << begin + 1 << begin + 2 << begin + 2 << begin + 1 << begin + 3;
 
   _normals << n6 << n6 << n6 << n6;
@@ -467,7 +467,7 @@ void Modeller::drawCube(
 
   // Right Face TR
   {
-  unsigned int begin( _vertex.size() );
+  xuint16 begin = (xuint16)_vertex.size();
   _triIndices << begin << begin + 1 << begin + 2 << begin + 2 << begin + 1 << begin + 3;
 
   _normals << n4 << n4 << n4 << n4;
@@ -482,7 +482,7 @@ void Modeller::drawQuad(const Vector3D &hor, const Vector3D &ver)
   Vector3D h = hor / 2.0;
   Vector3D v = ver / 2.0;
 
-  unsigned int begin( _vertex.size() );
+  xuint16 begin = (xuint16)_vertex.size();
   _triIndices << begin << begin + 1 << begin + 2 << begin << begin + 2 << begin + 3;
   _vertex << transformPoint( -h - v ) << transformPoint( h - v ) << transformPoint( h + v ) << transformPoint( -h + v );
   _texture << Eks::Vector2D(0,0) << Eks::Vector2D(1,0) << Eks::Vector2D(1,1) << Eks::Vector2D(0,1);
@@ -493,7 +493,7 @@ void Modeller::drawQuad(const Vector3D &hor, const Vector3D &ver)
 
 void Modeller::drawLocator(const Vector3D &size, const Vector3D &center)
   {
-  int begin( _vertex.size() );
+  xuint16 begin = (xuint16)_vertex.size();
   _linIndices << begin << begin + 1 << begin + 2 << begin + 3 << begin + 4 << begin + 5;
 
   _vertex << transformPoint( center + Vector3D( -size.x(), 0, 0 ) )
@@ -587,13 +587,13 @@ void Modeller::drawCurve(const AbstractCurve <Vector3D> &curve, xsize segments )
   Real start( curve.minimumT() );
   Real inc( ( curve.maximumT() - curve.minimumT() ) / (segments-1) );
 
-  int begin( _vertex.size() );
+  xuint16 begin = (xuint16)_vertex.size();
 
   _vertex << transformPoint( curve.sample( start ) );
   _texture << Eks::Vector2D();
   _normals << Vector3D();
 
-  for( xsize x=1; x<segments; x++ )
+  for( xuint16 x=1; x<(xuint16)segments; x++ )
     {
     _linIndices << begin + (x-1) << begin + x;
 

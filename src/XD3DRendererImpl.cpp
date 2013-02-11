@@ -23,7 +23,7 @@ bool failedCheck(HRESULT res)
   return true;
   }
 
-D3DRendererImpl::D3DRendererImpl(IUnknown *w, HWND hwnd, const detail::RendererFunctions& fns)
+D3DRendererImpl::D3DRendererImpl(IUnknown *w, const detail::RendererFunctions& fns)
   {
   setFunctions(fns);
   _featureLevel = D3D_FEATURE_LEVEL_9_1;
@@ -31,6 +31,19 @@ D3DRendererImpl::D3DRendererImpl(IUnknown *w, HWND hwnd, const detail::RendererF
   xAssertIsAligned(&_clearColour);
   _clearColour = Colour::Zero();
   _window = w;
+  _handle = 0;
+  createResources();
+  }
+
+D3DRendererImpl::D3DRendererImpl(HWND hwnd, const detail::RendererFunctions& fns)
+  {
+  setFunctions(fns);
+  _featureLevel = D3D_FEATURE_LEVEL_9_1;
+
+  xAssertIsAligned(&_clearColour);
+  _clearColour = Colour::Zero();
+
+  _window = 0;
   _handle = hwnd;
   createResources();
   }
@@ -323,7 +336,7 @@ bool XD3DBufferImpl::create(ID3D11Device1 *dev, const void *data, xsize size, D3
   bufferData.SysMemPitch = 0;
   bufferData.SysMemSlicePitch = 0;
 
-  CD3D11_BUFFER_DESC constantBufferDesc(size, type);
+  CD3D11_BUFFER_DESC constantBufferDesc((UINT)size, type);
   if(failedCheck(
     dev->CreateBuffer(
       &constantBufferDesc,
@@ -584,8 +597,8 @@ bool XD3DTexture2DImpl::create(
     D3D11_USAGE usage)
   {
   D3D11_TEXTURE2D_DESC desc;
-  desc.Width = width;
-  desc.Height = height;
+  desc.Width = (UINT)width;
+  desc.Height = (UINT)height;
   desc.MipLevels = 1;
   desc.ArraySize = 1;
   desc.Format = format;
@@ -598,7 +611,7 @@ bool XD3DTexture2DImpl::create(
 
   D3D11_SUBRESOURCE_DATA data;
   data.pSysMem = inp;
-  data.SysMemPitch = width * bpp;
+  data.SysMemPitch = (UINT)(width * bpp);
   data.SysMemSlicePitch = 0;
 
 #ifdef X_DEBUG

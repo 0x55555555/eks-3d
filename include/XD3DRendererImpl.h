@@ -183,7 +183,8 @@ public:
 class D3DRendererImpl : public Renderer
   {
 public:
-  D3DRendererImpl(IUnknown *w, HWND handle, const detail::RendererFunctions &fn);
+  D3DRendererImpl(IUnknown *w, const detail::RendererFunctions &fn);
+  D3DRendererImpl(HWND handle, const detail::RendererFunctions &fn);
   ~D3DRendererImpl();
 
   enum

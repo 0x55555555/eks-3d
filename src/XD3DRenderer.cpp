@@ -175,7 +175,7 @@ bool createVertexShaderComponent(
     xAssert(layout);
     xAssert(vertexItemCount);
 
-    xCompileTimeAssert(D3D11_APPEND_ALIGNED_ELEMENT == X_SIZE_SENTINEL);
+    xCompileTimeAssert(D3D11_APPEND_ALIGNED_ELEMENT == ShaderVertexLayoutDescription::OffsetPackTight);
     xCompileTimeAssert(D3D11_INPUT_PER_VERTEX_DATA == ShaderVertexLayoutDescription::Slot::PerVertex);
     xCompileTimeAssert(D3D11_INPUT_PER_INSTANCE_DATA == ShaderVertexLayoutDescription::Slot::PerInstance);
 
@@ -206,11 +206,11 @@ bool createVertexShaderComponent(
       currentVertexDesc->SemanticName = semanticMap[vertexDescriptions->semantic];
       currentVertexDesc->SemanticIndex = 0; // increase for matrices...
       currentVertexDesc->Format = formatMap[vertexDescriptions->format]; // increase for matrices...
-      currentVertexDesc->AlignedByteOffset = vertexDescriptions->offset;
+      currentVertexDesc->AlignedByteOffset = (UINT)vertexDescriptions->offset;
 
       currentVertexDesc->InputSlot = vertexDescriptions->slot.index;
       currentVertexDesc->InputSlotClass = (D3D11_INPUT_CLASSIFICATION)vertexDescriptions->slot.type;
-      currentVertexDesc->InstanceDataStepRate = vertexDescriptions->slot.instanceDataStepRate;
+      currentVertexDesc->InstanceDataStepRate = (UINT)vertexDescriptions->slot.instanceDataStepRate;
       }
 
     xAssert(!layout->isValid());
@@ -218,9 +218,9 @@ bool createVertexShaderComponent(
     if(failedCheck(
       D3D(r)->_d3dDevice->CreateInputLayout(
         vertexDesc,
-        vertexItemCount,
+        (UINT)vertexItemCount,
         s,
-        l,
+        (UINT)l,
         &lay->_inputLayout
         )))
       {
@@ -378,7 +378,7 @@ void drawTriangles(Renderer *r, const Geometry *vert)
   {
   const XD3DVertexBufferImpl *geo = vert->data<XD3DVertexBufferImpl>();
 
-  UINT stride = geo->elementSize;
+  UINT stride = (UINT)geo->elementSize;
   UINT offset = 0;
   D3D(r)->_d3dContext->IASetVertexBuffers(
     0,
@@ -391,7 +391,7 @@ void drawTriangles(Renderer *r, const Geometry *vert)
   D3D(r)->_d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   D3D(r)->_d3dContext->Draw(
-    geo->elementCount,
+    (UINT)geo->elementCount,
     0
     );
   }
@@ -401,7 +401,7 @@ void drawIndexedTriangles(Renderer *r, const IndexGeometry *indices, const Geome
   const XD3DVertexBufferImpl *geo = vert->data<XD3DVertexBufferImpl>();
   const XD3DIndexBufferImpl *idx = indices->data<XD3DIndexBufferImpl>();
 
-  UINT stride = geo->elementSize;
+  UINT stride = (UINT)geo->elementSize;
   UINT offset = 0;
   D3D(r)->_d3dContext->IASetVertexBuffers(
     0,
@@ -420,7 +420,7 @@ void drawIndexedTriangles(Renderer *r, const IndexGeometry *indices, const Geome
   D3D(r)->_d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   D3D(r)->_d3dContext->DrawIndexed(
-    idx->count,
+    (UINT)idx->count,
     0,
     0
     );
@@ -461,8 +461,8 @@ void setFragmentShaderConstantBuffer(
     }
 
   D3D(r)->_d3dContext->PSSetConstantBuffers(
-    D3DRendererImpl::UserPSContantBufferOffset + index,
-    num,
+    (UINT)(D3DRendererImpl::UserPSContantBufferOffset + index),
+    (UINT)num,
     buffers
     );
   }
@@ -482,8 +482,8 @@ void setVertexShaderConstantBuffer(
     }
 
   D3D(r)->_d3dContext->VSSetConstantBuffers(
-    D3DRendererImpl::UserVSContantBufferOffset + index,
-    num,
+    (UINT)(D3DRendererImpl::UserVSContantBufferOffset + index),
+    (UINT)num,
     buffers
     );
   }
@@ -511,8 +511,8 @@ void setFragmentShaderResource(
     }
 
   D3D(r)->_d3dContext->PSSetShaderResources(
-    D3DRendererImpl::UserPSContantBufferOffset + index,
-    num,
+    (UINT)(D3DRendererImpl::UserPSContantBufferOffset + index),
+    (UINT)num,
     buffers
     );
   }
@@ -533,8 +533,8 @@ void setVertexShaderResource(
     }
 
   D3D(r)->_d3dContext->VSSetShaderResources(
-    D3DRendererImpl::UserVSContantBufferOffset + index,
-    num,
+    (UINT)(D3DRendererImpl::UserVSContantBufferOffset + index),
+    (UINT)num,
     buffers
     );
   }
@@ -625,7 +625,7 @@ detail::RendererFunctions fns =
 
 Renderer *D3DRenderer::createD3DRenderer(IUnknown *window, ScreenFrameBuffer *buffer, Eks::AllocatorBase *a)
   {
-  D3DRendererImpl *r = a->createWithAlignment<D3DRendererImpl>(window, nullptr, fns, X_ALIGN_BYTE_COUNT);
+  D3DRendererImpl *r = a->createWithAlignment<D3DRendererImpl>(window, fns, X_ALIGN_BYTE_COUNT);
 
   xAssert(!buffer->isValid());
   buffer->create<XD3DSwapChainImpl>();
@@ -636,7 +636,7 @@ Renderer *D3DRenderer::createD3DRenderer(IUnknown *window, ScreenFrameBuffer *bu
 
 Renderer *D3DRenderer::createD3DRenderer(void *handle, ScreenFrameBuffer *buffer, Eks::AllocatorBase *a)
   {
-  D3DRendererImpl *r = a->createWithAlignment<D3DRendererImpl>(nullptr, (HWND)handle, fns, X_ALIGN_BYTE_COUNT);
+  D3DRendererImpl *r = a->createWithAlignment<D3DRendererImpl>((HWND)handle, fns, X_ALIGN_BYTE_COUNT);
 
   xAssert(!buffer->isValid());
   buffer->create<XD3DSwapChainImpl>();

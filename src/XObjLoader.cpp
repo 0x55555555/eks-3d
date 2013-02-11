@@ -10,7 +10,7 @@ const char separator = '/';
 namespace
 {
 
-int skipSpaces(const ObjLoader::LineCache &line, xsize from, xsize &firstSpace)
+xsize skipSpaces(const ObjLoader::LineCache &line, xsize from, xsize &firstSpace)
   {
   firstSpace = from;
 
@@ -172,9 +172,9 @@ void computeNormal(
 
     el.data << (b-a).cross(c-a).normalized();
 
-    triA[elIdx] = newNorm;
-    triB[elIdx] = newNorm;
-    triC[elIdx] = newNorm;
+    triA[elIdx] = (int)newNorm;
+    triB[elIdx] = (int)newNorm;
+    triC[elIdx] = (int)newNorm;
     }
   }
 }
@@ -214,7 +214,7 @@ void ObjLoader::bake(
     xsize elementCount,
     Vector<xuint8> *bakedData)
   {
-  for(int i = 0, s = unbakedTriangles.size(); i < s; ++i)
+  for(xsize i = 0, s = unbakedTriangles.size(); i < s; ++i)
     {
     const VectorI3D &idx = unbakedTriangles[i];
 
@@ -286,7 +286,7 @@ bool ObjLoader::readIndices(
 
     pos = sepEnd + 1;
     }
-  
+
   if(count == 0 && pos >= firstSpace)
     {
     return false;
@@ -373,7 +373,7 @@ void ObjLoader::load(
       ++pos;
       }
     ++pos; // skip \n
-    
+
     // remove the carriage return from win files.
     if(line.back() == '\r')
       {
