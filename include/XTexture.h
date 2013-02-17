@@ -4,6 +4,7 @@
 #include "X3DGlobal.h"
 #include "XPrivateImpl"
 #include "XProperty"
+#include "XRenderer.h"
 
 namespace Eks
 {
@@ -44,6 +45,8 @@ public:
         Format fmt,
         const void *data);
 
+  Eks::VectorUI2D size() const;
+
   void setRenderer(Renderer *r);
 
 private:
@@ -52,6 +55,14 @@ private:
   Renderer *_renderer;
   };
 
+
+inline Eks::VectorUI2D Texture2D::size() const
+  {
+  Eks::VectorUI2D ret;
+  _renderer->functions().get.texture2DInfo(_renderer, this, ret);
+
+  return ret;
+  }
 }
 
 #endif // XABSTRACTTEXTURE_H

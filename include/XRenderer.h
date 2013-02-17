@@ -163,6 +163,11 @@ struct RendererSetFunctions
   void (*transform)(Renderer *r, const Transform &);
   };
 
+struct RendererGetFunctions
+  {
+  void (*texture2DInfo)(const Renderer *r, const Texture2D *tex, Eks::VectorUI2D& v);
+  };
+
 struct RendererDrawFunctions
   {
   // draw the given geometry
@@ -186,6 +191,7 @@ struct RendererFunctions
   RendererCreateFunctions create;
   RendererDestroyFunctions destroy;
   RendererSetFunctions set;
+  RendererGetFunctions get;
   RendererDrawFunctions draw;
   RendererFramebufferFunctions frame;
   };

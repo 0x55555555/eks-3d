@@ -96,6 +96,21 @@ void setClearColour(Renderer *r, const Colour &col)
   D3D(r)->_clearColour = col;
   }
 
+void getTexture2DInfo(const Renderer *, const Texture2D* t, Eks::VectorUI2D& v)
+  {
+  const XD3DTexture2DImpl* impl = t->data<XD3DTexture2DImpl>();
+
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> tex;
+  impl->resource.As(&tex);
+  xAssert(tex);
+
+  D3D11_TEXTURE2D_DESC dsc;
+  tex->GetDesc(&dsc);
+
+  v.x() = dsc.Width;
+  v.y() = dsc.Height;
+  }
+
 bool createFramebuffer(
     Renderer *r,
     FrameBuffer *buffer,
@@ -607,6 +622,9 @@ detail::RendererFunctions fns =
       setShader,
       setRasteriserState,
       setTransform
+    },
+    {
+      getTexture2DInfo
     },
     {
       drawIndexedTriangles,
