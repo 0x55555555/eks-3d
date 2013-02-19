@@ -16,18 +16,11 @@ namespace Eks
 class XGLShader;
 class XGLFramebuffer;
 
-class EKS3D_EXPORT GLRenderer : public Renderer
+class EKS3D_EXPORT GLESRenderer
   {
 public:
   static Renderer *createGLRenderer(ScreenFrameBuffer *buffer);
   static void destroyGLRenderer(Renderer *, ScreenFrameBuffer *buffer);
-
-private:
-  QGLContext *_context;
-  Shader *_currentShader;
-  ShaderVertexLayout *_vertexLayout;
-  QSize _size;
-  XGLFramebuffer *_currentFramebuffer;
   };
 
 }

@@ -263,7 +263,8 @@ bool createGeometry(
 
   xsize dataSize = elementSize * elementCount;
 
-  bool result = geo->create(D3D(r)->_d3dDevice.Get(), data, dataSize, D3D11_BIND_VERTEX_BUFFER);
+  D3DRendererImpl* impl = D3D(r);
+  bool result = geo->create(impl->_d3dDevice.Get(), data, dataSize, D3D11_BIND_VERTEX_BUFFER);
 
   geo->elementSize = elementSize;
   geo->elementCount = elementCount;

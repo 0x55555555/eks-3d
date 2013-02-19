@@ -1,18 +1,19 @@
 #include "XGLRenderer.h"
 
-#ifndef X_ENABLE_GL_RENDERER
+#if X_ENABLE_GL_RENDERER
 
-#include "GL/glew.h"
 #include "XFramebuffer.h"
-#include "Geometry.h"
-#include "Shader.h"
+#include "XGeometry.h"
+#include "XShader.h"
 #include "XTexture.h"
-#include "Colour"
+#include "XColour"
 #include "QGLShaderProgram"
 #include "QVarLengthArray"
 #include "QDebug"
-#include "Shader.h"
+#include "XShader.h"
 #include "QFile"
+
+#define GL_R(x) static_cast<GLESRendererImpl*>(x)
 
 const char *glErrorString( int err )
   {
@@ -28,17 +29,13 @@ const char *glErrorString( int err )
     {
     return "GL Error: Invalid Operation";
     }
-  else if( err == GL_STACK_OVERFLOW )
-    {
-    return "GL Error: Stack Overflow";
-    }
-  else if( err == GL_STACK_UNDERFLOW )
-    {
-    return "GL Error: Stack Underflow";
-    }
   else if( err == GL_OUT_OF_MEMORY )
     {
     return "GL Error: Out Of Memory";
+    }
+  else if ( err )
+    {
+    return "GL Error: Unknown";
     }
   return "GL Error: No Error";
   }
@@ -53,36 +50,39 @@ const char *glErrorString( int err )
 //# define GLE_QUIET ; glGetError()
 #endif
 
+namespace Eks
+{
+
+class GLESRendererImpl;
+
 //----------------------------------------------------------------------------------------------------------------------
 // TEXTURE
 //----------------------------------------------------------------------------------------------------------------------
 
-class XGLTexture : public XAbstractTexture
+class XGLTexture
   {
 public:
-  XGLTexture( XGLRenderer * );
-  XGLTexture( XGLRenderer *, int format, int width, int height );
+  bool init( GLESRendererImpl *, int format, int width, int height );
+
   ~XGLTexture();
-  virtual void load( const QImage & );
-  virtual QImage save( );
 
 private:
   void clear();
-  XGLRenderer *_renderer;
+
   unsigned int _id;
+
   friend class XGLFramebuffer;
   friend class XGLShaderVariable;
-  friend class XGLRenderer;
   };
 
 //----------------------------------------------------------------------------------------------------------------------
 // FRAMEBUFFER
 //----------------------------------------------------------------------------------------------------------------------
 
-class XGLFramebuffer : public XAbstractFramebuffer
+class XGLFramebuffer
   {
 public:
-  XGLFramebuffer( XGLRenderer *, int options, int colourFormat, int depthFormat, int width, int height );
+  bool init( GLESRendererImpl *, int options, int colourFormat, int depthFormat, int width, int height );
   ~XGLFramebuffer( );
 
   void bind();
@@ -90,63 +90,14 @@ public:
 
   virtual bool isValid() const;
 
-  virtual const XAbstractTexture *colour() const;
-  virtual const XAbstractTexture *depth() const;
+  const Texture2D *colour() const;
+  const Texture2D *depth() const;
 
 private:
-  XGLRenderer *_renderer;
   XGLTexture *_colour;
   XGLTexture *_depth;
   unsigned int _buffer;
-  friend class XGLShaderVariable;
-  friend class XGLRenderer;
-  };
 
-//----------------------------------------------------------------------------------------------------------------------
-// VERTEX LAYOUT
-//----------------------------------------------------------------------------------------------------------------------
-
-class XGLVertexLayout
-  {
-public:
-  XGLVertexLayout( XGLRenderer * );
-  ~XGLVertexLayout();
-
-  struct Attribute
-    {
-    QString name;
-    xsize stride;
-    xsize offset;
-    xuint8 components;
-    // type is currently always float.
-    };
-
-  enum
-    {
-    AttributeCount = 3
-    };
-  QVarLengthArray<Attribute, AttributeCount> attributes;
-
-
-  };
-
-//----------------------------------------------------------------------------------------------------------------------
-// SHADER
-//----------------------------------------------------------------------------------------------------------------------
-
-class XGLShader
-  {
-public:
-  XGLShader( XGLRenderer * );
-  ~XGLShader();
-
-private:
-  bool build(QStringList &log);
-  bool isValid();
-
-
-  QGLShaderProgram shader;
-  friend class XGLRenderer;
   friend class XGLShaderVariable;
   };
 
@@ -157,7 +108,7 @@ private:
 class XGLIndexGeometryCache
   {
 public:
-  XGLIndexGeometryCache( XGLRenderer *, const void *data, IndexGeometry::Type type, xsize elementCount );
+  bool init( GLESRendererImpl *, const void *data, IndexGeometry::Type type, xsize elementCount );
   ~XGLIndexGeometryCache( );
 
   unsigned int _indexArray;
@@ -173,68 +124,151 @@ public:
 class XGLGeometryCache
   {
 public:
-  XGLGeometryCache( XGLRenderer *, const void *data, xsize elementSize, xsize elementCount );
+  bool init( GLESRendererImpl *, const void *data, xsize elementSize, xsize elementCount );
   ~XGLGeometryCache( );
 
   unsigned int _vertexArray;
   };
 
 //----------------------------------------------------------------------------------------------------------------------
+// VERTEX LAYOUT
+//----------------------------------------------------------------------------------------------------------------------
+
+class XGLVertexLayout
+  {
+public:
+  bool init( GLESRendererImpl * );
+  ~XGLVertexLayout();
+
+  struct Attribute
+    {
+    QString name;
+    xsize stride;
+    xsize offset;
+    xuint8 components;
+    // type is currently always float.
+    };
+
+  enum
+    {
+    AttributeCount = 3
+    };
+  Eks::Vector<Attribute, AttributeCount> attributes;
+
+  void bind(const XGLGeometryCache *geo) const;
+  void unbind() const;
+
+  /*
+
+  glBindBuffer( GL_ARRAY_BUFFER, gC->_vertexArray ) GLE;
+  Q_FOREACH( const XGLVertexLayout::Attribute &ref, layout->attributes )
+    {
+    int location( shader->shader.attributeLocation(ref.name) );
+    if( location >= 0 )
+      {
+      m_ids << location;
+      glEnableVertexAttribArray( location ) GLE;
+      glVertexAttribPointer( location, ref.components, GL_FLOAT, GL_FALSE, ref.stride, (GLvoid*)ref.offset ) GLE;
+      }
+    }
+  Q_FOREACH( int id, m_ids )
+    {
+    glDisableVertexAttribArray( id ) GLE;
+    }
+
+  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
+*/
+
+  };
+
+//----------------------------------------------------------------------------------------------------------------------
+// SHADER
+//----------------------------------------------------------------------------------------------------------------------
+
+class XGLShaderComponent
+  {
+  QGLShader component;
+  };
+
+class XGLShader
+  {
+public:
+  bool init( GLESRendererImpl *, XGLShaderComponent *, XGLShaderComponent * );
+  ~XGLShader();
+
+  bool build(QStringList &log);
+  bool isValid();
+
+
+  QGLShaderProgram shader;
+  friend class XGLRenderer;
+  friend class XGLShaderVariable;
+  };
+
+//----------------------------------------------------------------------------------------------------------------------
+// SHADER DATA
+//----------------------------------------------------------------------------------------------------------------------
+
+class XGLShaderData
+  {
+public:
+  bool init(GLESRendererImpl *, xsize size, void *data);
+  ~XGLShaderData();
+
+  void update(void *data);
+
+  friend class XGLRenderer;
+  friend class XGLShaderVariable;
+  };
+
+//----------------------------------------------------------------------------------------------------------------------
 // RENDERER
 //----------------------------------------------------------------------------------------------------------------------
 
-
-XGLRenderer::XGLRenderer() : _context(0), _currentShader(0), _currentFramebuffer(0)
+class GLESRendererImpl : public Renderer
   {
-  m_ids.reserve(8);
+public:
+  GLESRendererImpl();
+
+
+  Eks::Transform model;
+  bool modelDataDirty;
+
+  Eks::Transform view;
+  Eks::Transform projection;
+  bool viewDataDirty;
+
+  QGLContext *_context;
+  Shader *_currentShader;
+  ShaderVertexLayout *_vertexLayout;
+  QSize _size;
+  XGLFramebuffer *_currentFramebuffer;
+  };
+
+GLESRendererImpl::GLESRendererImpl() : _context(0), _currentShader(0), _currentFramebuffer(0)
+  {
   }
 
-void XGLRenderer::setContext(QGLContext *ctx)
+void setTransform(Renderer *r, const Transform &trans)
   {
-  _context = ctx;
+  GL_R(r)->model = trans;
+  GL_R(r)->modelDataDirty = true;
   }
 
-QGLContext *XGLRenderer::context()
-  {
-  return _context;
-  }
-
-const QGLContext *XGLRenderer::context() const
-  {
-  return _context;
-  }
-
-void XGLRenderer::intialise()
-  {
-  glewInit() GLE;
-  glEnable( GL_DEPTH_TEST ) GLE;
-  }
-
-void XGLRenderer::pushTransform( const XTransform &trans )
-  {
-  glMatrixMode( GL_MODELVIEW ) GLE;
-  glPushMatrix() GLE;
-  glMultMatrixf( trans.data() ) GLE;
-  }
-
-void XGLRenderer::popTransform( )
-  {
-  glMatrixMode( GL_MODELVIEW ) GLE;
-  glPopMatrix() GLE;
-  }
-
-void XGLRenderer::setClearColour(const Colour &col)
+void setClearColour(Renderer *, const Colour &col)
   {
   glClearColor(col.x(), col.y(), col.z(), col.w());
   }
 
-void XGLRenderer::clear( int c )
+void clear(Renderer *r, FrameBuffer *fb, int c)
   {
-  int realMode = ((c&ClearColour) != false) ? GL_COLOR_BUFFER_BIT : 0;
-  realMode |= ((c&ClearDepth) != false) ? GL_DEPTH_BUFFER_BIT : 0;
+  xAssert(GL_R(r)->_currentFramebuffer == fb);
+  int realMode = ((c&FrameBuffer::ClearColour) != false) ? GL_COLOR_BUFFER_BIT : 0;
+  realMode |= ((c&FrameBuffer::ClearDepth) != false) ? GL_DEPTH_BUFFER_BIT : 0;
   glClear( realMode ) GLE;
   }
 
+/*
 void XGLRenderer::debugRenderLocator(DebugLocatorMode m)
   {
   if((m&ClearShader) != 0)
@@ -296,92 +330,76 @@ void XGLRenderer::disableRenderFlag( RenderFlags f )
     {
     glDisable( GL_CULL_FACE ) GLE;
     }
-  }
+  }*/
 
-void XGLRenderer::setViewportSize( QSize size )
+void setViewportSize(Renderer *, QSize size)
   {
-  _size = size;
   glViewport( 0, 0, size.width(), size.height() ) GLE;
   }
 
-void XGLRenderer::setProjectionTransform( const XComplexTransform &trans )
+void setViewTransform(Renderer *r, const Eks::Transform &trans)
   {
-  glMatrixMode( GL_PROJECTION ) GLE;
-  glLoadIdentity() GLE;
-  glMultMatrixf( trans.data() ) GLE;
-  glMatrixMode( GL_MODELVIEW ) GLE;
+  GL_R(r)->view = trans;
+  GL_R(r)->viewDataDirty = true;
   }
 
-QDebug operator<<( QDebug dbg, Eks::Vector2D v )
+void setProjectionTransform(Renderer *r, const Eks::ComplexTransform &trans)
   {
-  return dbg << "Vertex2D(" << v.x() << "," << v.y() << ")";
+  GL_R(r)->projection = trans;
+  GL_R(r)->viewDataDirty = true;
   }
 
-QDebug operator<<( QDebug dbg, Eks::Vector3D v )
+void drawTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert)
   {
-  return dbg << "Vertex2D(" <<v.x() << "," << v.y() << "," << v.z() << ")";
-  }
-
-void XGLRenderer::drawTriangles(const IndexGeometry *indices, const Geometry *vert)
-  {
-  xAssert(_currentShader);
-  xAssert(_vertexLayout);
+  GLESRendererImpl* r = GL_R(ren);
+  xAssert(r->_currentShader);
+  xAssert(r->_vertexLayout);
   xAssert(indices);
   xAssert(vert);
 
   const XGLIndexGeometryCache *idx = indices->data<XGLIndexGeometryCache>();
   const XGLGeometryCache *gC = vert->data<XGLGeometryCache>();
-  const XGLShader *shader = _currentShader->data<XGLShader>();
-  const XGLVertexLayout *layout = _vertexLayout->data<XGLVertexLayout>();
+  const XGLVertexLayout *layout = r->_vertexLayout->data<XGLVertexLayout>();
 
-  glBindBuffer( GL_ARRAY_BUFFER, gC->_vertexArray ) GLE;
 
-  m_ids.clear();
-  Q_FOREACH( const XGLVertexLayout::Attribute &ref, layout->attributes )
-    {
-    int location( shader->shader.attributeLocation(ref.name) );
-    if( location >= 0 )
-      {
-      m_ids << location;
-      glEnableVertexAttribArray( location ) GLE;
-      glVertexAttribPointer( location, ref.components, GL_FLOAT, GL_FALSE, ref.stride, (GLvoid*)ref.offset ) GLE;
-      }
-    }
+  layout->bind(gC);
 
   glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, idx->_indexArray ) GLE;
+
   glDrawElements( GL_TRIANGLES, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
+
   glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
 
-  Q_FOREACH( int id, m_ids )
-    {
-    glDisableVertexAttribArray( id ) GLE;
-    }
-
-  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
+  layout->unbind();
   }
 
-bool XGLRenderer::createGeometry(
+bool createGeometry(
+    Renderer *ren,
     Geometry *g,
     const void *data,
     xsize elementSize,
     xsize elementCount)
   {
-  XGLGeometryCache *cache = g->data<XGLGeometryCache>();
-  new(cache) XGLGeometryCache( this, data, elementSize, elementCount );
+  XGLGeometryCache *cache = g->create<XGLGeometryCache>();
+  cache->init(GL_R(ren), data, elementSize, elementCount);
   return true;
   }
 
-void XGLRenderer::setShader( const Shader *shader )
+void setShader(Renderer *ren, const Shader *shader, const ShaderVertexLayout *layout)
   {
-  if( shader && ( _currentShader == 0 || _currentShader != shader ) )
+  GLESRendererImpl* r = GL_R(ren);
+  if( shader &&
+      ( r->_currentShader == 0 || r->_currentShader != shader || r->_vertexLayout != layout) )
     {
-    _currentShader = const_cast<Shader *>(shader);
-    XGLShader* shaderInt = _currentShader->data<XGLShader>();
+    r->_currentShader = const_cast<Shader *>(shader);
+    r->_vertexLayout = const_cast<ShaderVertexLayout *>(layout);
+    XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
 
     xAssert(shaderInt->shader.isLinked());
 
     shaderInt->shader.bind() GLE;
 
+    xAssertFail();
     /*
     int x=0;
     Q_FOREACH( ShaderVariable *var, shader->variables() )
@@ -400,40 +418,38 @@ void XGLRenderer::setShader( const Shader *shader )
       x++;
       }*/
     }
-  else if( shader == 0 && _currentShader != 0 )
+  else if( shader == 0 && r->_currentShader != 0 )
     {
-    XGLShader* shaderInt = _currentShader->data<XGLShader>();
+    XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
     shaderInt->shader.release() GLE;
-    _currentShader = 0;
+    r->_currentShader = 0;
+    r->_vertexLayout = 0;
     }
   }
 
-bool XGLRenderer::createShader(
+bool createShader(
+    Renderer *r,
     Shader *s,
     ShaderVertexComponent *v,
     ShaderFragmentComponent *f)
   {
-  XGLShader *glS = s->data<XGLShader>();
-  new(glS) XGLShader( this, v, f );
+  XGLShader *glS = s->create<XGLShader>();
+  glS->init( GL_R(r), v->data<XGLShaderComponent>(), f->data<XGLShaderComponent>() );
   }
 
-void XGLRenderer::setFramebuffer( const XFramebuffer *fb )
+void setFramebuffer(Renderer *r, const Framebuffer *fb)
   {
-  if( _currentFramebuffer )
+  GLESRendererImpl *r = GL_R(r);
+  if(r->_currentFramebuffer)
     {
     _currentFramebuffer->unbind();
     }
 
-  if( fb )
-    {
-    fb->prepareInternal( this );
-    _currentFramebuffer = static_cast<XGLFramebuffer*>(fb->internal());
-    }
+  xAssert(fb);
+  fb->prepareInternal( this );
+  r->_currentFramebuffer = static_cast<XGLFramebuffer*>(fb->internal());
 
-  if( _currentFramebuffer )
-    {
-    _currentFramebuffer->bind();
-    }
+  r->_currentFramebuffer->bind();
   }
 
 XAbstractFramebuffer *XGLRenderer::getFramebuffer( int options, int c, int d, int width, int height )
@@ -469,6 +485,16 @@ void XGLRenderer::destroyTexture( XAbstractTexture *texture )
 void XGLRenderer::destroyFramebuffer( XAbstractFramebuffer *fb )
   {
   delete fb;
+  }
+
+Renderer *GLESRenderer::createGLRenderer(ScreenFrameBuffer *buffer)
+  {
+  GLESRenderer *r = new GLESRenderer();
+  glEnable( GL_DEPTH_TEST ) GLE;
+
+  xAssertFail();
+
+  return r;
   }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -1187,5 +1213,7 @@ int XGLGeometryCache::getCacheOffset( const QString &name, int components, int a
 
   return c.offset;
   }
+
+}
 
 #endif
