@@ -58,7 +58,7 @@ private:
 
 inline Eks::VectorUI2D Texture2D::size() const
   {
-    xAssert(isValid());
+  xAssert(isValid());
   Eks::VectorUI2D ret;
   _renderer->functions().get.texture2DInfo(_renderer, this, ret);
 
