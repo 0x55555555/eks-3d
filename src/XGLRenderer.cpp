@@ -6,6 +6,7 @@
 #include "XGeometry.h"
 #include "XShader.h"
 #include "XTexture.h"
+#include "XRasteriserState.h"
 #include "XColour"
 #include "QGLShaderProgram"
 #include "QVarLengthArray"
@@ -59,12 +60,12 @@ class GLESRendererImpl;
 // TEXTURE
 //----------------------------------------------------------------------------------------------------------------------
 
-class XGLTexture
+class XGLTexture2D
   {
 public:
-  bool init( GLESRendererImpl *, int format, int width, int height );
+  bool init(GLESRendererImpl *, int format, int width, int height, const void *data);
 
-  ~XGLTexture();
+  ~XGLTexture2D();
 
 private:
   void clear();
@@ -82,7 +83,8 @@ private:
 class XGLFramebuffer
   {
 public:
-  bool init( GLESRendererImpl *, int options, int colourFormat, int depthFormat, int width, int height );
+  bool init(GLESRendererImpl *, int colourFormat, int depthFormat, int width, int height);
+  bool init(GLESRendererImpl *);
   ~XGLFramebuffer( );
 
   void bind();
@@ -94,8 +96,8 @@ public:
   const Texture2D *depth() const;
 
 private:
-  XGLTexture *_colour;
-  XGLTexture *_depth;
+  XGLTexture2D *_colour;
+  XGLTexture2D *_depth;
   unsigned int _buffer;
 
   friend class XGLShaderVariable;
@@ -137,7 +139,7 @@ public:
 class XGLVertexLayout
   {
 public:
-  bool init( GLESRendererImpl * );
+  bool init(GLESRendererImpl *, const ShaderVertexLayoutDescription *, xsize count);
   ~XGLVertexLayout();
 
   struct Attribute
@@ -187,6 +189,9 @@ public:
 
 class XGLShaderComponent
   {
+public:
+  bool init( GLESRendererImpl *, const char *data, xsize size);
+
   QGLShader component;
   };
 
@@ -222,13 +227,22 @@ public:
   };
 
 //----------------------------------------------------------------------------------------------------------------------
+// RASTERISER STATE
+//----------------------------------------------------------------------------------------------------------------------
+
+class XGLRasteriserState
+  {
+
+  };
+
+//----------------------------------------------------------------------------------------------------------------------
 // RENDERER
 //----------------------------------------------------------------------------------------------------------------------
 
 class GLESRendererImpl : public Renderer
   {
 public:
-  GLESRendererImpl();
+  GLESRendererImpl(const detail::RendererFunctions& fns);
 
 
   Eks::Transform model;
@@ -245,8 +259,9 @@ public:
   XGLFramebuffer *_currentFramebuffer;
   };
 
-GLESRendererImpl::GLESRendererImpl() : _context(0), _currentShader(0), _currentFramebuffer(0)
+GLESRendererImpl::GLESRendererImpl(const detail::RendererFunctions &fns) : _context(0), _currentShader(0), _currentFramebuffer(0)
   {
+  setFunctions(fns);
   }
 
 void setTransform(Renderer *r, const Transform &trans)
@@ -262,7 +277,7 @@ void setClearColour(Renderer *, const Colour &col)
 
 void clear(Renderer *r, FrameBuffer *fb, int c)
   {
-  xAssert(GL_R(r)->_currentFramebuffer == fb);
+  xAssert(GL_R(r)->_currentFramebuffer == fb->data<XGLFramebuffer>());
   int realMode = ((c&FrameBuffer::ClearColour) != false) ? GL_COLOR_BUFFER_BIT : 0;
   realMode |= ((c&FrameBuffer::ClearDepth) != false) ? GL_DEPTH_BUFFER_BIT : 0;
   glClear( realMode ) GLE;
@@ -385,6 +400,18 @@ bool createGeometry(
   return true;
   }
 
+bool createIndexGeometry(
+    Renderer *ren,
+    IndexGeometry *g,
+    int elementType,
+    const void *data,
+    xsize elementCount)
+  {
+  XGLIndexGeometryCache *cache = g->create<XGLIndexGeometryCache>();
+  cache->init(GL_R(ren), data, (IndexGeometry::Type)elementType, elementCount);
+  return true;
+  }
+
 void setShader(Renderer *ren, const Shader *shader, const ShaderVertexLayout *layout)
   {
   GLESRendererImpl* r = GL_R(ren);
@@ -409,7 +436,7 @@ void setShader(Renderer *ren, const Shader *shader, const ShaderVertexLayout *la
         {
         const XTexture *tex( glVar->_texture );
         tex->prepareInternal( this );
-        const XGLTexture *glTex( static_cast<const XGLTexture*>(tex->internal()) );
+        const XGLTexture2D *glTex( static_cast<const XGLTexture2D*>(tex->internal()) );
         xAssert( glTex );
         glActiveTexture( GL_TEXTURE0 + x ) GLE;
         glBindTexture( GL_TEXTURE_2D, glTex->_id ) GLE;
@@ -427,6 +454,38 @@ void setShader(Renderer *ren, const Shader *shader, const ShaderVertexLayout *la
     }
   }
 
+bool createFragmentShaderComponent(
+    Renderer *r,
+    ShaderFragmentComponent *f,
+    const char *s,
+    xsize l)
+  {
+  XGLShaderComponent *glS = f->create<XGLShaderComponent>();
+  glS->init(GL_R(r), s, l);
+  }
+
+bool createVertexShaderComponent(
+    Renderer *r,
+    ShaderVertexComponent *v,
+    const char *s,
+    xsize l,
+    const ShaderVertexLayoutDescription *vertexDescriptions,
+    xsize vertexItemCount,
+    ShaderVertexLayout *layout)
+  {
+  XGLShaderComponent *glS = v->create<XGLShaderComponent>();
+  glS->init(GL_R(r), s, l);
+
+  if(layout)
+    {
+    xAssert(vertexItemCount > 0);
+    xAssert(vertexDescriptions);
+
+    XGLVertexLayout *glL = layout->create<XGLVertexLayout>();
+    glL->init(GL_R(r), vertexDescriptions, vertexItemCount);
+    }
+  }
+
 bool createShader(
     Renderer *r,
     Shader *s,
@@ -434,65 +493,147 @@ bool createShader(
     ShaderFragmentComponent *f)
   {
   XGLShader *glS = s->create<XGLShader>();
-  glS->init( GL_R(r), v->data<XGLShaderComponent>(), f->data<XGLShaderComponent>() );
+  glS->init(GL_R(r), v->data<XGLShaderComponent>(), f->data<XGLShaderComponent>() );
   }
 
-void setFramebuffer(Renderer *r, const Framebuffer *fb)
+bool createShaderConstantData(
+    Renderer *r,
+    ShaderConstantData *d,
+    xsize size,
+    void *data)
   {
-  GLESRendererImpl *r = GL_R(r);
-  if(r->_currentFramebuffer)
-    {
-    _currentFramebuffer->unbind();
-    }
+  XGLShaderData *glD = d->create<XGLShaderData>();
+  glD->init(GL_R(r), size, data);
+  }
+
+bool createRasteriserState(
+    Renderer *r,
+    RasteriserState *s,
+    xuint32 cull)
+  {
+  XGLRasteriserState *glS = f->create<XGLRasteriserState>();
+  glS->init(GL_R(r), (RasteriserState::CullMode)cull);
+  }
+
+void beginRender(Renderer *ren, FrameBuffer *fb)
+  {
+  GLESRendererImpl *r = GL_R(ren);
+  xAssert(!r->_currentFramebuffer);
 
   xAssert(fb);
-  fb->prepareInternal( this );
-  r->_currentFramebuffer = static_cast<XGLFramebuffer*>(fb->internal());
+  r->_currentFramebuffer = fb->data<XGLFramebuffer>();
 
   r->_currentFramebuffer->bind();
   }
 
-XAbstractFramebuffer *XGLRenderer::getFramebuffer( int options, int c, int d, int width, int height )
+void endRender(Renderer *ren, FrameBuffer *fb)
   {
-  return new XGLFramebuffer( this, options, c, d, width, height );
+  GLESRendererImpl *r = GL_R(ren);
+
+  XGLFramebuffer* iFb = fb->data<XGLFramebuffer>();;
+  xAssert(r->_currentFramebuffer == iFb);
+
+  if(r->_currentFramebuffer)
+    {
+    r->_currentFramebuffer->unbind();
+    }
+
+  r->_currentFramebuffer->unbind();
+  r->_currentFramebuffer = 0;
   }
 
-XAbstractTexture *XGLRenderer::getTexture()
+bool createFramebuffer(
+    Renderer *r,
+    FrameBuffer *b,
+    xuint32 w,
+    xuint32 h,
+    xuint32 colourFormat,
+    xuint32 depthFormat)
   {
-  return new XGLTexture( this );
+  XGLFramebuffer* fb = b->create<XGLFramebuffer>();
+  return fb->init(GL_R(r), colourFormat, depthFormat, w, h );
   }
 
-QSize XGLRenderer::viewportSize()
+bool createTexture2D(
+    Renderer *r,
+    Texture2D *tex,
+    xsize w,
+    xsize h,
+    xuint32 format,
+    const void *data)
   {
-  return _size;
+  XGLTexture2D* t = tex->create<XGLTexture2D>();
+  return t->init(GL_R(r), format, w, h, data);
   }
 
-void XGLRenderer::destroyShader( XAbstractShader *shader )
+template <typename X, typename T> void destroy(Renderer *, X *x)
   {
-  delete shader;
+  x->destroy<T>();
   }
 
-void XGLRenderer::destroyGeometry( XAbstractGeometry *geometry )
+detail::RendererFunctions fns =
   {
-  delete geometry;
-  }
-
-void XGLRenderer::destroyTexture( XAbstractTexture *texture )
-  {
-  delete texture;
-  }
-
-void XGLRenderer::destroyFramebuffer( XAbstractFramebuffer *fb )
-  {
-  delete fb;
-  }
+    {
+      createFramebuffer,
+      createGeometry,
+      createIndexGeometry,
+      createTexture2D,
+      createShader,
+      createVertexShaderComponent,
+      createFragmentShaderComponent,
+      createRasteriserState,
+      createShaderConstantData
+    },
+    {
+      destroy<FrameBuffer, XGLFramebuffer>,
+      destroy<Geometry, XGLGeometryCache>,
+      destroy<IndexGeometry, XGLIndexGeometryCache>,
+      destroy<Texture2D, XGLTexture2D>,
+      destroy<Shader, XGLShader>,
+      destroy<ShaderVertexLayout, XGLVertexLayout>,
+      destroy<ShaderVertexComponent, XGLShaderComponent>,
+      destroy<ShaderFragmentComponent, XGLShaderComponent>,
+      destroy<RasteriserState, XGLRasteriserState>,
+      destroy<ShaderConstantData, XGLShaderData>
+    },
+    {
+      setClearColour,
+      updateShaderConstantData,
+      setViewTransform,
+      setProjectionTransform,
+      setFragmentShaderConstantBuffer,
+      setVertexShaderConstantBuffer,
+      setFragmentShaderResource,
+      setVertexShaderResource,
+      setShader,
+      setRasteriserState,
+      setTransform
+    },
+    {
+      getTexture2DInfo
+    },
+    {
+      drawIndexedTriangles,
+      drawTriangles,
+      debugRenderLocator
+    },
+    {
+      clear,
+      resize,
+      beginFrame,
+      endFrame,
+      present,
+      getFramebufferTexture
+    }
+  };
 
 Renderer *GLESRenderer::createGLRenderer(ScreenFrameBuffer *buffer)
   {
-  GLESRenderer *r = new GLESRenderer();
+  GLESRendererImpl *r = new GLESRendererImpl(fns);
   glEnable( GL_DEPTH_TEST ) GLE;
 
-  xAssertFail();
+  XGLFramebuffer* fb = buffer->create<XGLFramebuffer>();
+  fb->init(r);
 
   return r;
   }
