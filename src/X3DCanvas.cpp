@@ -50,6 +50,10 @@ void D3D3DCanvas::resizeEvent(QResizeEvent* evt)
 void D3D3DCanvas::paintEvent(QPaintEvent *)
   {
   paint3D(_renderer, _buffer);
+
+  bool deviceLost = false;
+  _buffer->present(&deviceLost);
+  xAssert(!deviceLost);
   }
 
 #endif

@@ -61,6 +61,7 @@ void beginFrame(Renderer *r, FrameBuffer *buffer)
   if(D3D(r)->_updateWorldTransformData)
     {
     D3D(r)->_worldTransformData.update(D3D(r)->_d3dContext.Get());
+    D3D(r)->_updateWorldTransformData = false;
     }
 
   XD3DFrameBufferImpl* framebuffer = buffer->data<XD3DFrameBufferImpl>();
