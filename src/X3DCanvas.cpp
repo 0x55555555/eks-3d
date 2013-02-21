@@ -57,6 +57,11 @@ D3D3DCanvas::~D3D3DCanvas()
   _buffer = 0;
   }
 
+void D3D3DCanvas::update3D()
+  {
+  paint3D(_renderer, _buffer);
+  }
+
 void D3D3DCanvas::resizeEvent(QResizeEvent* evt)
   {
   _buffer->resize(evt->size().width(), evt->size().height(), ScreenFrameBuffer::RotateNone);
