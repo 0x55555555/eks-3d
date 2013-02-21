@@ -55,11 +55,8 @@ HEADERS += \
     ../include/XObjLoader.h \
     ../include/XRasteriserState.h \
     ../include/XFrameBuffer.h \
-    ../include/XShaderManager.h
-
-OTHER_FILES += ../include/X3DCanvas.h
-
-SOURCES += moc_X3DCanvas.cpp
+    ../include/XShaderManager.h \
+    ../include/X3DCanvas.h
 
 INCLUDEPATH += ../include/ \
     $$ROOT/Eks/EksCore/
