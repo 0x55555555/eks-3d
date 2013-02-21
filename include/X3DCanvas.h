@@ -11,6 +11,8 @@
 
 namespace Eks
 {
+class ScreenFrameBuffer;
+class Renderer;
 class FrameBuffer;
 }
 
@@ -23,16 +25,25 @@ namespace Eks
 
 class EKS3D_EXPORT GL3DCanvas : public QGLWidget
   {
+  Q_OBJECT
+
 public:
   GL3DCanvas(QWidget *parent=0);
+  ~GL3DCanvas();
 
-  virtual void paintGL() X_OVERRIDE
-    {
-    paint3D();
-    }
-  virtual void paint3D() = 0;
+  void paintGL() X_OVERRIDE;
 
-  virtual bool isShown();
+signals:
+  void initialise3D(Eks::Renderer *r);
+  void paint3D(Eks::Renderer *r, Eks::FrameBuffer *buffer);
+  void resize3D(Eks::Renderer *r, xuint32 w, xuint32 h);
+
+public slots:
+  void update3D();
+
+private:
+  Renderer *_renderer;
+  ScreenFrameBuffer *_buffer;
   };
 
 }
@@ -48,11 +59,10 @@ class QPaintEngine;
 namespace Eks
 {
 
-class ScreenFrameBuffer;
-class Renderer;
-
 class EKS3D_EXPORT D3D3DCanvas : public QWidget
   {
+  Q_OBJECT
+
 public:
   D3D3DCanvas(QWidget* parent = 0);
   ~D3D3DCanvas();
@@ -65,13 +75,17 @@ public:
   Renderer *renderer() { return _renderer; }
   ScreenFrameBuffer *buffer() { return _buffer; }
 
+public slots:
+  void update3D();
+
+signals:
+  void initialise3D(Eks::Renderer *r);
+  void paint3D(Eks::Renderer *r, Eks::FrameBuffer *buffer);
+  void resize3D(Eks::Renderer *r, xuint32 w, xuint32 h);
+
 protected:
   void resizeEvent(QResizeEvent* evt) X_OVERRIDE;
   void paintEvent(QPaintEvent*) X_OVERRIDE;
-
-  virtual void initialise3D(Eks::Renderer *r) = 0;
-  virtual void paint3D(Eks::Renderer *r, Eks::FrameBuffer *buffer) = 0;
-  virtual void resize3D(Eks::Renderer *r, xuint32 w, xuint32 h) = 0;
 
 private:
   Renderer *_renderer;
@@ -85,35 +99,10 @@ private:
 namespace Eks
 {
 
-class EKS3D_EXPORT Canvas3D : public
-#if X_ENABLE_DX_RENDERER
-    D3D3DCanvas
-#elif X_ENABLE_GL_RENDERER
-    GL3DCanvas
-#endif
-    , public AbstractCanvas
+class EKS3D_EXPORT Canvas3D : public AbstractCanvas
   {
-  Q_OBJECT
-
 public:
-  typedef
-#if X_ENABLE_DX_RENDERER
-      D3D3DCanvas
-#elif X_ENABLE_GL_RENDERER
-      GL3DCanvas
-#endif
-    Base;
-
-  Canvas3D(QWidget *w);
-
-  X_CANVAS_GENERAL_MOUSEHANDLERS()
-
-  virtual void update(AbstractRenderModel::UpdateMode);
-
-  bool isShown() X_OVERRIDE;
-
-public slots:
-  void update3D();
+  static QWidget* createBest(QWidget *parent);
   };
 
 }

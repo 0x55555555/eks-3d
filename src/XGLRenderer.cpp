@@ -54,7 +54,63 @@ const char *glErrorString( int err )
 namespace Eks
 {
 
-class GLESRendererImpl;
+//----------------------------------------------------------------------------------------------------------------------
+// RENDERER
+//----------------------------------------------------------------------------------------------------------------------
+
+class GLESRendererImpl : public Renderer
+  {
+public:
+  GLESRendererImpl(const detail::RendererFunctions& fns);
+
+
+  static void setTransform(Renderer *r, const Transform &trans)
+    {
+    GL_R(r)->model = trans;
+    GL_R(r)->modelDataDirty = true;
+    }
+
+  static void setClearColour(Renderer *, const Colour &col)
+    {
+    glClearColor(col.x(), col.y(), col.z(), col.w());
+    }
+
+  static void clear(Renderer *r, FrameBuffer *fb, int c)
+    {
+    xAssert(GL_R(r)->_currentFramebuffer == fb->data<XGLFramebuffer>());
+    int realMode = ((c&FrameBuffer::ClearColour) != false) ? GL_COLOR_BUFFER_BIT : 0;
+    realMode |= ((c&FrameBuffer::ClearDepth) != false) ? GL_DEPTH_BUFFER_BIT : 0;
+    glClear( realMode ) GLE;
+    }
+
+
+  static void setViewTransform(Renderer *r, const Eks::Transform &trans)
+    {
+    GL_R(r)->view = trans;
+    GL_R(r)->viewDataDirty = true;
+    }
+
+  static void setProjectionTransform(Renderer *r, const Eks::ComplexTransform &trans)
+    {
+    GL_R(r)->projection = trans;
+    GL_R(r)->viewDataDirty = true;
+    }
+
+  static void drawTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert);
+
+  Eks::Transform model;
+  bool modelDataDirty;
+
+  Eks::Transform view;
+  Eks::Transform projection;
+  bool viewDataDirty;
+
+  QGLContext *_context;
+  Shader *_currentShader;
+  ShaderVertexLayout *_vertexLayout;
+  QSize _size;
+  XGLFramebuffer *_currentFramebuffer;
+  };
 
 //----------------------------------------------------------------------------------------------------------------------
 // TEXTURE
@@ -66,6 +122,18 @@ public:
   bool init(GLESRendererImpl *, int format, int width, int height, const void *data);
 
   ~XGLTexture2D();
+
+  static bool create(
+      Renderer *r,
+      Texture2D *tex,
+      xsize w,
+      xsize h,
+      xuint32 format,
+      const void *data)
+    {
+    XGLTexture2D* t = tex->create<XGLTexture2D>();
+    return t->init(GL_R(r), format, w, h, data);
+    }
 
 private:
   void clear();
@@ -95,6 +163,50 @@ public:
   const Texture2D *colour() const;
   const Texture2D *depth() const;
 
+  static bool create(
+      Renderer *r,
+      FrameBuffer *b,
+      xuint32 w,
+      xuint32 h,
+      xuint32 colourFormat,
+      xuint32 depthFormat)
+    {
+    XGLFramebuffer* fb = b->create<XGLFramebuffer>();
+    return fb->init(GL_R(r), colourFormat, depthFormat, w, h );
+    }
+
+  static void beginRender(Renderer *ren, FrameBuffer *fb)
+    {
+    GLESRendererImpl *r = GL_R(ren);
+    xAssert(!r->_currentFramebuffer);
+
+    xAssert(fb);
+    r->_currentFramebuffer = fb->data<XGLFramebuffer>();
+
+    r->_currentFramebuffer->bind();
+    }
+
+  static void endRender(Renderer *ren, FrameBuffer *fb)
+    {
+    GLESRendererImpl *r = GL_R(ren);
+
+    XGLFramebuffer* iFb = fb->data<XGLFramebuffer>();;
+    xAssert(r->_currentFramebuffer == iFb);
+
+    if(r->_currentFramebuffer)
+      {
+      r->_currentFramebuffer->unbind();
+      }
+
+    r->_currentFramebuffer->unbind();
+    r->_currentFramebuffer = 0;
+    }
+
+  static void present(Renderer *, ScreenFrameBuffer *, bool *)
+    {
+    // swap buffers?
+    }
+
 private:
   XGLTexture2D *_colour;
   XGLTexture2D *_depth;
@@ -113,6 +225,18 @@ public:
   bool init( GLESRendererImpl *, const void *data, IndexGeometry::Type type, xsize elementCount );
   ~XGLIndexGeometryCache( );
 
+  static bool create(
+      Renderer *ren,
+      IndexGeometry *g,
+      int elementType,
+      const void *data,
+      xsize elementCount)
+    {
+    XGLIndexGeometryCache *cache = g->create<XGLIndexGeometryCache>();
+    cache->init(GL_R(ren), data, (IndexGeometry::Type)elementType, elementCount);
+    return true;
+    }
+
   unsigned int _indexArray;
   unsigned int _indexCount;
   unsigned int _indexType;
@@ -128,6 +252,18 @@ class XGLGeometryCache
 public:
   bool init( GLESRendererImpl *, const void *data, xsize elementSize, xsize elementCount );
   ~XGLGeometryCache( );
+
+  static bool create(
+      Renderer *ren,
+      Geometry *g,
+      const void *data,
+      xsize elementSize,
+      xsize elementCount)
+    {
+    XGLGeometryCache *cache = g->create<XGLGeometryCache>();
+    cache->init(GL_R(ren), data, elementSize, elementCount);
+    return true;
+    }
 
   unsigned int _vertexArray;
   };
@@ -192,6 +328,38 @@ class XGLShaderComponent
 public:
   bool init( GLESRendererImpl *, const char *data, xsize size);
 
+  static bool createFragment(
+      Renderer *r,
+      ShaderFragmentComponent *f,
+      const char *s,
+      xsize l)
+    {
+    XGLShaderComponent *glS = f->create<XGLShaderComponent>();
+    glS->init(GL_R(r), s, l);
+    }
+
+  static bool createVertex(
+      Renderer *r,
+      ShaderVertexComponent *v,
+      const char *s,
+      xsize l,
+      const ShaderVertexLayoutDescription *vertexDescriptions,
+      xsize vertexItemCount,
+      ShaderVertexLayout *layout)
+    {
+    XGLShaderComponent *glS = v->create<XGLShaderComponent>();
+    glS->init(GL_R(r), s, l);
+
+    if(layout)
+      {
+      xAssert(vertexItemCount > 0);
+      xAssert(vertexDescriptions);
+
+      XGLVertexLayout *glL = layout->create<XGLVertexLayout>();
+      glL->init(GL_R(r), vertexDescriptions, vertexItemCount);
+      }
+    }
+
   QGLShader component;
   };
 
@@ -204,6 +372,71 @@ public:
   bool build(QStringList &log);
   bool isValid();
 
+  static bool create(
+      Renderer *r,
+      Shader *s,
+      ShaderVertexComponent *v,
+      ShaderFragmentComponent *f)
+    {
+    XGLShader *glS = s->create<XGLShader>();
+    glS->init(GL_R(r), v->data<XGLShaderComponent>(), f->data<XGLShaderComponent>() );
+    }
+
+  static void bind(Renderer *ren, const Shader *shader, const ShaderVertexLayout *layout)
+    {
+    GLESRendererImpl* r = GL_R(ren);
+    if( shader &&
+        ( r->_currentShader == 0 || r->_currentShader != shader || r->_vertexLayout != layout) )
+      {
+      r->_currentShader = const_cast<Shader *>(shader);
+      r->_vertexLayout = const_cast<ShaderVertexLayout *>(layout);
+      XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
+
+      xAssert(shaderInt->shader.isLinked());
+
+      shaderInt->shader.bind() GLE;
+
+      xAssertFail();
+      /*
+      int x=0;
+      Q_FOREACH( ShaderVariable *var, shader->variables() )
+        {
+        XGLShaderVariable *glVar( static_cast<XGLShaderVariable*>(var->internal()) );
+        if( glVar->_texture )
+          {
+          const XTexture *tex( glVar->_texture );
+          tex->prepareInternal( this );
+          const XGLTexture2D *glTex( static_cast<const XGLTexture2D*>(tex->internal()) );
+          xAssert( glTex );
+          glActiveTexture( GL_TEXTURE0 + x ) GLE;
+          glBindTexture( GL_TEXTURE_2D, glTex->_id ) GLE;
+          shaderInt->shader.setUniformValue( glVar->_location, x );
+          }
+        x++;
+        }*/
+      }
+    else if( shader == 0 && r->_currentShader != 0 )
+      {
+      XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
+      shaderInt->shader.release() GLE;
+      r->_currentShader = 0;
+      r->_vertexLayout = 0;
+      }
+    }
+
+  static void setConstantBuffers(
+    Renderer *r,
+    Shader *shader,
+    xsize index,
+    xsize count,
+    const ShaderConstantData * const* data);
+
+  static void setResources(
+    Renderer *r,
+    Shader *shader,
+    xsize index,
+    xsize count,
+    const Resource * const* data);
 
   QGLShaderProgram shader;
   friend class XGLRenderer;
@@ -220,7 +453,17 @@ public:
   bool init(GLESRendererImpl *, xsize size, void *data);
   ~XGLShaderData();
 
-  void update(void *data);
+  static void update(Renderer *r, ShaderConstantData *, void *data);
+
+  static bool create(
+      Renderer *r,
+      ShaderConstantData *d,
+      xsize size,
+      void *data)
+    {
+    XGLShaderData *glD = d->create<XGLShaderData>();
+    glD->init(GL_R(r), size, data);
+    }
 
   friend class XGLRenderer;
   friend class XGLShaderVariable;
@@ -232,55 +475,27 @@ public:
 
 class XGLRasteriserState
   {
-
-  };
-
-//----------------------------------------------------------------------------------------------------------------------
-// RENDERER
-//----------------------------------------------------------------------------------------------------------------------
-
-class GLESRendererImpl : public Renderer
-  {
 public:
-  GLESRendererImpl(const detail::RendererFunctions& fns);
+  bool init(GLESRendererImpl *, RasteriserState::CullMode mode);
+
+  static void bind(Renderer *r, const RasteriserState *state);
 
 
-  Eks::Transform model;
-  bool modelDataDirty;
+  static bool create(
+      Renderer *r,
+      RasteriserState *s,
+      xuint32 cull)
+    {
+    XGLRasteriserState *glS = s->create<XGLRasteriserState>();
+    glS->init(GL_R(r), (RasteriserState::CullMode)cull);
+    }
 
-  Eks::Transform view;
-  Eks::Transform projection;
-  bool viewDataDirty;
-
-  QGLContext *_context;
-  Shader *_currentShader;
-  ShaderVertexLayout *_vertexLayout;
-  QSize _size;
-  XGLFramebuffer *_currentFramebuffer;
+  RasteriserState::CullMode _cull;
   };
 
 GLESRendererImpl::GLESRendererImpl(const detail::RendererFunctions &fns) : _context(0), _currentShader(0), _currentFramebuffer(0)
   {
   setFunctions(fns);
-  }
-
-void setTransform(Renderer *r, const Transform &trans)
-  {
-  GL_R(r)->model = trans;
-  GL_R(r)->modelDataDirty = true;
-  }
-
-void setClearColour(Renderer *, const Colour &col)
-  {
-  glClearColor(col.x(), col.y(), col.z(), col.w());
-  }
-
-void clear(Renderer *r, FrameBuffer *fb, int c)
-  {
-  xAssert(GL_R(r)->_currentFramebuffer == fb->data<XGLFramebuffer>());
-  int realMode = ((c&FrameBuffer::ClearColour) != false) ? GL_COLOR_BUFFER_BIT : 0;
-  realMode |= ((c&FrameBuffer::ClearDepth) != false) ? GL_DEPTH_BUFFER_BIT : 0;
-  glClear( realMode ) GLE;
   }
 
 /*
@@ -345,26 +560,14 @@ void XGLRenderer::disableRenderFlag( RenderFlags f )
     {
     glDisable( GL_CULL_FACE ) GLE;
     }
-  }*/
+  }
 
 void setViewportSize(Renderer *, QSize size)
   {
   glViewport( 0, 0, size.width(), size.height() ) GLE;
-  }
+  }*/
 
-void setViewTransform(Renderer *r, const Eks::Transform &trans)
-  {
-  GL_R(r)->view = trans;
-  GL_R(r)->viewDataDirty = true;
-  }
-
-void setProjectionTransform(Renderer *r, const Eks::ComplexTransform &trans)
-  {
-  GL_R(r)->projection = trans;
-  GL_R(r)->viewDataDirty = true;
-  }
-
-void drawTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert)
+void GLESRendererImpl::drawTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert)
   {
   GLESRendererImpl* r = GL_R(ren);
   xAssert(r->_currentShader);
@@ -388,184 +591,6 @@ void drawTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *
   layout->unbind();
   }
 
-bool createGeometry(
-    Renderer *ren,
-    Geometry *g,
-    const void *data,
-    xsize elementSize,
-    xsize elementCount)
-  {
-  XGLGeometryCache *cache = g->create<XGLGeometryCache>();
-  cache->init(GL_R(ren), data, elementSize, elementCount);
-  return true;
-  }
-
-bool createIndexGeometry(
-    Renderer *ren,
-    IndexGeometry *g,
-    int elementType,
-    const void *data,
-    xsize elementCount)
-  {
-  XGLIndexGeometryCache *cache = g->create<XGLIndexGeometryCache>();
-  cache->init(GL_R(ren), data, (IndexGeometry::Type)elementType, elementCount);
-  return true;
-  }
-
-void setShader(Renderer *ren, const Shader *shader, const ShaderVertexLayout *layout)
-  {
-  GLESRendererImpl* r = GL_R(ren);
-  if( shader &&
-      ( r->_currentShader == 0 || r->_currentShader != shader || r->_vertexLayout != layout) )
-    {
-    r->_currentShader = const_cast<Shader *>(shader);
-    r->_vertexLayout = const_cast<ShaderVertexLayout *>(layout);
-    XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
-
-    xAssert(shaderInt->shader.isLinked());
-
-    shaderInt->shader.bind() GLE;
-
-    xAssertFail();
-    /*
-    int x=0;
-    Q_FOREACH( ShaderVariable *var, shader->variables() )
-      {
-      XGLShaderVariable *glVar( static_cast<XGLShaderVariable*>(var->internal()) );
-      if( glVar->_texture )
-        {
-        const XTexture *tex( glVar->_texture );
-        tex->prepareInternal( this );
-        const XGLTexture2D *glTex( static_cast<const XGLTexture2D*>(tex->internal()) );
-        xAssert( glTex );
-        glActiveTexture( GL_TEXTURE0 + x ) GLE;
-        glBindTexture( GL_TEXTURE_2D, glTex->_id ) GLE;
-        shaderInt->shader.setUniformValue( glVar->_location, x );
-        }
-      x++;
-      }*/
-    }
-  else if( shader == 0 && r->_currentShader != 0 )
-    {
-    XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
-    shaderInt->shader.release() GLE;
-    r->_currentShader = 0;
-    r->_vertexLayout = 0;
-    }
-  }
-
-bool createFragmentShaderComponent(
-    Renderer *r,
-    ShaderFragmentComponent *f,
-    const char *s,
-    xsize l)
-  {
-  XGLShaderComponent *glS = f->create<XGLShaderComponent>();
-  glS->init(GL_R(r), s, l);
-  }
-
-bool createVertexShaderComponent(
-    Renderer *r,
-    ShaderVertexComponent *v,
-    const char *s,
-    xsize l,
-    const ShaderVertexLayoutDescription *vertexDescriptions,
-    xsize vertexItemCount,
-    ShaderVertexLayout *layout)
-  {
-  XGLShaderComponent *glS = v->create<XGLShaderComponent>();
-  glS->init(GL_R(r), s, l);
-
-  if(layout)
-    {
-    xAssert(vertexItemCount > 0);
-    xAssert(vertexDescriptions);
-
-    XGLVertexLayout *glL = layout->create<XGLVertexLayout>();
-    glL->init(GL_R(r), vertexDescriptions, vertexItemCount);
-    }
-  }
-
-bool createShader(
-    Renderer *r,
-    Shader *s,
-    ShaderVertexComponent *v,
-    ShaderFragmentComponent *f)
-  {
-  XGLShader *glS = s->create<XGLShader>();
-  glS->init(GL_R(r), v->data<XGLShaderComponent>(), f->data<XGLShaderComponent>() );
-  }
-
-bool createShaderConstantData(
-    Renderer *r,
-    ShaderConstantData *d,
-    xsize size,
-    void *data)
-  {
-  XGLShaderData *glD = d->create<XGLShaderData>();
-  glD->init(GL_R(r), size, data);
-  }
-
-bool createRasteriserState(
-    Renderer *r,
-    RasteriserState *s,
-    xuint32 cull)
-  {
-  XGLRasteriserState *glS = f->create<XGLRasteriserState>();
-  glS->init(GL_R(r), (RasteriserState::CullMode)cull);
-  }
-
-void beginRender(Renderer *ren, FrameBuffer *fb)
-  {
-  GLESRendererImpl *r = GL_R(ren);
-  xAssert(!r->_currentFramebuffer);
-
-  xAssert(fb);
-  r->_currentFramebuffer = fb->data<XGLFramebuffer>();
-
-  r->_currentFramebuffer->bind();
-  }
-
-void endRender(Renderer *ren, FrameBuffer *fb)
-  {
-  GLESRendererImpl *r = GL_R(ren);
-
-  XGLFramebuffer* iFb = fb->data<XGLFramebuffer>();;
-  xAssert(r->_currentFramebuffer == iFb);
-
-  if(r->_currentFramebuffer)
-    {
-    r->_currentFramebuffer->unbind();
-    }
-
-  r->_currentFramebuffer->unbind();
-  r->_currentFramebuffer = 0;
-  }
-
-bool createFramebuffer(
-    Renderer *r,
-    FrameBuffer *b,
-    xuint32 w,
-    xuint32 h,
-    xuint32 colourFormat,
-    xuint32 depthFormat)
-  {
-  XGLFramebuffer* fb = b->create<XGLFramebuffer>();
-  return fb->init(GL_R(r), colourFormat, depthFormat, w, h );
-  }
-
-bool createTexture2D(
-    Renderer *r,
-    Texture2D *tex,
-    xsize w,
-    xsize h,
-    xuint32 format,
-    const void *data)
-  {
-  XGLTexture2D* t = tex->create<XGLTexture2D>();
-  return t->init(GL_R(r), format, w, h, data);
-  }
-
 template <typename X, typename T> void destroy(Renderer *, X *x)
   {
   x->destroy<T>();
@@ -574,15 +599,15 @@ template <typename X, typename T> void destroy(Renderer *, X *x)
 detail::RendererFunctions fns =
   {
     {
-      createFramebuffer,
-      createGeometry,
-      createIndexGeometry,
-      createTexture2D,
-      createShader,
-      createVertexShaderComponent,
-      createFragmentShaderComponent,
-      createRasteriserState,
-      createShaderConstantData
+      XGLFramebuffer::create,
+      XGLGeometryCache::create,
+      XGLIndexGeometryCache::create,
+      XGLTexture2D::create,
+      XGLShader::create,
+      XGLShaderComponent::createVertex,
+      XGLShaderComponent::createFragment,
+      XGLRasteriserState::create,
+      XGLShaderData::create
     },
     {
       destroy<FrameBuffer, XGLFramebuffer>,
@@ -597,17 +622,15 @@ detail::RendererFunctions fns =
       destroy<ShaderConstantData, XGLShaderData>
     },
     {
-      setClearColour,
-      updateShaderConstantData,
-      setViewTransform,
-      setProjectionTransform,
-      setFragmentShaderConstantBuffer,
-      setVertexShaderConstantBuffer,
-      setFragmentShaderResource,
-      setVertexShaderResource,
-      setShader,
-      setRasteriserState,
-      setTransform
+      GLESRendererImpl::setClearColour,
+      XGLShaderData::update,
+      GLESRendererImpl::setViewTransform,
+      GLESRendererImpl::setProjectionTransform,
+      XGLShader::setConstantBuffers,
+      XGLShader::setResources,
+      XGLShader::bind,
+      XGLRasteriserState::bind,
+      GLESRendererImpl::setTransform
     },
     {
       getTexture2DInfo
@@ -618,12 +641,12 @@ detail::RendererFunctions fns =
       debugRenderLocator
     },
     {
-      clear,
-      resize,
-      beginFrame,
-      endFrame,
-      present,
-      getFramebufferTexture
+      XGLFramebuffer::clear,
+      XGLFramebuffer::resize,
+      XGLFramebuffer::beginRender,
+      XGLFramebuffer::endRender,
+      XGLFramebuffer::present,
+      XGLFramebuffer::getTexture
     }
   };
 
@@ -914,251 +937,6 @@ void XGLShader::destroyVariable( XAbstractShaderVariable *var )
   {
   delete var;
   }
-
-//----------------------------------------------------------------------------------------------------------------------
-// SHADER VARIABLE
-//----------------------------------------------------------------------------------------------------------------------
-
-
-XGLShaderVariable::XGLShaderVariable( XAbstractShader *s, QString name )
-  : XAbstractShaderVariable( s ), _name( name ), _texture( 0 )
-  {
-  rebind();
-  }
-
-XGLShaderVariable::~XGLShaderVariable( )
-  {
-  clear();
-  }
-
-void XGLShaderVariable::setValue( int value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
-  }
-
-void XGLShaderVariable::setValue( Real value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
-  }
-
-void XGLShaderVariable::setValue( unsigned int value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const Colour &value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, toQt(value) ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const Eks::Vector2D &value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, toQt(value) ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const Eks::Vector3D &value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, toQt(value) ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const Eks::Vector4D &value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, toQt(value) ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const QMatrix2x2 &value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const QMatrix2x3 &value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const QMatrix2x4 &value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const QMatrix3x2 &value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const QMatrix3x3 &value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const QMatrix3x4 &value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const QMatrix4x2 &value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const QMatrix4x3 &value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const QMatrix4x4 &value )
-  {
-  clear();
-  bindShader();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, value ) GLE;
-  }
-
-void XGLShaderVariable::setValue( const XTexture *value )
-  {
-  clear();
-  bindShader();
-  _texture = value;
-  _texture->prepareInternal( abstractShader()->renderer() ) GLE; // todo, use texture units.
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValue( _location, (int)0) GLE; // static_cast<XGLTexture*>(_texture->internal())->_id) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<int> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size() ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<Real> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size(), 1 ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<unsigned int> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size() ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<Colour> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, values.front().data(), values.size(), 4 ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<Eks::Vector2D> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, values.front().data(), values.size(), 2 ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<Eks::Vector3D> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, values.front().data(), values.size(), 3 ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<Eks::Vector4D> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, values.front().data(), values.size(), 4 ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<QMatrix2x2> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size() ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<QMatrix2x3> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size() ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<QMatrix2x4> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size() ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<QMatrix3x2> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size() ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<QMatrix3x3> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size() ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<QMatrix3x4> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size() ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<QMatrix4x2> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size() ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<QMatrix4x3> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size() ) GLE;
-  }
-
-void XGLShaderVariable::setValueArray( const XVector<QMatrix4x4> &values )
-  {
-  clear();
-  GL_SHADER_VARIABLE_PARENT->shader.setUniformValueArray( _location, &(values.front()), values.size() ) GLE;
-  }
-
-void XGLShaderVariable::rebind()
-  {
-  _location = GL_SHADER_VARIABLE_PARENT->shader.uniformLocation( _name ) GLE;
-  }
-
-void XGLShaderVariable::clear()
-  {
-  _texture = 0;
-  }
-
-#undef GL_SHADER_VARIABLE_PARENT
 
 //----------------------------------------------------------------------------------------------------------------------
 // INDEX GEOMETRY CACHE

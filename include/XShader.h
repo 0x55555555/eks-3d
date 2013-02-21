@@ -163,15 +163,11 @@ public:
               ShaderFragmentComponent *f);
 
 
-  void setFragmentShaderConstantData(xsize first, const ConstantData *data);
-  void setVertexShaderConstantData(xsize first, const ConstantData *data);
-  void setFragmentShaderConstantDatas(xsize first, xsize num, const ConstantData * const*data);
-  void setVertexShaderConstantDatas(xsize first, xsize num, const ConstantData * const*data);
+  void setShaderConstantData(xsize first, const ConstantData *data);
+  void setShaderConstantDatas(xsize first, xsize num, const ConstantData *const* data);
 
-  void setFragmentShaderResource(xsize first, const Resource *data);
-  void setVertexShaderResource(xsize first, const Resource *data);
-  void setFragmentShaderResources(xsize first, xsize num, const Resource * const*data);
-  void setVertexShaderResources(xsize first, xsize num, const Resource * const*data);
+  void setShaderResource(xsize first, const Resource *data);
+  void setShaderResources(xsize first, xsize num, const Resource *const* data);
 
 private:
   X_DISABLE_COPY(Shader);
@@ -192,52 +188,28 @@ inline void ShaderConstantData::update(void *data)
   _renderer->functions().set.shaderConstantData(_renderer, this, data);
   }
 
-inline void Shader::setFragmentShaderConstantData(xsize first, const ConstantData *data)
+inline void Shader::setShaderConstantData(xsize first, const ConstantData *data)
   {
   xAssert(_renderer);
-  _renderer->functions().set.fragmentShaderConstantBuffer(_renderer, this, first, 1, &data);
+  _renderer->functions().set.shaderConstantBuffer(_renderer, this, first, 1, &data);
   }
 
-inline void Shader::setVertexShaderConstantData(xsize first, const ConstantData *data)
+inline void Shader::setShaderConstantDatas(xsize first, xsize num, const ConstantData *const* data)
   {
   xAssert(_renderer);
-  _renderer->functions().set.vertexShaderConstantBuffer(_renderer, this, first, 1, &data);
+  _renderer->functions().set.shaderConstantBuffer(_renderer, this, first, num, data);
   }
 
-inline void Shader::setFragmentShaderConstantDatas(xsize first, xsize num, const ConstantData * const*data)
+inline void Shader::setShaderResource(xsize first, const Resource *data)
   {
   xAssert(_renderer);
-  _renderer->functions().set.fragmentShaderConstantBuffer(_renderer, this, first, num, data);
+  _renderer->functions().set.shaderResource(_renderer, this, first, 1, &data);
   }
 
-inline void Shader::setVertexShaderConstantDatas(xsize first, xsize num, const ConstantData * const*data)
+inline void Shader::setShaderResources(xsize first, xsize num, const Resource *const* data)
   {
   xAssert(_renderer);
-  _renderer->functions().set.vertexShaderConstantBuffer(_renderer, this, first, num, data);
-  }
-
-inline void Shader::setFragmentShaderResource(xsize first, const Resource *data)
-  {
-  xAssert(_renderer);
-  _renderer->functions().set.fragmentShaderResource(_renderer, this, first, 1, &data);
-  }
-
-inline void Shader::setVertexShaderResource(xsize first, const Resource *data)
-  {
-  xAssert(_renderer);
-  _renderer->functions().set.vertexShaderResource(_renderer, this, first, 1, &data);
-  }
-
-inline void Shader::setFragmentShaderResources(xsize first, xsize num, const Resource * const*data)
-  {
-  xAssert(_renderer);
-  _renderer->functions().set.fragmentShaderResource(_renderer, this, first, num, data);
-  }
-
-inline void Shader::setVertexShaderResources(xsize first, xsize num, const Resource * const*data)
-  {
-  xAssert(_renderer);
-  _renderer->functions().set.vertexShaderResource(_renderer, this, first, num, data);
+  _renderer->functions().set.shaderResource(_renderer, this, first, num, data);
   }
 
 }

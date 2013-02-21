@@ -2,8 +2,11 @@
 
 #if X_QT_INTEROP
 
+#include "XGLRenderer.h"
 #include "XD3DRenderer.h"
 #include "XFramebuffer.h"
+
+#define ALLOC Eks::GlobalAllocator::instance()
 
 namespace Eks
 {
@@ -12,16 +15,27 @@ namespace Eks
 
 GL3DCanvas::GL3DCanvas(QWidget *parent) : QGLWidget(parent)
   {
+  _buffer = ALLOC->create<ScreenFrameBuffer>();
+  _renderer = GLESRenderer::createGLRenderer(_buffer, ALLOC);
   }
 
-bool GL3DCanvas::isShown()
+GL3DCanvas::~GL3DCanvas()
   {
-  return !isHidden() && hasFocus();
+  Eks::GLESRenderer::destroyGLRenderer(_renderer, _buffer, ALLOC);
+  ALLOC->destroy(_buffer);
+  _buffer = 0;
   }
+
+void GL3DCanvas::paintGL()
+  {
+  paint3D(_renderer, _buffer);
+  }
+
 
 #endif
 
 #if X_ENABLE_DX_RENDERER
+
 
 D3D3DCanvas::D3D3DCanvas(QWidget* parent)
     : QWidget(parent)
@@ -31,14 +45,15 @@ D3D3DCanvas::D3D3DCanvas(QWidget* parent)
 
   WId handle = winId();
 
-  _buffer = new ScreenFrameBuffer();
-  _renderer = Eks::D3DRenderer::createD3DRenderer((void*)handle, _buffer, Eks::GlobalAllocator::instance());
+
+  _buffer = ALLOC->create<ScreenFrameBuffer>();
+  _renderer = Eks::D3DRenderer::createD3DRenderer((void*)handle, _buffer, ALLOC);
   }
 
 D3D3DCanvas::~D3D3DCanvas()
   {
   Eks::D3DRenderer::destroyD3DRenderer(_renderer, _buffer, Eks::GlobalAllocator::instance());
-  delete _buffer;
+  ALLOC->destroy(_buffer);
   _buffer = 0;
   }
 
@@ -58,25 +73,21 @@ void D3D3DCanvas::paintEvent(QPaintEvent *)
 
 #endif
 
-
-Canvas3D::Canvas3D(QWidget *w) : Base(w)
+QWidget* Canvas3D::createBest(QWidget* parent)
   {
-  }
+#if X_ENABLE_DX_RENDERER
+  if(QSysInfo::WindowsVersion >= QSysInfo::WV_WINDOWS8)
+    {
+    return new D3D3DCanvas(parent);
+    }
+#endif
 
-bool Canvas3D::isShown()
-  {
-  return isVisible();
+#if X_ENABLE_GL_RENDERER
+  return new GL3DCanvas(parent);
+#else
+  return 0;
+#endif
   }
-
-void Canvas3D::update(AbstractRenderModel::UpdateMode)
-  {
-  }
-
-void Canvas3D::update3D()
-  {
-  paint3D(renderer(), buffer());
-  }
-
 }
 
 #endif

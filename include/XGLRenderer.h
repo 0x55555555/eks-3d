@@ -19,8 +19,8 @@ class XGLFramebuffer;
 class EKS3D_EXPORT GLESRenderer
   {
 public:
-  static Renderer *createGLRenderer(ScreenFrameBuffer *buffer);
-  static void destroyGLRenderer(Renderer *, ScreenFrameBuffer *buffer);
+  static Renderer *createGLRenderer(ScreenFrameBuffer *buffer, Eks::AllocatorBase* alloc);
+  static void destroyGLRenderer(Renderer *, ScreenFrameBuffer *buffer, Eks::AllocatorBase* alloc);
   };
 
 }

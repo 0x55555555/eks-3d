@@ -463,7 +463,7 @@ void setProjectionTransform(Renderer *r, const ComplexTransform &p)
   D3D(r)->_updateWorldTransformData = true;
   }
 
-void setFragmentShaderConstantBuffer(
+void setShaderConstantBuffer(
     Renderer *r,
     Shader *,
     xsize index,
@@ -482,21 +482,6 @@ void setFragmentShaderConstantBuffer(
     (UINT)num,
     buffers
     );
-  }
-
-void setVertexShaderConstantBuffer(
-    Renderer *r,
-    Shader *,
-    xsize index,
-    xsize num,
-    const ShaderConstantData * const*s)
-  {
-  ID3D11Buffer **buffers = (ID3D11Buffer **)alloca(sizeof(ID3D11Buffer *) * num);
-  for(xsize i = 0; i < num; ++i)
-    {
-    const XD3DBufferImpl *b = s[i]->data<XD3DBufferImpl>();
-    buffers[i] = b->buffer.Get();
-    }
 
   D3D(r)->_d3dContext->VSSetConstantBuffers(
     (UINT)(D3DRendererImpl::UserVSContantBufferOffset + index),
@@ -505,7 +490,7 @@ void setVertexShaderConstantBuffer(
     );
   }
 
-void setFragmentShaderResource(
+void setShaderResource(
     Renderer *r,
     Shader *,
     xsize index,
@@ -532,22 +517,6 @@ void setFragmentShaderResource(
     (UINT)num,
     buffers
     );
-  }
-
-void setVertexShaderResource(
-    Renderer *r,
-    Shader *,
-    xsize index,
-    xsize num,
-    const Resource * const*s)
-  {
-  ID3D11ShaderResourceView **buffers =
-    (ID3D11ShaderResourceView **)alloca(sizeof(ID3D11ShaderResourceView *) * num);
-  for(xsize i = 0; i < num; ++i)
-    {
-    const XD3DShaderResourceImpl *b = s[i]->data<XD3DShaderResourceImpl>();
-    buffers[i] = b->view.Get();
-    }
 
   D3D(r)->_d3dContext->VSSetShaderResources(
     (UINT)(D3DRendererImpl::UserVSContantBufferOffset + index),
@@ -617,10 +586,8 @@ detail::RendererFunctions fns =
       updateShaderConstantData,
       setViewTransform,
       setProjectionTransform,
-      setFragmentShaderConstantBuffer,
-      setVertexShaderConstantBuffer,
-      setFragmentShaderResource,
-      setVertexShaderResource,
+      setShaderConstantBuffer,
+      setShaderResource,
       setShader,
       setRasteriserState,
       setTransform

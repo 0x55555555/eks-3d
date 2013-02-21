@@ -126,33 +126,19 @@ struct RendererSetFunctions
   void (*viewTransform)(Renderer *r, const Transform &);
   void (*projectionTransform)(Renderer *r, const ComplexTransform &);
 
-  void (*fragmentShaderConstantBuffer)(
+  void (*shaderConstantBuffer)(
     Renderer *r,
     Shader *shader,
     xsize index,
     xsize count,
-    const ShaderConstantData * const*data);
+    const ShaderConstantData * const* data);
 
-  void (*vertexShaderConstantBuffer)(
+  void (*shaderResource)(
     Renderer *r,
     Shader *shader,
     xsize index,
     xsize count,
-    const ShaderConstantData * const*data);
-
-  void (*fragmentShaderResource)(
-    Renderer *r,
-    Shader *shader,
-    xsize index,
-    xsize count,
-    const Resource * const*data);
-
-  void (*vertexShaderResource)(
-    Renderer *r,
-    Shader *shader,
-    xsize index,
-    xsize count,
-    const Resource * const*data);
+    const Resource * const* data);
 
   // set the current shader
   void (*shader)(Renderer *r, const Shader *, const ShaderVertexLayout *layout);
