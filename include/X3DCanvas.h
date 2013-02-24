@@ -64,7 +64,7 @@ class EKS3D_EXPORT D3D3DCanvas : public QWidget
   Q_OBJECT
 
 public:
-  D3D3DCanvas(QWidget* parent = 0);
+  D3D3DCanvas(QWidget* parent = 0, Eks::Renderer **r = 0);
   ~D3D3DCanvas();
 
   QPaintEngine* paintEngine() const X_OVERRIDE
@@ -102,7 +102,7 @@ namespace Eks
 class EKS3D_EXPORT Canvas3D : public AbstractCanvas
   {
 public:
-  static QWidget* createBest(QWidget *parent);
+  static QWidget* createBest(QWidget *parent, Eks::Renderer **r);
   };
 
 }

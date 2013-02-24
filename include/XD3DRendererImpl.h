@@ -190,7 +190,9 @@ public:
   enum
     {
     UserVSContantBufferOffset = 2,
-    UserPSContantBufferOffset = 0
+    UserPSContantBufferOffset = 0,
+    UserVSResourceOffset = 0,
+    UserPSResourceOffset = 0
     };
 
   // Direct3D Objects.

@@ -95,6 +95,7 @@ bool ShaderFragmentComponent::delayedCreate(ShaderFragmentComponent &ths,
   }
 
 ShaderConstantData::ShaderConstantData(Renderer *r, xsize sizeOfData, void *data)
+   : _renderer(0)
   {
   if(r)
     {

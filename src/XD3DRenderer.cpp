@@ -513,13 +513,13 @@ void setShaderResource(
     }
 
   D3D(r)->_d3dContext->PSSetShaderResources(
-    (UINT)(D3DRendererImpl::UserPSContantBufferOffset + index),
+    (UINT)(D3DRendererImpl::UserPSResourceOffset + index),
     (UINT)num,
     buffers
     );
 
   D3D(r)->_d3dContext->VSSetShaderResources(
-    (UINT)(D3DRendererImpl::UserVSContantBufferOffset + index),
+    (UINT)(D3DRendererImpl::UserVSResourceOffset + index),
     (UINT)num,
     buffers
     );

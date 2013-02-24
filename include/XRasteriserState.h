@@ -8,7 +8,7 @@ namespace Eks
 
 class Renderer;
 
-class RasteriserState : public PrivateImpl<sizeof(void *)>
+class EKSCORE_EXPORT RasteriserState : public PrivateImpl<sizeof(void *)>
   {
 public:
 
