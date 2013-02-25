@@ -1,6 +1,7 @@
 #ifndef XRASTERISERSTATE_H
 #define XRASTERISERSTATE_H
 
+#include "X3DGlobal.h"
 #include "XPrivateImpl"
 
 namespace Eks
@@ -8,7 +9,7 @@ namespace Eks
 
 class Renderer;
 
-class EKSCORE_EXPORT RasteriserState : public PrivateImpl<sizeof(void *)>
+class EKS3D_EXPORT RasteriserState : public PrivateImpl<sizeof(void *)>
   {
 public:
 

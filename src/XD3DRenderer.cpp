@@ -88,7 +88,7 @@ bool resize(Renderer *r, ScreenFrameBuffer *screenBuffer, xuint32 w, xuint32 h, 
 
 void setTransform(Renderer *r, const Transform &tr)
   {
-  D3D(r)->_modelTransformData.data = tr.matrix();
+  D3D(r)->_modelTransformData.data = tr.matrix().transpose();
   D3D(r)->_modelTransformData.update(D3D(r)->_d3dContext.Get());
   }
 

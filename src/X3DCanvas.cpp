@@ -63,7 +63,7 @@ D3D3DCanvas::~D3D3DCanvas()
 
 void D3D3DCanvas::update3D()
   {
-  paint3D(_renderer, _buffer);
+  update();
   }
 
 void D3D3DCanvas::resizeEvent(QResizeEvent* evt)
