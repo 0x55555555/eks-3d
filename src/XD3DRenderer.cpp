@@ -392,7 +392,7 @@ bool createDepthStencilState(
     RasteriserState *s,
     xuint32 cull)
   {
-  XD3DDepthStencilStateImpl *blend = s->create<XD3DDepthStencilStateImpl>();
+  XD3DDepthStencilStateImpl *depthStencil = s->create<XD3DDepthStencilStateImpl>();
 
   D3D11_DEPTH_STENCIL_DESC desc;
   desc.FillMode = D3D11_FILL_SOLID;
@@ -407,7 +407,7 @@ bool createDepthStencilState(
   desc.AntialiasedLineEnable = false;
   desc.ForcedSampleCount = 0;
 
-  return blend->create(D3D(r)->_d3dDevice.Get(), desc);
+  return depthStencil->create(D3D(r)->_d3dDevice.Get(), desc);
   }
 
 bool createShaderConstantData(
