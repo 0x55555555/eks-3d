@@ -26,6 +26,7 @@ public:
   enum Format
     {
     Rgba8,
+    Depth24Stencil8,
 
     FormatCount
     };

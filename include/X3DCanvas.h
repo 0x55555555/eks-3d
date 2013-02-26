@@ -28,7 +28,7 @@ class EKS3D_EXPORT GL3DCanvas : public QGLWidget
   Q_OBJECT
 
 public:
-  GL3DCanvas(QWidget *parent=0);
+  GL3DCanvas(QWidget *parent=0, Eks::Renderer **r = 0);
   ~GL3DCanvas();
 
   void paintGL() X_OVERRIDE;

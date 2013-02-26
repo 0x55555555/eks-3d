@@ -14,10 +14,13 @@ namespace Eks
 
 #if X_ENABLE_GL_RENDERER
 
-GL3DCanvas::GL3DCanvas(QWidget *parent) : QGLWidget(parent)
+GL3DCanvas::GL3DCanvas(QWidget *parent, Eks::Renderer **r) : QGLWidget(parent)
   {
   _buffer = ALLOC->create<ScreenFrameBuffer>();
-  _renderer = GLESRenderer::createGLRenderer(_buffer, ALLOC);
+
+  Eks::Optional<Renderer *> renderer(r);
+
+  _renderer = renderer = GLESRenderer::createGLRenderer(_buffer, ALLOC);
   }
 
 GL3DCanvas::~GL3DCanvas()
@@ -57,7 +60,7 @@ D3D3DCanvas::D3D3DCanvas(QWidget* parent, Renderer **r)
 D3D3DCanvas::~D3D3DCanvas()
   {
   Eks::D3DRenderer::destroyD3DRenderer(_renderer, _buffer, Eks::GlobalAllocator::instance());
-  ALLOC->destroy(_buffer); 
+  ALLOC->destroy(_buffer);
   _buffer = 0;
   }
 

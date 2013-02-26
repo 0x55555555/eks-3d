@@ -96,7 +96,9 @@ public:
     GL_R(r)->viewDataDirty = true;
     }
 
-  static void drawTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert);
+  static void drawIndexedTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert);
+  static void drawTriangles(Renderer *r, const Geometry *vert);
+  static void debugRenderLocator(Renderer *r, RendererDebugLocatorMode);
 
   Eks::Transform model;
   bool modelDataDirty;
@@ -135,8 +137,11 @@ public:
     return t->init(GL_R(r), format, w, h, data);
     }
 
+  static void getInfo(const Renderer *r, const Texture2D *tex, Eks::VectorUI2D& v);
+
 private:
   void clear();
+  int getInternalFormat( int format );
 
   unsigned int _id;
 
@@ -151,7 +156,7 @@ private:
 class XGLFramebuffer
   {
 public:
-  bool init(GLESRendererImpl *, int colourFormat, int depthFormat, int width, int height);
+  bool init(Renderer *, xuint32 colourFormat, xuint32 depthFormat, xuint32 width, xuint32 height);
   bool init(GLESRendererImpl *);
   ~XGLFramebuffer( );
 
@@ -202,14 +207,19 @@ public:
     r->_currentFramebuffer = 0;
     }
 
+  static void clear(Renderer *r, FrameBuffer *buffer, xuint32 mode);
+  static bool resize(Renderer *r, ScreenFrameBuffer *buffer, xuint32 w, xuint32 h, xuint32 rotation);
+
   static void present(Renderer *, ScreenFrameBuffer *, bool *)
     {
     // swap buffers?
     }
 
+  static Texture2D *getTexture(Renderer *r, FrameBuffer *buffer, xuint32 mode);
+
 private:
-  XGLTexture2D *_colour;
-  XGLTexture2D *_depth;
+  Texture2D _colour;
+  Texture2D _depth;
   unsigned int _buffer;
 
   friend class XGLShaderVariable;
@@ -567,7 +577,7 @@ void setViewportSize(Renderer *, QSize size)
   glViewport( 0, 0, size.width(), size.height() ) GLE;
   }*/
 
-void GLESRendererImpl::drawTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert)
+void GLESRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert)
   {
   GLESRendererImpl* r = GL_R(ren);
   xAssert(r->_currentShader);
@@ -633,12 +643,12 @@ detail::RendererFunctions fns =
       GLESRendererImpl::setTransform
     },
     {
-      getTexture2DInfo
+      XGLTexture2D::getInfo
     },
     {
-      drawIndexedTriangles,
-      drawTriangles,
-      debugRenderLocator
+      GLESRendererImpl::drawIndexedTriangles,
+      GLESRendererImpl::drawTriangles,
+      GLESRendererImpl::debugRenderLocator
     },
     {
       XGLFramebuffer::clear,
@@ -650,9 +660,9 @@ detail::RendererFunctions fns =
     }
   };
 
-Renderer *GLESRenderer::createGLRenderer(ScreenFrameBuffer *buffer)
+Renderer *GLESRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::AllocatorBase* allocator)
   {
-  GLESRendererImpl *r = new GLESRendererImpl(fns);
+  GLESRendererImpl *r = allocator->create<GLESRendererImpl>(fns);
   glEnable( GL_DEPTH_TEST ) GLE;
 
   XGLFramebuffer* fb = buffer->create<XGLFramebuffer>();
@@ -664,137 +674,70 @@ Renderer *GLESRenderer::createGLRenderer(ScreenFrameBuffer *buffer)
 //----------------------------------------------------------------------------------------------------------------------
 // TEXTURE
 //----------------------------------------------------------------------------------------------------------------------
-
-int getFormat( int format )
+bool XGLTexture2D::init(GLESRendererImpl *, int format, int width, int height, const void *data)
   {
-  if( (format&RGBA) != false )
-    {
-    return GL_RGBA;
-    }
-  else if( (format&RGB) != false )
-    {
-    return GL_RGB;
-    }
-  else if( (format&Short) != false )
-    {
-    return GL_DEPTH_COMPONENT;
-    }
-  else if( (format&Float) != false )
-    {
-    return GL_DEPTH_COMPONENT;
-    }
-  return GL_RGBA;
-  }
+  glGenTextures(1, &_id) GLE;
+  glBindTexture(GL_TEXTURE_2D, _id) GLE;
 
-int getInternalFormat( int format )
-  {
-  switch( format )
-    {
-    case RGBA|Byte:
-      return GL_RGBA8;
-    case RGBA|Half:
-      return GL_RGBA16F_ARB;
-    case RGBA|Float:
-      return GL_RGBA32F_ARB;
-    case RGB|Byte:
-      return GL_RGB8;
-    case RGB|Half:
-      return GL_RGBA16F_ARB;
-    case RGB|Float:
-      return GL_RGB32F_ARB;
-    case Short:
-      return GL_DEPTH_COMPONENT16;
-    case Float:
-      return GL_DEPTH_COMPONENT32F_NV;
-    default:
-      qDebug() << "Invalid format option" << format;
-    }
-  return GL_RGBA8;
-  }
-
-XGLTexture::XGLTexture( XGLRenderer *r ) : _renderer( r ), _id( 0 )
-  {
-  }
-
-XGLTexture::XGLTexture( XGLRenderer *r, int format, int width, int height ) : _renderer( r )
-  {
-  glGenTextures( 1, &_id ) GLE;
-  glBindTexture( GL_TEXTURE_2D, _id ) GLE;
-
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST ) GLE;
-  glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST ) GLE;
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) GLE;
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) GLE;
 
   // could also be GL_REPEAT
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP) GLE;
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP) GLE;
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE) GLE;
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE) GLE;
+
+  int formatMap[] =
+  {
+    GL_RGBA
+  };
+  xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == Texture2D::FormatCount);
 
   // 0 at end could be data to unsigned byte...
-  glTexImage2D( GL_TEXTURE_2D, 0, getInternalFormat( format ), width, height, 0, getFormat( format ), GL_UNSIGNED_BYTE, (const GLvoid *)0 ) GLE;
+  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, formatMap[format], GL_UNSIGNED_BYTE, data) GLE;
 
-  glBindTexture( GL_TEXTURE_2D, 0 ) GLE;
+  glBindTexture(GL_TEXTURE_2D, 0) GLE;
+
+  return true;
   }
 
-XGLTexture::~XGLTexture()
+XGLTexture2D::~XGLTexture2D()
   {
   clear();
   }
 
-void XGLTexture::load( const QImage &im )
-  {
-  clear();
-  _id = _renderer->context()->bindTexture( im ) GLE;
-  glBindTexture(GL_TEXTURE_2D, 0);
-  }
 
-QImage XGLTexture::save( )
+void XGLTexture2D::clear()
   {
-  if( _id != 0 )
-    {
-    int width, height;
-    glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width ) GLE;
-    glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height ) GLE;
-    QImage ret( QSize( width, height ), QImage::Format_ARGB32_Premultiplied );
-    glGetTexImage( GL_TEXTURE_2D, 0, GL_BGRA, GL_BYTE, ret.bits() ) GLE;
-    return ret;
-    }
-  return QImage();
-  }
-
-void XGLTexture::clear()
-  {
-  _renderer->context()->deleteTexture( _id ) GLE;
+  glDeleteTextures(1, &_id) GLE;
   }
 
 //----------------------------------------------------------------------------------------------------------------------
 // FRAMEBUFFER
 //----------------------------------------------------------------------------------------------------------------------
-
-XGLFramebuffer::XGLFramebuffer( XGLRenderer *r, int options, int cF, int dF, int width, int height )
-  : _renderer( r ), _colour( 0 ), _depth( 0 )
+bool XGLFramebuffer::init(Renderer *r, xuint32 cF, xuint32 dF, xuint32 width, xuint32 height)
   {
-  glGenFramebuffersEXT( 1, &_buffer ) GLE;
-  glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, _buffer ) GLE;
+  glGenFramebuffers(1, &_buffer) GLE;
+  glBindFramebuffer(GL_FRAMEBUFFER, _buffer) GLE;
 
-  if( width <= 0 || height <= 0 )
+  if(!Texture2D::delayedCreate(_colour, r, cF, width, height, 0))
     {
-    width = r->viewportSize().width();
-    height = r->viewportSize().height();
+    return false;
     }
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _colour->_id, 0) GLE;
 
-  if( (options&XFramebuffer::Colour) != false )
+  if(!Texture2D::delayedCreate(_depth, r, dF, width, height, 0))
     {
-    _colour = new XGLTexture( r, cF, width, height ) GLE;
-    glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, _colour->_id, 0 ) GLE;
+    return false;
     }
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _depth->_id, 0) GLE;
 
-  if( (options&XFramebuffer::Depth) != false )
-    {
-    _depth = new XGLTexture( r, dF, width, height ) GLE;
-    glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, _depth->_id, 0 ) GLE;
-    }
+  glBindFramebuffer(GL_FRAMEBUFFER, 0) GLE;
+  return isValid();
+  }
 
-  glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 ) GLE;
-  xAssert( isValid() );
+bool XGLFramebuffer::init(GLESRendererImpl *)
+  {
+  _buffer = 0;
   }
 
 XGLFramebuffer::~XGLFramebuffer( )
