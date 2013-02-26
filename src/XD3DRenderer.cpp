@@ -316,7 +316,8 @@ bool createTexture(
 
   FormatBpp formatMap[] =
     {
-    { DXGI_FORMAT_R8G8B8A8_UNORM, sizeof(xuint8) * 4 }
+    { DXGI_FORMAT_R8G8B8A8_UNORM, sizeof(xuint8) * 4 },
+    { DXGI_FORMAT_D24_UNORM_S8_UINT, 32 }
     };
   xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == Texture2D::FormatCount);
 
@@ -361,6 +362,52 @@ bool createRasteriserState(
   desc.ForcedSampleCount = 0;
 
   return ras->create(D3D(r)->_d3dDevice.Get(), desc);
+  }
+
+bool createBlendState(
+    Renderer *r,
+    RasteriserState *s,
+    xuint32 cull)
+  {
+  XD3DBlendStateImpl *blend = s->create<XD3DBlendStateImpl>();
+
+  D3D11_BLEND_DESC1 desc;
+  desc.FillMode = D3D11_FILL_SOLID;
+  desc.CullMode = cullMap[cull];
+  desc.FrontCounterClockwise = true;
+  desc.DepthBias = false;
+  desc.DepthBiasClamp = 0;
+  desc.SlopeScaledDepthBias = 0;
+  desc.DepthClipEnable = true;
+  desc.ScissorEnable = false;
+  desc.MultisampleEnable = false;
+  desc.AntialiasedLineEnable = false;
+  desc.ForcedSampleCount = 0;
+
+  return blend->create(D3D(r)->_d3dDevice.Get(), desc);
+  }
+
+bool createDepthStencilState(
+    Renderer *r,
+    RasteriserState *s,
+    xuint32 cull)
+  {
+  XD3DDepthStencilStateImpl *blend = s->create<XD3DDepthStencilStateImpl>();
+
+  D3D11_DEPTH_STENCIL_DESC desc;
+  desc.FillMode = D3D11_FILL_SOLID;
+  desc.CullMode = cullMap[cull];
+  desc.FrontCounterClockwise = true;
+  desc.DepthBias = false;
+  desc.DepthBiasClamp = 0;
+  desc.SlopeScaledDepthBias = 0;
+  desc.DepthClipEnable = true;
+  desc.ScissorEnable = false;
+  desc.MultisampleEnable = false;
+  desc.AntialiasedLineEnable = false;
+  desc.ForcedSampleCount = 0;
+
+  return blend->create(D3D(r)->_d3dDevice.Get(), desc);
   }
 
 bool createShaderConstantData(
@@ -567,6 +614,8 @@ detail::RendererFunctions fns =
       createVertexShaderComponent,
       createFragmentShaderComponent,
       createRasteriserState,
+      createDepthStencilState,
+      createBlendState,
       createShaderConstantData
     },
     {
@@ -579,6 +628,8 @@ detail::RendererFunctions fns =
       destroy<ShaderVertexComponent, XD3DVertexShaderImpl>,
       destroy<ShaderFragmentComponent, XD3DFragmentShaderImpl>,
       destroy<RasteriserState, XD3DRasteriserStateImpl>,
+      destroy<DepthStencilState, XD3DDepthStencilStateImpl>,
+      destroy<BlendState, XD3DBlendStateImpl>,
       destroy<ShaderConstantData, XD3DBufferImpl>
     },
     {

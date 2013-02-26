@@ -30,7 +30,9 @@ SOURCES += \
     ../src/XRasteriserState.cpp \
     ../src/XFrameBuffer.cpp \
     ../src/X3DCanvas.cpp \
-    ../src/XShaderManager.cpp
+    ../src/XShaderManager.cpp \
+    ../src/XDepthStencilState.cpp \
+    ../src/XBlendState.cpp
 
 HEADERS += \
     ../include/X3DGlobal.h \
@@ -56,7 +58,9 @@ HEADERS += \
     ../include/XRasteriserState.h \
     ../include/XFrameBuffer.h \
     ../include/XShaderManager.h \
-    ../include/X3DCanvas.h
+    ../include/X3DCanvas.h \
+    ../include/XDepthStencilState.h \
+    ../include/XBlendState.h
 
 INCLUDEPATH += ../include/ \
     $$ROOT/Eks/EksCore/

@@ -21,6 +21,8 @@ class ScreenFrameBuffer;
 class ShaderVertexComponent;
 class ShaderFragmentComponent;
 class Geometry;
+class DepthStencilState;
+class BlendState;
 class RasteriserState;
 class Texture2D;
 class Resource;
@@ -95,6 +97,14 @@ struct RendererCreateFunctions
       RasteriserState *s,
       xuint32 cull);
 
+  bool (*depthStencilState)(
+      Renderer *r,
+      DepthStencilState *s);
+
+  bool (*blendState)(
+      Renderer *r,
+      BlendState *s);
+
   bool (*shaderConstantData)(
       Renderer *r,
       ShaderConstantData *,
@@ -114,6 +124,8 @@ struct RendererDestroyFunctions
   void (*vertexShaderComponent)(Renderer *r, ShaderVertexComponent* s);
   void (*fragmentShaderComponent)(Renderer *r, ShaderFragmentComponent* s);
   void (*rasteriserState)(Renderer *r, RasteriserState *);
+  void (*depthStencilState)(Renderer *r, DepthStencilState *);
+  void (*blendState)(Renderer *r, BlendState *);
   void (*shaderConstantData)(Renderer *r, ShaderConstantData *);
   };
 
@@ -143,8 +155,10 @@ struct RendererSetFunctions
   // set the current shader
   void (*shader)(Renderer *r, const Shader *, const ShaderVertexLayout *layout);
 
-  // set rasteriser
+  // set states
   void (*rasteriserState)(Renderer *r, const RasteriserState *state);
+  void (*blendState)(Renderer *r, const BlendStateState *state);
+  void (*depthStencilState)(Renderer *r, const DepthStencilState *state);
 
   void (*transform)(Renderer *r, const Transform &);
   };
