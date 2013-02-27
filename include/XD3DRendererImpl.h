@@ -59,6 +59,16 @@ public:
   ComPtr<ID3D11RasterizerState1> _state;
   };
 
+class XD3DDepthStencilStateImpl
+  {
+public:
+  };
+
+class XD3DBlendStateImpl
+  {
+public:
+  };
+
 class XD3DRenderTargetImpl
   {
 public:

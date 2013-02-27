@@ -11,6 +11,8 @@
 #include "XTexture.h"
 #include "XD3DRendererImpl.h"
 #include "XRenderer.h"
+#include "XBlendState.h"
+#include "XDepthStencilState.h"
 #include "XColour"
 #include "XOptional"
 #include "XShader.h"
@@ -366,10 +368,11 @@ bool createRasteriserState(
 
 bool createBlendState(
     Renderer *r,
-    RasteriserState *s,
-    xuint32 cull)
+    BlendState *s)
   {
-  XD3DBlendStateImpl *blend = s->create<XD3DBlendStateImpl>();
+  (void)s;
+  (void)r;
+  /*XD3DBlendStateImpl *blend = s->create<XD3DBlendStateImpl>();
 
   D3D11_BLEND_DESC1 desc;
   desc.FillMode = D3D11_FILL_SOLID;
@@ -384,15 +387,17 @@ bool createBlendState(
   desc.AntialiasedLineEnable = false;
   desc.ForcedSampleCount = 0;
 
-  return blend->create(D3D(r)->_d3dDevice.Get(), desc);
+  return blend->create(D3D(r)->_d3dDevice.Get(), desc);*/
+  return false;
   }
 
 bool createDepthStencilState(
     Renderer *r,
-    RasteriserState *s,
-    xuint32 cull)
+    DepthStencilState *s)
   {
-  XD3DDepthStencilStateImpl *depthStencil = s->create<XD3DDepthStencilStateImpl>();
+  (void)s;
+  (void)r;
+  /*XD3DDepthStencilStateImpl *depthStencil = s->create<XD3DDepthStencilStateImpl>();
 
   D3D11_DEPTH_STENCIL_DESC desc;
   desc.FillMode = D3D11_FILL_SOLID;
@@ -407,7 +412,8 @@ bool createDepthStencilState(
   desc.AntialiasedLineEnable = false;
   desc.ForcedSampleCount = 0;
 
-  return depthStencil->create(D3D(r)->_d3dDevice.Get(), desc);
+  return depthStencil->create(D3D(r)->_d3dDevice.Get(), desc);*/
+  return false;
   }
 
 bool createShaderConstantData(
@@ -603,6 +609,16 @@ void setRasteriserState(Renderer *r, const RasteriserState *s)
   D3D(r)->_d3dContext->RSSetState(ras->_state.Get());
   }
 
+void setDepthStencilState(Renderer *, const DepthStencilState *)
+  {
+
+  }
+
+void setBlendState(Renderer *, const BlendState *)
+  {
+
+  }
+
 detail::RendererFunctions fns =
   {
     {
@@ -641,6 +657,8 @@ detail::RendererFunctions fns =
       setShaderResource,
       setShader,
       setRasteriserState,
+      setBlendState,
+      setDepthStencilState,
       setTransform
     },
     {

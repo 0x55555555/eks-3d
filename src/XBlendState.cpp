@@ -20,7 +20,7 @@ BlendState::~BlendState()
     }
   }
 
-bool BlendState::delayedCreate(RasteriserState &ths, Renderer *r)
+bool BlendState::delayedCreate(BlendState &ths, Renderer *r)
   {
   ths._renderer = r;
   return r->functions().create.blendState(r, &ths);

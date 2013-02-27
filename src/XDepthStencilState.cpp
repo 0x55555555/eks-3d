@@ -20,7 +20,7 @@ DepthStencilState::~DepthStencilState()
     }
   }
 
-bool DepthStencilState::delayedCreate(RasteriserState &ths, Renderer *r)
+bool DepthStencilState::delayedCreate(DepthStencilState &ths, Renderer *r)
   {
   ths._renderer = r;
   return r->functions().create.depthStencilState(r, &ths);

@@ -23,4 +23,6 @@ private:
   Renderer *_renderer;
   };
 
+}
+
 #endif // XBLENDSTATE_H
