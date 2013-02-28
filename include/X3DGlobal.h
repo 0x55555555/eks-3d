@@ -26,7 +26,7 @@
 #define X3DDataModelFunctionScopedBlock(mess) XProfileScopedBlockBase(X3DDataModelProfileScope, mess)
 
 #ifdef Q_CC_MSVC
-# define X_ENABLE_GL_RENDERER 0
+# define X_ENABLE_GL_RENDERER 1
 # define X_ENABLE_DX_RENDERER 1
 #else
 # define X_ENABLE_GL_RENDERER 1

@@ -16,7 +16,7 @@ namespace Eks
 class XGLShader;
 class XGLFramebuffer;
 
-class EKS3D_EXPORT GLESRenderer
+class EKS3D_EXPORT GLRenderer
   {
 public:
   static Renderer *createGLRenderer(ScreenFrameBuffer *buffer, Eks::AllocatorBase* alloc);

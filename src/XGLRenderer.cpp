@@ -2,19 +2,22 @@
 
 #if X_ENABLE_GL_RENDERER
 
+#include "GL/glew.h"
+
 #include "XFramebuffer.h"
 #include "XGeometry.h"
 #include "XShader.h"
 #include "XTexture.h"
 #include "XRasteriserState.h"
+#include "XBlendState.h"
+#include "XDepthStencilState.h"
 #include "XColour"
-#include "QGLShaderProgram"
 #include "QVarLengthArray"
 #include "QDebug"
 #include "XShader.h"
 #include "QFile"
 
-#define GL_R(x) static_cast<GLESRendererImpl*>(x)
+#define GL_REND(x) static_cast<GLRendererImpl*>(x)
 
 const char *glErrorString( int err )
   {
@@ -54,20 +57,25 @@ const char *glErrorString( int err )
 namespace Eks
 {
 
+template <typename X, typename T> void destroy(Renderer *, X *x)
+  {
+  x->destroy<T>();
+  }
+
 //----------------------------------------------------------------------------------------------------------------------
 // RENDERER
 //----------------------------------------------------------------------------------------------------------------------
 
-class GLESRendererImpl : public Renderer
+class GLRendererImpl : public Renderer
   {
 public:
-  GLESRendererImpl(const detail::RendererFunctions& fns);
+  GLRendererImpl(const detail::RendererFunctions& fns);
 
 
   static void setTransform(Renderer *r, const Transform &trans)
     {
-    GL_R(r)->model = trans;
-    GL_R(r)->modelDataDirty = true;
+    GL_REND(r)->model = trans;
+    GL_REND(r)->modelDataDirty = true;
     }
 
   static void setClearColour(Renderer *, const Colour &col)
@@ -77,7 +85,7 @@ public:
 
   static void clear(Renderer *r, FrameBuffer *fb, int c)
     {
-    xAssert(GL_R(r)->_currentFramebuffer == fb->data<XGLFramebuffer>());
+    xAssert(GL_REND(r)->_currentFramebuffer == fb->data<XGLFramebuffer>());
     int realMode = ((c&FrameBuffer::ClearColour) != false) ? GL_COLOR_BUFFER_BIT : 0;
     realMode |= ((c&FrameBuffer::ClearDepth) != false) ? GL_DEPTH_BUFFER_BIT : 0;
     glClear( realMode ) GLE;
@@ -86,14 +94,14 @@ public:
 
   static void setViewTransform(Renderer *r, const Eks::Transform &trans)
     {
-    GL_R(r)->view = trans;
-    GL_R(r)->viewDataDirty = true;
+    GL_REND(r)->view = trans;
+    GL_REND(r)->viewDataDirty = true;
     }
 
   static void setProjectionTransform(Renderer *r, const Eks::ComplexTransform &trans)
     {
-    GL_R(r)->projection = trans;
-    GL_R(r)->viewDataDirty = true;
+    GL_REND(r)->projection = trans;
+    GL_REND(r)->viewDataDirty = true;
     }
 
   static void drawIndexedTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert);
@@ -104,7 +112,7 @@ public:
   bool modelDataDirty;
 
   Eks::Transform view;
-  Eks::Transform projection;
+  Eks::ComplexTransform projection;
   bool viewDataDirty;
 
   QGLContext *_context;
@@ -121,7 +129,7 @@ public:
 class XGLTexture2D
   {
 public:
-  bool init(GLESRendererImpl *, int format, int width, int height, const void *data);
+  bool init(GLRendererImpl *, int format, int width, int height, const void *data);
 
   ~XGLTexture2D();
 
@@ -134,7 +142,7 @@ public:
       const void *data)
     {
     XGLTexture2D* t = tex->create<XGLTexture2D>();
-    return t->init(GL_R(r), format, w, h, data);
+    return t->init(GL_REND(r), format, w, h, data);
     }
 
   static void getInfo(const Renderer *r, const Texture2D *tex, Eks::VectorUI2D& v);
@@ -156,8 +164,8 @@ private:
 class XGLFramebuffer
   {
 public:
-  bool init(Renderer *, xuint32 colourFormat, xuint32 depthFormat, xuint32 width, xuint32 height);
-  bool init(GLESRendererImpl *);
+  bool init(Renderer *, Texture2D::Format colourFormat, Texture2D::Format depthFormat, xuint32 width, xuint32 height);
+  bool init(GLRendererImpl *);
   ~XGLFramebuffer( );
 
   void bind();
@@ -177,12 +185,12 @@ public:
       xuint32 depthFormat)
     {
     XGLFramebuffer* fb = b->create<XGLFramebuffer>();
-    return fb->init(GL_R(r), colourFormat, depthFormat, w, h );
+    return fb->init(GL_REND(r), (Texture2D::Format)colourFormat, (Texture2D::Format)depthFormat, w, h );
     }
 
   static void beginRender(Renderer *ren, FrameBuffer *fb)
     {
-    GLESRendererImpl *r = GL_R(ren);
+    GLRendererImpl *r = GL_REND(ren);
     xAssert(!r->_currentFramebuffer);
 
     xAssert(fb);
@@ -193,7 +201,7 @@ public:
 
   static void endRender(Renderer *ren, FrameBuffer *fb)
     {
-    GLESRendererImpl *r = GL_R(ren);
+    GLRendererImpl *r = GL_REND(ren);
 
     XGLFramebuffer* iFb = fb->data<XGLFramebuffer>();;
     xAssert(r->_currentFramebuffer == iFb);
@@ -226,13 +234,24 @@ private:
   };
 
 //----------------------------------------------------------------------------------------------------------------------
-// INDEX GEOMETRY CACHE
+// BUFFER
 //----------------------------------------------------------------------------------------------------------------------
-
-class XGLIndexGeometryCache
+class XGLBuffer
   {
 public:
-  bool init( GLESRendererImpl *, const void *data, IndexGeometry::Type type, xsize elementCount );
+  bool init( GLRendererImpl *, const void *data, xuint32 type, xuint32 size);
+  ~XGLBuffer( );
+
+  unsigned int _buffer;
+  };
+
+//----------------------------------------------------------------------------------------------------------------------
+// INDEX GEOMETRY CACHE
+//----------------------------------------------------------------------------------------------------------------------
+class XGLIndexGeometryCache : public XGLBuffer
+  {
+public:
+  bool init(GLRendererImpl *, const void *data, IndexGeometry::Type type, xsize elementCount);
   ~XGLIndexGeometryCache( );
 
   static bool create(
@@ -243,11 +262,10 @@ public:
       xsize elementCount)
     {
     XGLIndexGeometryCache *cache = g->create<XGLIndexGeometryCache>();
-    cache->init(GL_R(ren), data, (IndexGeometry::Type)elementType, elementCount);
+    cache->init(GL_REND(ren), data, (IndexGeometry::Type)elementType, elementCount);
     return true;
     }
 
-  unsigned int _indexArray;
   unsigned int _indexCount;
   unsigned int _indexType;
   };
@@ -255,12 +273,10 @@ public:
 //----------------------------------------------------------------------------------------------------------------------
 // GEOMETRY CACHE
 //----------------------------------------------------------------------------------------------------------------------
-
-
-class XGLGeometryCache
+class XGLGeometryCache : public XGLBuffer
   {
 public:
-  bool init( GLESRendererImpl *, const void *data, xsize elementSize, xsize elementCount );
+  bool init( GLRendererImpl *, const void *data, xsize elementSize, xsize elementCount );
   ~XGLGeometryCache( );
 
   static bool create(
@@ -271,11 +287,9 @@ public:
       xsize elementCount)
     {
     XGLGeometryCache *cache = g->create<XGLGeometryCache>();
-    cache->init(GL_R(ren), data, elementSize, elementCount);
+    cache->init(GL_REND(ren), data, elementSize, elementCount);
     return true;
     }
-
-  unsigned int _vertexArray;
   };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -285,7 +299,7 @@ public:
 class XGLVertexLayout
   {
 public:
-  bool init(GLESRendererImpl *, const ShaderVertexLayoutDescription *, xsize count);
+  bool init(GLRendererImpl *, const ShaderVertexLayoutDescription *, xsize count);
   ~XGLVertexLayout();
 
   struct Attribute
@@ -296,12 +310,6 @@ public:
     xuint8 components;
     // type is currently always float.
     };
-
-  enum
-    {
-    AttributeCount = 3
-    };
-  Eks::Vector<Attribute, AttributeCount> attributes;
 
   void bind(const XGLGeometryCache *geo) const;
   void unbind() const;
@@ -336,7 +344,7 @@ public:
 class XGLShaderComponent
   {
 public:
-  bool init( GLESRendererImpl *, const char *data, xsize size);
+  bool init( GLRendererImpl *, const char *data, xsize size);
 
   static bool createFragment(
       Renderer *r,
@@ -345,7 +353,7 @@ public:
       xsize l)
     {
     XGLShaderComponent *glS = f->create<XGLShaderComponent>();
-    glS->init(GL_R(r), s, l);
+    return glS->init(GL_REND(r), s, l);
     }
 
   static bool createVertex(
@@ -358,7 +366,10 @@ public:
       ShaderVertexLayout *layout)
     {
     XGLShaderComponent *glS = v->create<XGLShaderComponent>();
-    glS->init(GL_R(r), s, l);
+    if(!glS->init(GL_REND(r), s, l))
+      {
+      return false;
+      }
 
     if(layout)
       {
@@ -366,21 +377,34 @@ public:
       xAssert(vertexDescriptions);
 
       XGLVertexLayout *glL = layout->create<XGLVertexLayout>();
-      glL->init(GL_R(r), vertexDescriptions, vertexItemCount);
+      return glL->init(GL_REND(r), vertexDescriptions, vertexItemCount);
       }
+
+    return true;
     }
 
-  QGLShader component;
+  xuint32 component;
   };
 
 class XGLShader
   {
 public:
-  bool init( GLESRendererImpl *, XGLShaderComponent *, XGLShaderComponent * );
+  bool init( GLRendererImpl *, XGLShaderComponent *, XGLShaderComponent * );
   ~XGLShader();
 
   bool build(QStringList &log);
   bool isValid();
+
+  static void destroy(Renderer *r, Shader *x)
+    {
+    if(x == GL_REND(r)->_currentShader)
+      {
+      glUseProgram(0);
+      GL_REND(r)->_currentShader = 0;
+      }
+
+    Eks::destroy<Shader, XGLShader>(r, x);
+    }
 
   static bool create(
       Renderer *r,
@@ -389,25 +413,25 @@ public:
       ShaderFragmentComponent *f)
     {
     XGLShader *glS = s->create<XGLShader>();
-    glS->init(GL_R(r), v->data<XGLShaderComponent>(), f->data<XGLShaderComponent>() );
+    return glS->init(GL_REND(r), v->data<XGLShaderComponent>(), f->data<XGLShaderComponent>() );
     }
 
   static void bind(Renderer *ren, const Shader *shader, const ShaderVertexLayout *layout)
     {
-    GLESRendererImpl* r = GL_R(ren);
+    GLRendererImpl* r = GL_REND(ren);
     if( shader &&
         ( r->_currentShader == 0 || r->_currentShader != shader || r->_vertexLayout != layout) )
       {
       r->_currentShader = const_cast<Shader *>(shader);
       r->_vertexLayout = const_cast<ShaderVertexLayout *>(layout);
-      XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
+      //XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
 
+      xAssertFail();
+      /*
       xAssert(shaderInt->shader.isLinked());
 
       shaderInt->shader.bind() GLE;
 
-      xAssertFail();
-      /*
       int x=0;
       Q_FOREACH( ShaderVariable *var, shader->variables() )
         {
@@ -427,8 +451,7 @@ public:
       }
     else if( shader == 0 && r->_currentShader != 0 )
       {
-      XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
-      shaderInt->shader.release() GLE;
+      glUseProgram(0);
       r->_currentShader = 0;
       r->_vertexLayout = 0;
       }
@@ -448,7 +471,7 @@ public:
     xsize count,
     const Resource * const* data);
 
-  QGLShaderProgram shader;
+  xuint32 shader;
   friend class XGLRenderer;
   friend class XGLShaderVariable;
   };
@@ -460,7 +483,7 @@ public:
 class XGLShaderData
   {
 public:
-  bool init(GLESRendererImpl *, xsize size, void *data);
+  bool init(GLRendererImpl *, xsize size, void *data);
   ~XGLShaderData();
 
   static void update(Renderer *r, ShaderConstantData *, void *data);
@@ -472,11 +495,55 @@ public:
       void *data)
     {
     XGLShaderData *glD = d->create<XGLShaderData>();
-    glD->init(GL_R(r), size, data);
+    return glD->init(GL_REND(r), size, data);
     }
 
   friend class XGLRenderer;
   friend class XGLShaderVariable;
+  };
+
+//----------------------------------------------------------------------------------------------------------------------
+// BLEND STATE
+//----------------------------------------------------------------------------------------------------------------------
+
+class XGLBlendState
+  {
+public:
+  bool init(GLRendererImpl *);
+
+  static void bind(Renderer *r, const BlendState *state);
+
+
+  static bool create(
+      Renderer *r,
+      BlendState *s)
+    {
+    (void)r;
+    (void)s;
+    return false;
+    }
+  };
+
+//----------------------------------------------------------------------------------------------------------------------
+// DEPTH STENCIL STATE
+//----------------------------------------------------------------------------------------------------------------------
+
+class XGLDepthStencilState
+  {
+public:
+  bool init(GLRendererImpl *);
+
+  static void bind(Renderer *r, const DepthStencilState *state);
+
+
+  static bool create(
+      Renderer *r,
+      DepthStencilState *s)
+    {
+    (void)r;
+    (void)s;
+    return false;
+    }
   };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -486,7 +553,7 @@ public:
 class XGLRasteriserState
   {
 public:
-  bool init(GLESRendererImpl *, RasteriserState::CullMode mode);
+  bool init(GLRendererImpl *, RasteriserState::CullMode mode);
 
   static void bind(Renderer *r, const RasteriserState *state);
 
@@ -497,13 +564,13 @@ public:
       xuint32 cull)
     {
     XGLRasteriserState *glS = s->create<XGLRasteriserState>();
-    glS->init(GL_R(r), (RasteriserState::CullMode)cull);
+    return glS->init(GL_REND(r), (RasteriserState::CullMode)cull);
     }
 
   RasteriserState::CullMode _cull;
   };
 
-GLESRendererImpl::GLESRendererImpl(const detail::RendererFunctions &fns) : _context(0), _currentShader(0), _currentFramebuffer(0)
+GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns) : _context(0), _currentShader(0), _currentFramebuffer(0)
   {
   setFunctions(fns);
   }
@@ -577,9 +644,9 @@ void setViewportSize(Renderer *, QSize size)
   glViewport( 0, 0, size.width(), size.height() ) GLE;
   }*/
 
-void GLESRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert)
+void GLRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert)
   {
-  GLESRendererImpl* r = GL_R(ren);
+  GLRendererImpl* r = GL_REND(ren);
   xAssert(r->_currentShader);
   xAssert(r->_vertexLayout);
   xAssert(indices);
@@ -592,7 +659,7 @@ void GLESRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *
 
   layout->bind(gC);
 
-  glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, idx->_indexArray ) GLE;
+  glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, idx->_buffer ) GLE;
 
   glDrawElements( GL_TRIANGLES, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
 
@@ -601,12 +668,7 @@ void GLESRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *
   layout->unbind();
   }
 
-template <typename X, typename T> void destroy(Renderer *, X *x)
-  {
-  x->destroy<T>();
-  }
-
-detail::RendererFunctions fns =
+detail::RendererFunctions glfns =
   {
     {
       XGLFramebuffer::create,
@@ -617,6 +679,8 @@ detail::RendererFunctions fns =
       XGLShaderComponent::createVertex,
       XGLShaderComponent::createFragment,
       XGLRasteriserState::create,
+      XGLDepthStencilState::create,
+      XGLBlendState::create,
       XGLShaderData::create
     },
     {
@@ -624,31 +688,35 @@ detail::RendererFunctions fns =
       destroy<Geometry, XGLGeometryCache>,
       destroy<IndexGeometry, XGLIndexGeometryCache>,
       destroy<Texture2D, XGLTexture2D>,
-      destroy<Shader, XGLShader>,
+      XGLShader::destroy,
       destroy<ShaderVertexLayout, XGLVertexLayout>,
       destroy<ShaderVertexComponent, XGLShaderComponent>,
       destroy<ShaderFragmentComponent, XGLShaderComponent>,
       destroy<RasteriserState, XGLRasteriserState>,
+      destroy<DepthStencilState, XGLDepthStencilState>,
+      destroy<BlendState, XGLBlendState>,
       destroy<ShaderConstantData, XGLShaderData>
     },
     {
-      GLESRendererImpl::setClearColour,
+      GLRendererImpl::setClearColour,
       XGLShaderData::update,
-      GLESRendererImpl::setViewTransform,
-      GLESRendererImpl::setProjectionTransform,
+      GLRendererImpl::setViewTransform,
+      GLRendererImpl::setProjectionTransform,
       XGLShader::setConstantBuffers,
       XGLShader::setResources,
       XGLShader::bind,
       XGLRasteriserState::bind,
-      GLESRendererImpl::setTransform
+      XGLDepthStencilState::bind,
+      XGLBlendState::bind,
+      GLRendererImpl::setTransform
     },
     {
       XGLTexture2D::getInfo
     },
     {
-      GLESRendererImpl::drawIndexedTriangles,
-      GLESRendererImpl::drawTriangles,
-      GLESRendererImpl::debugRenderLocator
+      GLRendererImpl::drawIndexedTriangles,
+      GLRendererImpl::drawTriangles,
+      GLRendererImpl::debugRenderLocator
     },
     {
       XGLFramebuffer::clear,
@@ -660,9 +728,9 @@ detail::RendererFunctions fns =
     }
   };
 
-Renderer *GLESRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::AllocatorBase* allocator)
+Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::AllocatorBase* alloc)
   {
-  GLESRendererImpl *r = allocator->create<GLESRendererImpl>(fns);
+  GLRendererImpl *r = alloc->create<GLRendererImpl>(glfns);
   glEnable( GL_DEPTH_TEST ) GLE;
 
   XGLFramebuffer* fb = buffer->create<XGLFramebuffer>();
@@ -671,10 +739,17 @@ Renderer *GLESRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::Allocat
   return r;
   }
 
+void GLRenderer::destroyGLRenderer(Renderer *r, ScreenFrameBuffer *buffer, Eks::AllocatorBase* alloc)
+  {
+  buffer->destroy<XGLFramebuffer>();
+
+  alloc->destroy(GL_REND(r));
+  }
+
 //----------------------------------------------------------------------------------------------------------------------
 // TEXTURE
 //----------------------------------------------------------------------------------------------------------------------
-bool XGLTexture2D::init(GLESRendererImpl *, int format, int width, int height, const void *data)
+bool XGLTexture2D::init(GLRendererImpl *, int format, int width, int height, const void *data)
   {
   glGenTextures(1, &_id) GLE;
   glBindTexture(GL_TEXTURE_2D, _id) GLE;
@@ -688,7 +763,8 @@ bool XGLTexture2D::init(GLESRendererImpl *, int format, int width, int height, c
 
   int formatMap[] =
   {
-    GL_RGBA
+    GL_RGBA,
+    GL_DEPTH_COMPONENT24
   };
   xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == Texture2D::FormatCount);
 
@@ -714,39 +790,34 @@ void XGLTexture2D::clear()
 //----------------------------------------------------------------------------------------------------------------------
 // FRAMEBUFFER
 //----------------------------------------------------------------------------------------------------------------------
-bool XGLFramebuffer::init(Renderer *r, xuint32 cF, xuint32 dF, xuint32 width, xuint32 height)
+bool XGLFramebuffer::init(Renderer *r, Texture2D::Format cF, Texture2D::Format dF, xuint32 width, xuint32 height)
   {
   glGenFramebuffers(1, &_buffer) GLE;
   glBindFramebuffer(GL_FRAMEBUFFER, _buffer) GLE;
 
-  if(!Texture2D::delayedCreate(_colour, r, cF, width, height, 0))
+  if(!Texture2D::delayedCreate(_colour, r, width, height, cF, 0))
     {
     return false;
     }
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, _colour->_id, 0) GLE;
+  XGLTexture2D* c = _colour.data<XGLTexture2D>();
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, c->_id, 0) GLE;
 
-  if(!Texture2D::delayedCreate(_depth, r, dF, width, height, 0))
+  if(!Texture2D::delayedCreate(_depth, r, width, height, dF, 0))
     {
     return false;
     }
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, _depth->_id, 0) GLE;
+  XGLTexture2D* d = _depth.data<XGLTexture2D>();
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, d->_id, 0) GLE;
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0) GLE;
   return isValid();
   }
 
-bool XGLFramebuffer::init(GLESRendererImpl *)
-  {
-  _buffer = 0;
-  }
-
 XGLFramebuffer::~XGLFramebuffer( )
   {
-  delete _colour;
-  delete _depth;
   if( _buffer )
     {
-    glDeleteFramebuffersEXT( 1, &_buffer ) GLE;
+    glDeleteFramebuffers( 1, &_buffer ) GLE;
     }
   }
 
@@ -788,292 +859,96 @@ void XGLFramebuffer::unbind()
   glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 ) GLE;
   }
 
-const XAbstractTexture *XGLFramebuffer::colour() const
-  {
-  return _colour;
-  }
-
-const XAbstractTexture *XGLFramebuffer::depth() const
-  {
-  return _depth;
-  }
-
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER
 //----------------------------------------------------------------------------------------------------------------------
-
-XGLShader::XGLShader( XGLRenderer *renderer ) : XAbstractShader( renderer ), shader( renderer->context() )
-  {
-  }
-
 XGLShader::~XGLShader()
   {
-  XGLRenderer *r = static_cast<XGLRenderer*>(renderer());
-  if(r && r->_currentShader == this)
-    {
-    r->_currentShader = 0;
-    shader.release();
-    }
+  glDeleteProgram(shader);
   }
 
-bool XGLShader::addComponent(ComponentType c, const QString &source, QStringList &log)
+//bool XGLShader::build(QStringList &log)
+//  {
+//  bool result = shader.link() GLE;
+
+//  QString logEntry = shader.log();
+//  if(!logEntry.isEmpty())
+//    {
+//    log << logEntry;
+//    }
+
+//  return result;
+//  }
+
+//bool XGLShader::isValid()
+//  {
+//  bool result = shader.isLinked() GLE;
+//  return result;
+//  }
+
+//XAbstractShaderVariable *XGLShader::createVariable( QString in, XAbstractShader *s )
+//  {
+//  XGLShaderVariable* var = new XGLShaderVariable( s, in );
+//  return var;
+//  }
+
+//void XGLShader::destroyVariable( XAbstractShaderVariable *var )
+//  {
+//  delete var;
+//  }
+
+//----------------------------------------------------------------------------------------------------------------------
+// BUFFER
+//----------------------------------------------------------------------------------------------------------------------
+bool XGLBuffer::init( GLRendererImpl *, const void *data, xuint32 type, xuint32 size)
   {
-  QGLShader::ShaderTypeBit t = QGLShader::Fragment;
-  if(c == Vertex)
-    {
-    t = QGLShader::Vertex;
-    }
-  else if(c == Geometry)
-    {
-    t = QGLShader::Geometry;
-    }
+  glGenBuffers(1, &_buffer);
 
-  QGLShader *component = new QGLShader(t, &shader) GLE;
+  glBindBuffer(type, _buffer) GLE;
+  glBufferData(type, size, data, GL_STATIC_DRAW) GLE;
+  glBindBuffer(type, 0) GLE;
 
-  bool result = component->compileSourceCode(source) GLE;
-
-  if(result)
-    {
-    shader.addShader(component) GLE;
-    }
-
-  QString logEntry = component->log();
-  if(!logEntry.isEmpty())
-    {
-    log << logEntry;
-    }
-
-  if(!result)
-    {
-    delete component;
-    }
-
-  return result;
+  return true;
   }
 
-bool XGLShader::build(QStringList &log)
+
+XGLBuffer::~XGLBuffer( )
   {
-  bool result = shader.link() GLE;
-
-  QString logEntry = shader.log();
-  if(!logEntry.isEmpty())
-    {
-    log << logEntry;
-    }
-
-  return result;
-  }
-
-bool XGLShader::isValid()
-  {
-  bool result = shader.isLinked() GLE;
-  return result;
-  }
-
-XAbstractShaderVariable *XGLShader::createVariable( QString in, XAbstractShader *s )
-  {
-  XGLShaderVariable* var = new XGLShaderVariable( s, in );
-  return var;
-  }
-
-void XGLShader::destroyVariable( XAbstractShaderVariable *var )
-  {
-  delete var;
+  glDeleteBuffers(1, &_buffer) GLE;
   }
 
 //----------------------------------------------------------------------------------------------------------------------
 // INDEX GEOMETRY CACHE
 //----------------------------------------------------------------------------------------------------------------------
-XGLIndexGeometryCache::XGLIndexGeometryCache( XGLRenderer *, const void *data, IndexGeometry::Type type, xsize elementCount )
+bool XGLIndexGeometryCache::init(GLRendererImpl *r, const void *data, IndexGeometry::Type type, xsize elementCount)
   {
-  unsigned int typeMap[] =
+  struct Type
     {
-    GL_UNSIGNED_SHORT
+    xuint32 type;
+    xuint32 size;
+    };
+
+  Type typeMap[] =
+    {
+    { GL_UNSIGNED_SHORT, sizeof(xuint16) }
     };
   xCompileTimeAssert(IndexGeometry::TypeCount == X_ARRAY_COUNT(typeMap));
 
-  _indexType = typeMap[type];
+  _indexType = typeMap[type].type;
   _indexCount = elementCount;
+
+  xsize dataSize = elementCount * typeMap[type].size;
+  return XGLBuffer::init(r, data, GL_ELEMENT_ARRAY_BUFFER, dataSize);
   }
 
 //----------------------------------------------------------------------------------------------------------------------
 // GEOMETRY CACHE
 //----------------------------------------------------------------------------------------------------------------------
 
-XGLGeometryCache::XGLGeometryCache( XGLRenderer *r, const void *data, xsize elementSize, xsize elementCount ) : _renderer( r )
+bool XGLGeometryCache::init(GLRendererImpl *r, const void *data, xsize elementSize, xsize elementCount)
   {
-  _pointArray = 0;
-  _lineArray = 0;
-  _triangleArray = 0;
-
-  _pointSize = 0;
-  _lineSize = 0;
-  _triangleSize = 0;
-
-  glGenBuffers( 1, &_vertexArray ) GLE;
-  if( type == Geometry::Dynamic )
-    {
-    _type = GL_DYNAMIC_DRAW;
-    }
-  else if( type == Geometry::Stream )
-    {
-    _type = GL_STREAM_DRAW;
-    }
-  else
-    {
-    _type = GL_STATIC_DRAW;
-    }
-  _usedCacheSize = 0;
-  }
-
-XGLGeometryCache::~XGLGeometryCache( )
-  {
-  glDeleteBuffers( 1, &_vertexArray ) GLE;
-
-  if( _pointArray )
-    {
-    glDeleteBuffers( 1, &_pointArray ) GLE;
-    }
-  if( _lineArray )
-    {
-    glDeleteBuffers( 1, &_lineArray ) GLE;
-    }
-  if( _triangleArray )
-    {
-    glDeleteBuffers( 1, &_triangleArray ) GLE;
-    }
-  }
-
-void XGLGeometryCache::setPoints( const XVector<unsigned int> &poi )
-  {
-  if( poi.size() )
-    {
-    _pointSize = poi.size();
-    if( !_pointArray )
-      {
-      glGenBuffers( 1, &_pointArray );
-      }
-
-    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, _pointArray ) GLE;
-    glBufferData( GL_ELEMENT_ARRAY_BUFFER, poi.size()*sizeof(unsigned int), &(poi.front()), _type ) GLE;
-    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
-    }
-  else if( _pointArray )
-    {
-    glDeleteBuffers( 1, &_pointArray ) GLE;
-    }
-  }
-
-void XGLGeometryCache::setLines( const XVector<unsigned int> &lin )
-  {
-  if( lin.size() )
-    {
-    _lineSize = lin.size();
-    if( !_lineArray )
-      {
-      glGenBuffers( 1, &_lineArray ) GLE;
-      }
-
-    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, _lineArray ) GLE;
-    glBufferData( GL_ELEMENT_ARRAY_BUFFER, lin.size()*sizeof(unsigned int), &(lin.front()), _type ) GLE;
-    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
-    }
-  else if( _lineArray )
-    {
-    glDeleteBuffers( 1, &_lineArray ) GLE;
-    }
-  }
-
-void XGLGeometryCache::setTriangles( const XVector<unsigned int> &tri )
-  {
-  if( tri.size() )
-    {
-    _triangleSize = tri.size();
-    if( !_triangleArray )
-      {
-      glGenBuffers( 1, &_triangleArray ) GLE;
-      }
-
-    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, _triangleArray ) GLE;
-    glBufferData( GL_ELEMENT_ARRAY_BUFFER, tri.size()*sizeof(unsigned int), &(tri.front()), _type ) GLE;
-    glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
-    }
-  else if( _triangleArray )
-    {
-    glDeleteBuffers( 1, &_triangleArray );
-    }
-  }
-
-void XGLGeometryCache::setAttributesSize( int s, int num1D, int num2D, int num3D, int num4D )
-  {
-  _usedCacheSize = 0;
-  _cache.clear();
-  glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
-  glBufferData( GL_ARRAY_BUFFER, (sizeof(float)*s*num1D)
-                + (sizeof(float)*2*s*num2D)
-                + (sizeof(float)*3*s*num3D)
-                + (sizeof(float)*4*s*num4D), 0, _type ) GLE;
-  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
-  }
-
-void XGLGeometryCache::setAttribute( QString name, const XVector<Real> &attr )
-  {
-  int offset( getCacheOffset( name, 1, attr.size() ) );
-
-  //insert data
-  glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
-  glBufferSubData( GL_ARRAY_BUFFER, offset, attr.size()*1*sizeof(float), &attr.front() ) GLE;
-  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
-  }
-
-void XGLGeometryCache::setAttribute( QString name, const XVector<Eks::Vector2D> &attr )
-  {
-  int offset( getCacheOffset( name, 2, attr.size() ) );
-
-  //insert data
-  glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
-  glBufferSubData( GL_ARRAY_BUFFER, offset, attr.size()*2*sizeof(float), &attr.front() ) GLE;
-  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
-  }
-
-void XGLGeometryCache::setAttribute( QString name, const XVector<Eks::Vector3D> &attr )
-  {
-  int offset( getCacheOffset( name, 3, attr.size() ) );
-
-  //insert data
-  glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
-  glBufferSubData( GL_ARRAY_BUFFER, offset, attr.size()*3*sizeof(float), &attr.front() ) GLE;
-  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
-  }
-
-void XGLGeometryCache::setAttribute( QString name, const XVector<Eks::Vector4D> &attr )
-  {
-  int offset( getCacheOffset( name, 4, attr.size() ) );
-
-  //insert data
-  glBindBuffer( GL_ARRAY_BUFFER, _vertexArray ) GLE;
-  glBufferSubData( GL_ARRAY_BUFFER, offset, attr.size()*4*sizeof(float), &attr.front() ) GLE;
-  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
-  }
-
-int XGLGeometryCache::getCacheOffset( const QString &name, int components, int attrSize )
-  {
-  Q_FOREACH( const DrawCache &ref, _cache )
-    {
-    if( ref.name == name )
-      {
-      return ref.offset;
-      }
-    }
-
-  DrawCache c;
-  c.components = components;
-  c.name = name;
-  c.offset = _usedCacheSize;
-  _cache << c;
-  _usedCacheSize += sizeof(float) * components * attrSize;
-
-  return c.offset;
+  xsize dataSize = elementSize * elementCount;
+  return XGLBuffer::init(r, data, GL_ARRAY_BUFFER, dataSize);
   }
 
 }

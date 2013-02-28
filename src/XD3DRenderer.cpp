@@ -125,8 +125,9 @@ bool createFramebuffer(
   FormatBpp colFormatMap[] =
   {
     { DXGI_FORMAT_R8G8B8A8_UNORM, 24 },
+    { DXGI_FORMAT_UNKNOWN, 0 },
   };
-  xCompileTimeAssert(X_ARRAY_COUNT(colFormatMap) == FrameBuffer::ColourFormatCount);
+  xCompileTimeAssert(X_ARRAY_COUNT(colFormatMap) == Texture2D::FormatCount);
 
   struct DepthFormatBpp
     {
@@ -137,12 +138,17 @@ bool createFramebuffer(
   DepthFormatBpp depthFormatMap[] =
   {
     {
+      { DXGI_FORMAT_UNKNOWN, 0 },
+      DXGI_FORMAT_UNKNOWN,
+      DXGI_FORMAT_UNKNOWN
+    },
+    {
       { DXGI_FORMAT_R24G8_TYPELESS, 32 },
       DXGI_FORMAT_D24_UNORM_S8_UINT,
       DXGI_FORMAT_R24_UNORM_X8_TYPELESS
     }
   };
-  xCompileTimeAssert(X_ARRAY_COUNT(depthFormatMap) == FrameBuffer::DepthStencilFormatCount);
+  xCompileTimeAssert(X_ARRAY_COUNT(depthFormatMap) == Texture2D::FormatCount);
 
 
   XD3DFrameBufferImpl *fb = buffer->create<XD3DFrameBufferImpl>();
@@ -619,7 +625,7 @@ void setBlendState(Renderer *, const BlendState *)
 
   }
 
-detail::RendererFunctions fns =
+detail::RendererFunctions d3dfns =
   {
     {
       createFramebuffer,
@@ -657,8 +663,8 @@ detail::RendererFunctions fns =
       setShaderResource,
       setShader,
       setRasteriserState,
+    setDepthStencilState,
       setBlendState,
-      setDepthStencilState,
       setTransform
     },
     {
@@ -681,7 +687,7 @@ detail::RendererFunctions fns =
 
 Renderer *D3DRenderer::createD3DRenderer(IUnknown *window, ScreenFrameBuffer *buffer, Eks::AllocatorBase *a)
   {
-  D3DRendererImpl *r = a->createWithAlignment<D3DRendererImpl>(window, fns, X_ALIGN_BYTE_COUNT);
+  D3DRendererImpl *r = a->createWithAlignment<D3DRendererImpl>(window, d3dfns, X_ALIGN_BYTE_COUNT);
 
   xAssert(!buffer->isValid());
   buffer->create<XD3DSwapChainImpl>();
@@ -692,7 +698,7 @@ Renderer *D3DRenderer::createD3DRenderer(IUnknown *window, ScreenFrameBuffer *bu
 
 Renderer *D3DRenderer::createD3DRenderer(void *handle, ScreenFrameBuffer *buffer, Eks::AllocatorBase *a)
   {
-  D3DRendererImpl *r = a->createWithAlignment<D3DRendererImpl>((HWND)handle, fns, X_ALIGN_BYTE_COUNT);
+  D3DRendererImpl *r = a->createWithAlignment<D3DRendererImpl>((HWND)handle, d3dfns, X_ALIGN_BYTE_COUNT);
 
   xAssert(!buffer->isValid());
   buffer->create<XD3DSwapChainImpl>();

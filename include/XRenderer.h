@@ -157,8 +157,8 @@ struct RendererSetFunctions
 
   // set states
   void (*rasteriserState)(Renderer *r, const RasteriserState *state);
-  void (*blendState)(Renderer *r, const BlendState *state);
   void (*depthStencilState)(Renderer *r, const DepthStencilState *state);
+  void (*blendState)(Renderer *r, const BlendState *state);
 
   void (*transform)(Renderer *r, const Transform &);
   };

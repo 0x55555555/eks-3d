@@ -60,7 +60,10 @@ HEADERS += \
     ../include/XShaderManager.h \
     ../include/X3DCanvas.h \
     ../include/XDepthStencilState.h \
-    ../include/XBlendState.h
+    ../include/XBlendState.h \
+    ../3rdParty/GL/wglew.h \
+    ../3rdParty/GL/glxew.h \
+    ../3rdParty/GL/glew.h
 
 INCLUDEPATH += ../include/ \
     $$ROOT/Eks/EksCore/

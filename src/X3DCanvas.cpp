@@ -20,12 +20,12 @@ GL3DCanvas::GL3DCanvas(QWidget *parent, Eks::Renderer **r) : QGLWidget(parent)
 
   Eks::Optional<Renderer *> renderer(r);
 
-  _renderer = renderer = GLESRenderer::createGLRenderer(_buffer, ALLOC);
+  _renderer = renderer = GLRenderer::createGLRenderer(_buffer, ALLOC);
   }
 
 GL3DCanvas::~GL3DCanvas()
   {
-  Eks::GLESRenderer::destroyGLRenderer(_renderer, _buffer, ALLOC);
+  Eks::GLRenderer::destroyGLRenderer(_renderer, _buffer, ALLOC);
   ALLOC->destroy(_buffer);
   _buffer = 0;
   }
@@ -33,6 +33,11 @@ GL3DCanvas::~GL3DCanvas()
 void GL3DCanvas::paintGL()
   {
   paint3D(_renderer, _buffer);
+  }
+
+void GL3DCanvas::update3D()
+  {
+  update();
   }
 
 
