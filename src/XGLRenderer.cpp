@@ -215,19 +215,40 @@ public:
     r->_currentFramebuffer = 0;
     }
 
-  static void clear(Renderer *r, FrameBuffer *buffer, xuint32 mode);
-  static bool resize(Renderer *r, ScreenFrameBuffer *buffer, xuint32 w, xuint32 h, xuint32 rotation);
+  static void clear(Renderer *r, FrameBuffer *buffer, xuint32 mode)
+    {
+#if X_ASSERTS_ENABLED
+    GLRendererImpl *rend = GL_REND(r);
+    XGLFramebuffer *fb = buffer->data<XGLFramebuffer>();
+    xAssert(rend->_currentFramebuffer == fb);
+  #endif
+
+    xuint32 mask = ((mode&FrameBuffer::ClearColour) != 0 ? GL_COLOR_BUFFER_BIT : 0) |
+                   ((mode&FrameBuffer::ClearDepth) != 0 ? GL_DEPTH_BUFFER_BIT : 0);
+
+    glClear(mask);
+    }
+
+  static bool resize(Renderer *, ScreenFrameBuffer *, xuint32, xuint32, xuint32)
+    {
+    // nothing to do?
+    return true;
+    }
 
   static void present(Renderer *, ScreenFrameBuffer *, bool *)
     {
     // swap buffers?
     }
 
-  static Texture2D *getTexture(Renderer *r, FrameBuffer *buffer, xuint32 mode);
+  static Texture2D *getTexture(Renderer *, FrameBuffer *buffer, xuint32 mode)
+    {
+    xAssert(mode < FrameBuffer::TextureIdCount);
+    XGLFramebuffer *fb = buffer->data<XGLFramebuffer>();
+    return fb->_textures + mode;
+    }
 
 private:
-  Texture2D _colour;
-  Texture2D _depth;
+  Texture2D _textures[FrameBuffer::TextureIdCount];
   unsigned int _buffer;
 
   friend class XGLShaderVariable;
@@ -252,7 +273,6 @@ class XGLIndexGeometryCache : public XGLBuffer
   {
 public:
   bool init(GLRendererImpl *, const void *data, IndexGeometry::Type type, xsize elementCount);
-  ~XGLIndexGeometryCache( );
 
   static bool create(
       Renderer *ren,
@@ -277,7 +297,6 @@ class XGLGeometryCache : public XGLBuffer
   {
 public:
   bool init( GLRendererImpl *, const void *data, xsize elementSize, xsize elementCount );
-  ~XGLGeometryCache( );
 
   static bool create(
       Renderer *ren,
@@ -290,6 +309,8 @@ public:
     cache->init(GL_REND(ren), data, elementSize, elementCount);
     return true;
     }
+
+  xsize _elementCount;
   };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -575,37 +596,48 @@ GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns) : _context(
   setFunctions(fns);
   }
 
-/*
-void XGLRenderer::debugRenderLocator(DebugLocatorMode m)
+
+void GLRendererImpl::debugRenderLocator(Renderer *r, RendererDebugLocatorMode m)
   {
-  if((m&ClearShader) != 0)
+  if((m&RendererDebugLocatorMode::DebugLocatorClearShader) != 0)
     {
-    _currentShader = 0;
+    GL_REND(r)->_currentShader = 0;
     glUseProgram(0);
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
-  glBegin(GL_LINES);
-  glVertex3f(-0.5, 0, 0);
-  glVertex3f(0.5, 0, 0);
-  glVertex3f(0, -0.5, 0);
-  glVertex3f(0, 0.5, 0);
-  glVertex3f(0, 0, -0.5);
-  glVertex3f(0, 0, 0.5);
-  glEnd();
+  float lineData[] =
+  {
+    -0.5, 0, 0,
+    0.5, 0, 0,
+    0, -0.5, 0,
+    0, 0.5, 0,
+    0, 0, -0.5,
+    0, 0, 0.5
+  };
 
+  glEnableClientState(GL_VERTEX_ARRAY) GLE;
+  glVertexPointer(2, GL_FLOAT, sizeof(float) * 3, lineData) GLE;
+  glDrawArrays(GL_LINES, 0, 6) GLE;
+  glDisableClientState(GL_VERTEX_ARRAY);
 
-  glBegin(GL_TRIANGLES);
-  glVertex3f(-0.5, 0, 0);
-  glVertex3f(0, 0, 0);
-  glVertex3f(0, -0.5, 0);
+  float triData[] =
+  {
+    -0.5, 0, 0,
+    0, 0, 0,
+    0, -0.5, 0,
+    0, 0, 0,
+    -0.5, 0, 0,
+    0, -0.5, 0,
+  };
 
-  glVertex3f(0, 0, 0);
-  glVertex3f(-0.5, 0, 0);
-  glVertex3f(0, -0.5, 0);
-  glEnd();
+  glEnableClientState(GL_VERTEX_ARRAY) GLE;
+  glVertexPointer(2, GL_FLOAT, sizeof(float) * 3, triData) GLE;
+  glDrawArrays(GL_TRIANGLES, 0, 6) GLE;
+  glDisableClientState(GL_VERTEX_ARRAY);
   }
 
+/*
 void XGLRenderer::enableRenderFlag( RenderFlags f )
   {
   if( f == AlphaBlending )
@@ -664,6 +696,23 @@ void GLRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *in
   glDrawElements( GL_TRIANGLES, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
 
   glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
+
+  layout->unbind();
+  }
+
+void GLRendererImpl::drawTriangles(Renderer *ren, const Geometry *vert)
+  {
+  GLRendererImpl* r = GL_REND(ren);
+  xAssert(r->_currentShader);
+  xAssert(r->_vertexLayout);
+  xAssert(vert);
+
+  const XGLGeometryCache *gC = vert->data<XGLGeometryCache>();
+  const XGLVertexLayout *layout = r->_vertexLayout->data<XGLVertexLayout>();
+
+  layout->bind(gC);
+
+  glDrawArrays( GL_TRIANGLES, 0, gC->_elementCount) GLE;
 
   layout->unbind();
   }
@@ -795,18 +844,18 @@ bool XGLFramebuffer::init(Renderer *r, Texture2D::Format cF, Texture2D::Format d
   glGenFramebuffers(1, &_buffer) GLE;
   glBindFramebuffer(GL_FRAMEBUFFER, _buffer) GLE;
 
-  if(!Texture2D::delayedCreate(_colour, r, width, height, cF, 0))
+  if(!Texture2D::delayedCreate(_textures[FrameBuffer::TextureColour], r, width, height, cF, 0))
     {
     return false;
     }
-  XGLTexture2D* c = _colour.data<XGLTexture2D>();
+  XGLTexture2D* c = _textures[FrameBuffer::TextureColour].data<XGLTexture2D>();
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, c->_id, 0) GLE;
 
-  if(!Texture2D::delayedCreate(_depth, r, width, height, dF, 0))
+  if(!Texture2D::delayedCreate(_textures[FrameBuffer::TextureDepthStencil], r, width, height, dF, 0))
     {
     return false;
     }
-  XGLTexture2D* d = _depth.data<XGLTexture2D>();
+  XGLTexture2D* d = _textures[FrameBuffer::TextureDepthStencil].data<XGLTexture2D>();
   glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, d->_id, 0) GLE;
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0) GLE;
@@ -948,6 +997,7 @@ bool XGLIndexGeometryCache::init(GLRendererImpl *r, const void *data, IndexGeome
 bool XGLGeometryCache::init(GLRendererImpl *r, const void *data, xsize elementSize, xsize elementCount)
   {
   xsize dataSize = elementSize * elementCount;
+  _elementCount = elementCount;
   return XGLBuffer::init(r, data, GL_ARRAY_BUFFER, dataSize);
   }
 
