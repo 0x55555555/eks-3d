@@ -229,9 +229,10 @@ public:
     glClear(mask);
     }
 
-  static bool resize(Renderer *, ScreenFrameBuffer *, xuint32, xuint32, xuint32)
+  static bool resize(Renderer *, ScreenFrameBuffer *, xuint32, xuint32 w, xuint32 h)
     {
     // nothing to do?
+    glViewport(0,0,w,h);
     return true;
     }
 

@@ -23,18 +23,10 @@ private:
 class EKS3D_EXPORT Texture2D : public Resource
   {
 public:
-  enum Format
-    {
-    Rgba8,
-    Depth24Stencil8,
-
-    FormatCount
-    };
-
   Texture2D(Renderer *r=0,
         xsize width=0,
         xsize height=0,
-        Format fmt=FormatCount,
+        TextureFormat fmt=Eks::TextureFormatCount,
         const void *data=0);
   ~Texture2D();
 
@@ -43,7 +35,7 @@ public:
         Renderer *r,
         xsize width,
         xsize height,
-        Format fmt,
+        TextureFormat fmt,
         const void *data);
 
   Eks::VectorUI2D size() const;

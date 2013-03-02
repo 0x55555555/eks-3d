@@ -127,7 +127,7 @@ bool createFramebuffer(
     { DXGI_FORMAT_R8G8B8A8_UNORM, 24 },
     { DXGI_FORMAT_UNKNOWN, 0 },
   };
-  xCompileTimeAssert(X_ARRAY_COUNT(colFormatMap) == Texture2D::FormatCount);
+  xCompileTimeAssert(X_ARRAY_COUNT(colFormatMap) == TextureFormatCount);
 
   struct DepthFormatBpp
     {
@@ -148,7 +148,7 @@ bool createFramebuffer(
       DXGI_FORMAT_R24_UNORM_X8_TYPELESS
     }
   };
-  xCompileTimeAssert(X_ARRAY_COUNT(depthFormatMap) == Texture2D::FormatCount);
+  xCompileTimeAssert(X_ARRAY_COUNT(depthFormatMap) == TextureFormatCount);
 
 
   XD3DFrameBufferImpl *fb = buffer->create<XD3DFrameBufferImpl>();
@@ -327,7 +327,7 @@ bool createTexture(
     { DXGI_FORMAT_R8G8B8A8_UNORM, sizeof(xuint8) * 4 },
     { DXGI_FORMAT_D24_UNORM_S8_UINT, 32 }
     };
-  xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == Texture2D::FormatCount);
+  xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == TextureFormatCount);
 
 
   return tex->create(
@@ -663,7 +663,7 @@ detail::RendererFunctions d3dfns =
       setShaderResource,
       setShader,
       setRasteriserState,
-    setDepthStencilState,
+      setDepthStencilState,
       setBlendState,
       setTransform
     },
@@ -713,6 +713,12 @@ void D3DRenderer::destroyD3DRenderer(Renderer *r, ScreenFrameBuffer *buffer, Eks
   buffer->setRenderer(0);
   destroy<ScreenFrameBuffer, XD3DSwapChainImpl>(r, buffer);
   a->destroy(D3D(r));
+  }
+
+void D3DRenderer::getInternals(Renderer *r, ID3D11Device1 **dev, ID3D11DeviceContext1 **ctx)
+  {
+  *dev = D3D(r)->_d3dDevice.Get();
+  *ctx = D3D(r)->_d3dContext.Get();
   }
 
 }

@@ -8,8 +8,8 @@ FrameBuffer::FrameBuffer(
     Renderer *r,
     xuint32 width,
     xuint32 height,
-    Texture2D::Format colour,
-    Texture2D::Format dsF)
+    TextureFormat colour,
+    TextureFormat dsF)
   {
   if(r)
     {
@@ -30,8 +30,8 @@ bool FrameBuffer::delayedCreate(
     Renderer *r,
     xuint32 width,
     xuint32 height,
-    Texture2D::Format colour,
-    Texture2D::Format dsF)
+    TextureFormat colour,
+    TextureFormat dsF)
   {
   xAssert(width > 0);
   xAssert(height > 0);

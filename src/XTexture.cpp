@@ -11,7 +11,7 @@ Texture2D::Texture2D(
     Renderer *r,
     xsize width,
     xsize height,
-    Format fmt,
+    TextureFormat fmt,
     const void *data)
   {
   if(r)
@@ -33,7 +33,7 @@ bool Texture2D::delayedCreate(
     Renderer *r,
     xsize width,
     xsize height,
-    Format fmt,
+    TextureFormat fmt,
     const void *data)
   {
   ths._renderer = r;

@@ -4,11 +4,11 @@
 #include "X3DGlobal.h"
 #include "XProperty"
 #include "XPrivateImpl"
-#include "XTexture.h"
 
 namespace Eks
 {
 
+class Texture2D;
 class Renderer;
 class FrameBufferRenderFrame;
 
@@ -29,8 +29,8 @@ public:
     Renderer *r = 0,
     xuint32 width = 0,
     xuint32 height = 0,
-    Texture2D::Format colour = Texture2D::Rgba8,
-    Texture2D::Format dsF = Texture2D::Depth24Stencil8);
+    TextureFormat colour = Eks::Rgba8,
+    TextureFormat dsF = Eks::Depth24Stencil8);
   ~FrameBuffer();
 
   static bool delayedCreate(
@@ -38,8 +38,8 @@ public:
     Renderer *r,
     xuint32 width,
     xuint32 height,
-    Texture2D::Format colour = Texture2D::Rgba8,
-    Texture2D::Format dsF = Texture2D::Depth24Stencil8);
+    TextureFormat colour = Eks::Rgba8,
+    TextureFormat dsF = Eks::Depth24Stencil8);
 
   enum ClearMode
     {
