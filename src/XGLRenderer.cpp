@@ -125,8 +125,14 @@ public:
 //----------------------------------------------------------------------------------------------------------------------
 // TEXTURE
 //----------------------------------------------------------------------------------------------------------------------
+class XGLShaderResource
+  {
+  };
 
-class XGLTexture2D
+//----------------------------------------------------------------------------------------------------------------------
+// TEXTURE
+//----------------------------------------------------------------------------------------------------------------------
+class XGLTexture2D : public XGLShaderResource
   {
 public:
   bool init(GLRendererImpl *, int format, int width, int height, const void *data);
@@ -164,7 +170,7 @@ private:
 class XGLFramebuffer
   {
 public:
-  bool init(Renderer *, Texture2D::Format colourFormat, Texture2D::Format depthFormat, xuint32 width, xuint32 height);
+  bool init(Renderer *, TextureFormat colourFormat, TextureFormat depthFormat, xuint32 width, xuint32 height);
   bool init(GLRendererImpl *);
   ~XGLFramebuffer( );
 
@@ -185,7 +191,7 @@ public:
       xuint32 depthFormat)
     {
     XGLFramebuffer* fb = b->create<XGLFramebuffer>();
-    return fb->init(GL_REND(r), (Texture2D::Format)colourFormat, (Texture2D::Format)depthFormat, w, h );
+    return fb->init(GL_REND(r), (TextureFormat)colourFormat, (TextureFormat)depthFormat, w, h );
     }
 
   static void beginRender(Renderer *ren, FrameBuffer *fb)
@@ -321,40 +327,54 @@ public:
 class XGLVertexLayout
   {
 public:
-  bool init(GLRendererImpl *, const ShaderVertexLayoutDescription *, xsize count);
+  bool init(GLRendererImpl *, XGLShader* shader, const ShaderVertexLayoutDescription *, xsize count)
+    {
+
+    int location( shader->shader.attributeLocation(ref.name) );
+    if( location >= 0 )
+      {
+      }
+    }
   ~XGLVertexLayout();
 
   struct Attribute
     {
-    QString name;
+    xuint32 name;
     xsize stride;
     xsize offset;
     xuint8 components;
     // type is currently always float.
     };
 
-  void bind(const XGLGeometryCache *geo) const;
-  void unbind() const;
+  Eks::Vector<Attribute, 3> _attrs;
 
-  /*
-
-  glBindBuffer( GL_ARRAY_BUFFER, gC->_vertexArray ) GLE;
-  Q_FOREACH( const XGLVertexLayout::Attribute &ref, layout->attributes )
+  void bind() const
     {
-    int location( shader->shader.attributeLocation(ref.name) );
-    if( location >= 0 )
+    xForeach(const auto &ref, layout->attributes)
       {
-      m_ids << location;
-      glEnableVertexAttribArray( location ) GLE;
-      glVertexAttribPointer( location, ref.components, GL_FLOAT, GL_FALSE, ref.stride, (GLvoid*)ref.offset ) GLE;
+      glEnableVertexAttribArray(location) GLE;
+      glVertexAttribPointer(
+        ref.location,
+        ref.components,
+        GL_FLOAT,
+        GL_FALSE,
+        ref.stride,
+        (GLvoid*)ref.offset ) GLE;
       }
     }
-  Q_FOREACH( int id, m_ids )
+
+  void unbind() const
     {
-    glDisableVertexAttribArray( id ) GLE;
+    xForeach(const auto &ref, layout->attributes)
+      {
+      glDisableVertexAttribArray(ref.location) GLE;
+      }
     }
 
-  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
+  /*
+   *
+const XGLGeometryCache *geo
+
 */
 
   };
@@ -441,12 +461,20 @@ public:
   static void bind(Renderer *ren, const Shader *shader, const ShaderVertexLayout *layout)
     {
     GLRendererImpl* r = GL_REND(ren);
+    if(r->_vertexLayout)
+      {
+      XGLVertexLayout* oldLayout = r->_vertexLayout;
+      oldLayout->unbind();
+      }
     if( shader &&
         ( r->_currentShader == 0 || r->_currentShader != shader || r->_vertexLayout != layout) )
       {
       r->_currentShader = const_cast<Shader *>(shader);
       r->_vertexLayout = const_cast<ShaderVertexLayout *>(layout);
       //XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
+
+      XGLVertexLayout* newLayout = layout;
+      newLayout->bind();
 
       xAssertFail();
       /*
@@ -533,8 +561,10 @@ class XGLBlendState
 public:
   bool init(GLRendererImpl *);
 
-  static void bind(Renderer *r, const BlendState *state);
-
+  static void bind(Renderer *, const BlendState *)
+    {
+    xAssertFail();
+    }
 
   static bool create(
       Renderer *r,
@@ -555,8 +585,10 @@ class XGLDepthStencilState
 public:
   bool init(GLRendererImpl *);
 
-  static void bind(Renderer *r, const DepthStencilState *state);
-
+  static void bind(Renderer *, const DepthStencilState *)
+    {
+    xAssertFail();
+    }
 
   static bool create(
       Renderer *r,
@@ -575,9 +607,30 @@ public:
 class XGLRasteriserState
   {
 public:
-  bool init(GLRendererImpl *, RasteriserState::CullMode mode);
+  bool init(GLRendererImpl *, RasteriserState::CullMode mode)
+    {
+    _cull = mode;
+    return true;
+    }
 
-  static void bind(Renderer *r, const RasteriserState *state);
+  static void bind(Renderer *, const RasteriserState *state)
+    {
+    const XGLRasteriserState* s = state->data<XGLRasteriserState>();
+    switch(s->_cull)
+      {
+    case RasteriserState::CullNone:
+      glDisable(GL_CULL_FACE);
+      break;
+    case RasteriserState::CullFront:
+      glEnable(GL_CULL_FACE);
+      glCullFace(GL_FRONT);
+      break;
+    case RasteriserState::CullBack:
+      glEnable(GL_CULL_FACE);
+      glCullFace(GL_BACK);
+      break;
+      }
+    }
 
 
   static bool create(
@@ -711,11 +764,11 @@ void GLRendererImpl::drawTriangles(Renderer *ren, const Geometry *vert)
   const XGLGeometryCache *gC = vert->data<XGLGeometryCache>();
   const XGLVertexLayout *layout = r->_vertexLayout->data<XGLVertexLayout>();
 
-  layout->bind(gC);
+  glBindBuffer( GL_ARRAY_BUFFER, idx->_buffer ) GLE;
 
   glDrawArrays( GL_TRIANGLES, 0, gC->_elementCount) GLE;
 
-  layout->unbind();
+  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
   }
 
 detail::RendererFunctions glfns =
@@ -816,7 +869,7 @@ bool XGLTexture2D::init(GLRendererImpl *, int format, int width, int height, con
     GL_RGBA,
     GL_DEPTH_COMPONENT24
   };
-  xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == Texture2D::FormatCount);
+  xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == TextureFormatCount);
 
   // 0 at end could be data to unsigned byte...
   glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, formatMap[format], GL_UNSIGNED_BYTE, data) GLE;
@@ -840,7 +893,7 @@ void XGLTexture2D::clear()
 //----------------------------------------------------------------------------------------------------------------------
 // FRAMEBUFFER
 //----------------------------------------------------------------------------------------------------------------------
-bool XGLFramebuffer::init(Renderer *r, Texture2D::Format cF, Texture2D::Format dF, xuint32 width, xuint32 height)
+bool XGLFramebuffer::init(Renderer *r, TextureFormat cF, TextureFormat dF, xuint32 width, xuint32 height)
   {
   glGenFramebuffers(1, &_buffer) GLE;
   glBindFramebuffer(GL_FRAMEBUFFER, _buffer) GLE;
@@ -861,6 +914,12 @@ bool XGLFramebuffer::init(Renderer *r, Texture2D::Format cF, Texture2D::Format d
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0) GLE;
   return isValid();
+  }
+
+bool XGLFramebuffer::init(GLRendererImpl *)
+  {
+  _buffer = 0;
+  return true;
   }
 
 XGLFramebuffer::~XGLFramebuffer( )

@@ -33,4 +33,15 @@
 # define X_ENABLE_DX_RENDERER 0
 #endif
 
+namespace Eks
+{
+enum TextureFormat
+  {
+  Rgba8,
+  Depth24Stencil8,
+
+  TextureFormatCount
+  };
+};
+
 #endif // X3DGLOBAL_H
