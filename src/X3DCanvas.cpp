@@ -14,13 +14,10 @@ namespace Eks
 
 #if X_ENABLE_GL_RENDERER
 
-GL3DCanvas::GL3DCanvas(QWidget *parent, Eks::Renderer **r) : QGLWidget(parent)
+GL3DCanvas::GL3DCanvas(QWidget *parent) : QGLWidget(parent)
   {
-  _buffer = ALLOC->create<ScreenFrameBuffer>();
-
-  Eks::Optional<Renderer *> renderer(r);
-
-  _renderer = renderer = GLRenderer::createGLRenderer(_buffer, ALLOC);
+  _buffer = 0;
+  _renderer = 0;
   }
 
 GL3DCanvas::~GL3DCanvas()
@@ -33,6 +30,20 @@ GL3DCanvas::~GL3DCanvas()
 void GL3DCanvas::paintGL()
   {
   paint3D(_renderer, _buffer);
+  }
+
+void GL3DCanvas::initializeGL()
+  {
+  _buffer = ALLOC->create<ScreenFrameBuffer>();
+
+  _renderer = GLRenderer::createGLRenderer(_buffer, ALLOC);
+
+  initialise3D(_renderer);
+  }
+
+void GL3DCanvas::resizeGL(int w, int h)
+  {
+  resize3D(_renderer, w, h);
   }
 
 void GL3DCanvas::update3D()
@@ -91,13 +102,13 @@ void D3D3DCanvas::paintEvent(QPaintEvent *)
 
 #endif
 
-QWidget* Canvas3D::createBest(QWidget* parent, Renderer **r)
+QWidget* Canvas3D::createBest(QWidget* parent)
   {
-  Eks::Optional<Renderer*> ren(r);
 
 #if X_ENABLE_DX_RENDERER
-  if(QSysInfo::WindowsVersion >= QSysInfo::WV_WINDOWS8)
+  if(false && QSysInfo::WindowsVersion >= QSysInfo::WV_WINDOWS8)
     {
+    Renderer *ren = 0;
     D3D3DCanvas *can = new D3D3DCanvas(parent, &ren);
     can->initialise3D(ren);
     return can;
@@ -105,8 +116,7 @@ QWidget* Canvas3D::createBest(QWidget* parent, Renderer **r)
 #endif
 
 #if X_ENABLE_GL_RENDERER
-  GL3DCanvas *can = new GL3DCanvas(parent, &ren);
-  can->initialise3D(ren);
+  GL3DCanvas *can = new GL3DCanvas(parent);
   return can;
 #else
   return 0;

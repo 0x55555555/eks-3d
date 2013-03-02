@@ -67,7 +67,7 @@ public:
   Slot slot;
   };
 
-class EKS3D_EXPORT ShaderVertexLayout : public PrivateImpl<sizeof(void*)>
+class EKS3D_EXPORT ShaderVertexLayout : public PrivateImpl<sizeof(void*) * 6>
   {
 public:
   typedef ShaderVertexLayoutDescription Description;
@@ -81,7 +81,7 @@ private:
   Renderer *_renderer;
   };
 
-class EKS3D_EXPORT ShaderConstantData : public PrivateImpl<sizeof(void*)>
+class EKS3D_EXPORT ShaderConstantData : public PrivateImpl<sizeof(void*) * 2>
   {
 public:
   ShaderConstantData(Renderer *r=0, xsize sizeOfData=0, void *data=0);
@@ -100,7 +100,7 @@ private:
   Renderer *_renderer;
   };
 
-class EKS3D_EXPORT ShaderVertexComponent : public PrivateImpl<sizeof(void*)>
+class EKS3D_EXPORT ShaderVertexComponent : public PrivateImpl<sizeof(void*) * 2>
   {
 public:
   typedef ShaderVertexLayout VertexLayout;
@@ -128,7 +128,7 @@ private:
   Renderer *_renderer;
   };
 
-class EKS3D_EXPORT ShaderFragmentComponent : public PrivateImpl<sizeof(void*)>
+class EKS3D_EXPORT ShaderFragmentComponent : public PrivateImpl<sizeof(void*) * 2>
   {
 public:
   ShaderFragmentComponent(Renderer *r=0,

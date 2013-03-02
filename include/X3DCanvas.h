@@ -28,9 +28,11 @@ class EKS3D_EXPORT GL3DCanvas : public QGLWidget
   Q_OBJECT
 
 public:
-  GL3DCanvas(QWidget *parent=0, Eks::Renderer **r = 0);
+  GL3DCanvas(QWidget *parent=0);
   ~GL3DCanvas();
 
+  void resizeGL(int w, int h) X_OVERRIDE;
+  void initializeGL() X_OVERRIDE;
   void paintGL() X_OVERRIDE;
 
 signals:
@@ -102,7 +104,7 @@ namespace Eks
 class EKS3D_EXPORT Canvas3D : public AbstractCanvas
   {
 public:
-  static QWidget* createBest(QWidget *parent, Eks::Renderer **r);
+  static QWidget* createBest(QWidget *parent);
   };
 
 }
