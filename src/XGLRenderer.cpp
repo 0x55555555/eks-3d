@@ -641,7 +641,7 @@ public:
 
 GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns) : _context(0), _currentShader(0), _currentFramebuffer(0)
   {
-  glewInit();
+  glewInit() GLE;
   setFunctions(fns);
   }
 
@@ -820,6 +820,8 @@ detail::RendererFunctions glfns =
 
 Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::AllocatorBase* alloc)
   {
+  GLE_QUIET;
+
   GLRendererImpl *r = alloc->create<GLRendererImpl>(glfns);
   r->_allocator = alloc;
   glEnable( GL_DEPTH_TEST ) GLE;
