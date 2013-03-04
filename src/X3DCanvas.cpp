@@ -2,6 +2,12 @@
 
 #if X_QT_INTEROP
 
+#ifdef Q_OS_WIN
+# include "Windows.h"
+# include "GL/glew.h"
+# include "GL/wglew.h"
+#endif
+
 #include "XOptional"
 #include "XGLRenderer.h"
 #include "XD3DRenderer.h"
@@ -14,10 +20,51 @@ namespace Eks
 
 #if X_ENABLE_GL_RENDERER
 
-GL3DCanvas::GL3DCanvas(QWidget *parent) : QGLWidget(parent)
+GL3DCanvas::GL3DCanvas(QWidget *parent) :
+#ifdef Q_OS_WIN
+  QWidget(parent)
+#else
+  QGLWidget(parent)
+#endif
   {
   _buffer = 0;
   _renderer = 0;
+
+#ifdef Q_OS_WIN
+  setAttribute(Qt::WA_PaintOnScreen, true);
+  setAttribute(Qt::WA_NativeWindow, true);
+
+  WId handle = winId();
+  HDC hdc = GetDC((HWND)handle);
+
+  PIXELFORMATDESCRIPTOR pfd =
+    {
+    sizeof(PIXELFORMATDESCRIPTOR),
+    1,
+    PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+    PFD_TYPE_RGBA,            // The kind of framebuffer. RGBA or palette.
+    32,                       // Colordepth of the framebuffer.
+    0, 0, 0, 0, 0, 0,
+    0,
+    0,
+    0,
+    0, 0, 0, 0,
+    24,                       // Number of bits for the depthbuffer
+    8,                        // Number of bits for the stencilbuffer
+    0,                        // Number of Aux buffers in the framebuffer.
+    PFD_MAIN_PLANE,
+    0,
+    0, 0, 0
+    };
+
+  int pf = ChoosePixelFormat(hdc, &pfd);
+  xAssert(pf);
+  SetPixelFormat(hdc, pf, &pfd);
+
+  _context = wglCreateContext(hdc);
+
+  glewInit();
+#endif
   }
 
 GL3DCanvas::~GL3DCanvas()
@@ -25,6 +72,9 @@ GL3DCanvas::~GL3DCanvas()
   Eks::GLRenderer::destroyGLRenderer(_renderer, _buffer, ALLOC);
   ALLOC->destroy(_buffer);
   _buffer = 0;
+
+  wglMakeCurrent(0);
+  wglDeleteContext(context);
   }
 
 void GL3DCanvas::paintGL()
@@ -34,6 +84,7 @@ void GL3DCanvas::paintGL()
 
 void GL3DCanvas::initializeGL()
   {
+  qDebug() << format().majorVersion() << format().minorVersion();
   _buffer = ALLOC->create<ScreenFrameBuffer>();
 
   _renderer = GLRenderer::createGLRenderer(_buffer, ALLOC);
