@@ -425,17 +425,34 @@ bool createDepthStencilState(
 bool createShaderConstantData(
     Renderer *r,
     ShaderConstantData *s,
-    xsize size,
+    ShaderConstantDataDescription *desc,
+    xsize descCount,
     void *data)
   {
   XD3DBufferImpl *b = s->create<XD3DBufferImpl>();
+
+  xsize sizeMap[] =
+  {
+    sizeof(float),
+    sizeof(float) * 3,
+    sizeof(float) * 4,
+    sizeof(float) * 16
+  };
+  xCompileTimeAssert(X_ARRAY_COUNT(sizeMap) == ShaderConstantDataDescription::TypeCount);
+
+
+  xsize size = 0;
+  for(xsize i = 0; i < descCount; ++i)
+    {
+    size += sizeMap[desc[i].type];
+    }
 
   enum
     {
     SizeAlignment = 16
     };
 
-  xAssert((size % SizeAlignment) == 0)
+  xAssert((size % SizeAlignment) == 0);
 
   return b->create(D3D(r)->_d3dDevice.Get(), data, size, D3D11_BIND_CONSTANT_BUFFER);
   }

@@ -38,7 +38,7 @@ namespace Eks
 enum TextureFormat
   {
   Rgba8,
-  Depth24Stencil8,
+  Depth24,
 
   TextureFormatCount
   };

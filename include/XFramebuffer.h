@@ -12,7 +12,7 @@ class Texture2D;
 class Renderer;
 class FrameBufferRenderFrame;
 
-class EKS3D_EXPORT FrameBuffer : public PrivateImpl<sizeof(void *) * 12>
+class EKS3D_EXPORT FrameBuffer : public PrivateImpl<sizeof(void *) * 16>
   {
 public:
   typedef FrameBufferRenderFrame RenderFrame;
@@ -30,7 +30,7 @@ public:
     xuint32 width = 0,
     xuint32 height = 0,
     TextureFormat colour = Eks::Rgba8,
-    TextureFormat dsF = Eks::Depth24Stencil8);
+    TextureFormat dsF = Eks::Depth24);
   ~FrameBuffer();
 
   static bool delayedCreate(
@@ -39,7 +39,7 @@ public:
     xuint32 width,
     xuint32 height,
     TextureFormat colour = Eks::Rgba8,
-    TextureFormat dsF = Eks::Depth24Stencil8);
+    TextureFormat dsF = Eks::Depth24);
 
   enum ClearMode
     {

@@ -94,12 +94,16 @@ bool ShaderFragmentComponent::delayedCreate(ShaderFragmentComponent &ths,
   return r->functions().create.fragmentShaderComponent(r, &ths, source, length);
   }
 
-ShaderConstantData::ShaderConstantData(Renderer *r, xsize sizeOfData, void *data)
+ShaderConstantData::ShaderConstantData(
+    Renderer *r,
+    Description *desc,
+    xsize descCount,
+    void *data)
    : _renderer(0)
   {
   if(r)
     {
-    delayedCreate(*this, r, sizeOfData, data);
+    delayedCreate(*this, r, desc, descCount, data);
     }
   }
 
@@ -111,12 +115,18 @@ ShaderConstantData::~ShaderConstantData()
     }
   }
 
-bool ShaderConstantData::delayedCreate(ShaderConstantData &ths, Renderer *r, xsize sizeOfData, void *data)
+bool ShaderConstantData::delayedCreate(
+    ShaderConstantData &ths,
+    Renderer *r,
+    Description *desc,
+    xsize descCount,
+    void *data)
   {
   xAssert(!ths.isValid());
   xAssert(r);
+  xAssert(desc && descCount);
   ths._renderer = r;
-  return r->functions().create.shaderConstantData(r, &ths, sizeOfData, data);
+  return r->functions().create.shaderConstantData(r, &ths, desc, descCount, data);
   }
 
 Shader::Shader(Renderer *r,

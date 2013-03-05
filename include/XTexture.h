@@ -11,7 +11,7 @@ namespace Eks
 
 class Renderer;
 
-class EKS3D_EXPORT Resource : public PrivateImpl<sizeof(void *) * 2>
+class EKS3D_EXPORT Resource : public PrivateImpl<sizeof(void *) * 4>
   {
 protected:
   Resource();

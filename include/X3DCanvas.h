@@ -19,19 +19,13 @@ class FrameBuffer;
 
 #if X_ENABLE_GL_RENDERER
 
-#ifndef Q_OS_WIN
-# include "QtOpenGL/QGLWidget"
-#endif
+#include "QtOpenGL/QGLWidget"
 
 namespace Eks
 {
 
 class EKS3D_EXPORT GL3DCanvas
-#ifdef Q_OS_WIN
-    : public QWidget
-#else
     : public QGLWidget
-#endif
   {
   Q_OBJECT
 
@@ -39,11 +33,9 @@ public:
   GL3DCanvas(QWidget *parent=0);
   ~GL3DCanvas();
 
-#ifndef Q_OS_WIN
   void resizeGL(int w, int h) X_OVERRIDE;
   void initializeGL() X_OVERRIDE;
   void paintGL() X_OVERRIDE;
-#endif
 
 signals:
   void initialise3D(Eks::Renderer *r);
@@ -56,10 +48,6 @@ public slots:
 private:
   Renderer *_renderer;
   ScreenFrameBuffer *_buffer;
-
-#ifdef Q_OS_WIN
-  void *_context;
-#endif
   };
 
 }

@@ -2,7 +2,8 @@
 
 #if X_ENABLE_GL_RENDERER
 
-#include "GL/glew.h"
+#include "QtGui/qopengl.h"
+// #include "GL/glew.h"
 
 #include "XFramebuffer.h"
 #include "XGeometry.h"
@@ -44,7 +45,7 @@ const char *glErrorString( int err )
   return "GL Error: No Error";
   }
 
-#ifdef X_DEBUG
+#if 0 //def X_DEBUG
 # define GLE ; { int _GL = glGetError(); xAssertMessage(!_GL, "GL Error", _GL, glErrorString( _GL )); }
 # define GLE_QUIET ; glGetError()
 #else
@@ -56,7 +57,7 @@ const char *glErrorString( int err )
 
 namespace Eks
 {
-
+class XGLShaderData;
 class XGLVertexLayout;
 
 template <typename X, typename T> void destroy(Renderer *, X *x)
@@ -185,6 +186,8 @@ private:
   void clear();
   int getInternalFormat( int format );
 
+  VectorUI2D size;
+
   friend class XGLFramebuffer;
   friend class XGLShaderVariable;
   };
@@ -240,10 +243,8 @@ public:
     if(r->_currentFramebuffer)
       {
       r->_currentFramebuffer->unbind();
+      r->_currentFramebuffer = 0;
       }
-
-    r->_currentFramebuffer->unbind();
-    r->_currentFramebuffer = 0;
     }
 
   static void clear(Renderer *r, FrameBuffer *buffer, xuint32 mode)
@@ -427,6 +428,14 @@ public:
 
   xuint32 shader;
   xuint8 maxSetupResources;
+
+  struct Buffer
+    {
+    XGLShaderData *data;
+    xuint8 revision;
+    };
+
+  Eks::Vector<Buffer> _buffers;
   friend class XGLRenderer;
   friend class XGLShaderVariable;
   };
@@ -437,9 +446,10 @@ public:
 class XGLVertexLayout
   {
 public:
-  bool init1(GLRendererImpl *, const ShaderVertexLayoutDescription *descs, xsize count)
+  bool init1(GLRendererImpl *r, const ShaderVertexLayoutDescription *descs, xsize count)
     {
-    _attrs = Eks::Vector<Attribute>(_renderer->_allocator);
+    _renderer = r;
+    _attrs.allocator() = Eks::TypedAllocator<Attribute>(_renderer->_allocator);
     _attrs.resize(count);
     xCompileTimeAssert(4 == ShaderVertexLayoutDescription::SemanticCount);
 
@@ -524,6 +534,43 @@ public:
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER DATA
 //----------------------------------------------------------------------------------------------------------------------
+class XGLShaderData
+  {
+public:
+  bool init(GLRendererImpl *, ShaderConstantDataDescription *desc, xsize descCount, void *data);
+
+  static void update(Renderer *r, ShaderConstantData *, void *data);
+
+  static bool create(
+      Renderer *r,
+      ShaderConstantData *d,
+      ShaderConstantDataDescription *desc,
+      xsize descCount,
+      void *data)
+    {
+    XGLShaderData *glD = d->create<XGLShaderData>();
+    return glD->init(GL_REND(r), desc, descCount, data);
+    }
+
+  void bind(xuint32 program, xuint32 index) const;
+
+  typedef void (*BindFunction)(xuint32 location, const xuint8* data);
+  struct Binder
+    {
+    Eks::String name;
+    BindFunction bind;
+    xsize offset;
+    };
+
+  Vector<xuint8> _data;
+  Vector<Binder> _binders;
+  xuint8 _revision;
+
+  friend class XGLRenderer;
+  };
+
+// thi uses uniform buffers
+#if 0
 class XGLShaderData : public XGLBuffer
   {
 public:
@@ -546,8 +593,8 @@ public:
   xsize _size;
 
   friend class XGLRenderer;
-  friend class XGLShaderVariable;
   };
+#endif
 
 //----------------------------------------------------------------------------------------------------------------------
 // BLEND STATE
@@ -639,9 +686,12 @@ public:
   RasteriserState::CullMode _cull;
   };
 
-GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns) : _context(0), _currentShader(0), _currentFramebuffer(0)
+GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns)
+  : _context(0),
+    _currentShader(0),
+    _currentFramebuffer(0),
+    _vertexLayout(0)
   {
-  glewInit() GLE;
   setFunctions(fns);
   }
 
@@ -652,7 +702,6 @@ void GLRendererImpl::debugRenderLocator(Renderer *r, RendererDebugLocatorMode m)
     {
     GL_REND(r)->_currentShader = 0;
     glUseProgram(0);
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     }
 
   float lineData[] =
@@ -665,10 +714,10 @@ void GLRendererImpl::debugRenderLocator(Renderer *r, RendererDebugLocatorMode m)
     0, 0, 0.5
   };
 
-  glEnableClientState(GL_VERTEX_ARRAY) GLE;
-  glVertexPointer(2, GL_FLOAT, sizeof(float) * 3, lineData) GLE;
+  glEnableVertexAttribArray(0) GLE;
+  glVertexAttribPointer(0, 2, GL_FLOAT, false, sizeof(float) * 3, lineData) GLE;
   glDrawArrays(GL_LINES, 0, 6) GLE;
-  glDisableClientState(GL_VERTEX_ARRAY);
+  glDisableVertexAttribArray(0);
 
   float triData[] =
   {
@@ -680,10 +729,10 @@ void GLRendererImpl::debugRenderLocator(Renderer *r, RendererDebugLocatorMode m)
     0, -0.5, 0,
   };
 
-  glEnableClientState(GL_VERTEX_ARRAY) GLE;
-  glVertexPointer(2, GL_FLOAT, sizeof(float) * 3, triData) GLE;
+  glEnableVertexAttribArray(0) GLE;
+  glVertexAttribPointer(0, 2, GL_FLOAT, false, sizeof(float) * 3, triData) GLE;
   glDrawArrays(GL_TRIANGLES, 0, 6) GLE;
-  glDisableClientState(GL_VERTEX_ARRAY);
+  glDisableVertexAttribArray(0);
   }
 
 /*
@@ -820,14 +869,13 @@ detail::RendererFunctions glfns =
 
 Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::AllocatorBase* alloc)
   {
-  GLE_QUIET;
-
   GLRendererImpl *r = alloc->create<GLRendererImpl>(glfns);
   r->_allocator = alloc;
   glEnable( GL_DEPTH_TEST ) GLE;
 
   XGLFramebuffer* fb = buffer->create<XGLFramebuffer>();
   fb->init(r);
+  buffer->setRenderer(r);
 
   return r;
   }
@@ -846,6 +894,8 @@ bool XGLTexture2D::init(GLRendererImpl *, int format, int width, int height, con
   {
   _type = GL_TEXTURE_2D;
 
+  size = VectorUI2D(width, height);
+
   glGenTextures(1, &_id) GLE;
   glBindTexture(GL_TEXTURE_2D, _id) GLE;
 
@@ -859,7 +909,7 @@ bool XGLTexture2D::init(GLRendererImpl *, int format, int width, int height, con
   int formatMap[] =
   {
     GL_RGBA,
-    GL_DEPTH_COMPONENT24
+    GL_DEPTH_COMPONENT24_OES
   };
   xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == TextureFormatCount);
 
@@ -879,18 +929,7 @@ XGLTexture2D::~XGLTexture2D()
 void XGLTexture2D::getInfo(const Renderer *, const Texture2D *tex, Eks::VectorUI2D& v)
   {
   const XGLTexture2D *tImpl = tex->data<XGLTexture2D>();
-
-  tImpl->bind();
-
-  int w = 0, h = 0;
-
-  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w) GLE;
-  glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &h) GLE;
-
-  v.x() = w;
-  v.y() = h;
-
-  tImpl->unbind();
+  v = tImpl->size;
   }
 
 void XGLTexture2D::clear()
@@ -940,40 +979,40 @@ XGLFramebuffer::~XGLFramebuffer( )
 
 bool XGLFramebuffer::isValid() const
   {
-  glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, _buffer ) GLE;
-  int status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) GLE;
+  glBindFramebuffer( GL_FRAMEBUFFER, _buffer ) GLE;
+  int status = glCheckFramebufferStatus(GL_FRAMEBUFFER) GLE;
 
-  if( status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT )
+  if( status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT )
     {
     qWarning() << "Framebuffer Incomplete attachment";
     }
-  else if( status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT )
+  else if( status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS )
     {
     qWarning() << "Framebuffer Incomplete dimensions";
     }
-  else if( status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT )
+  else if( status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT )
     {
     qWarning() << "Framebuffer Incomplete missing attachment";
     }
-  else if( status == GL_FRAMEBUFFER_UNSUPPORTED_EXT )
+  else if( status == GL_FRAMEBUFFER_UNSUPPORTED )
     {
     qWarning() << "Framebuffer unsupported attachment";
     }
 
-  glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 ) GLE;
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 ) GLE;
 
-  return status == GL_FRAMEBUFFER_COMPLETE_EXT;
+  return status == GL_FRAMEBUFFER_COMPLETE;
   }
 
 void XGLFramebuffer::bind()
   {
   xAssert( isValid() );
-  glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, _buffer ) GLE;
+  glBindFramebuffer( GL_FRAMEBUFFER, _buffer ) GLE;
   }
 
 void XGLFramebuffer::unbind()
   {
-  glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 ) GLE;
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 ) GLE;
   }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -1020,7 +1059,110 @@ bool XGLShaderComponent::createVertex(
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER DATA
 //----------------------------------------------------------------------------------------------------------------------
+bool XGLShaderData::init(
+    GLRendererImpl *r,
+    ShaderConstantDataDescription* desc,
+    xsize descCount,
+    void *data)
+  {
+  _revision = 0;
+  _data.allocator() = TypedAllocator<xuint8>(r->_allocator);
 
+  struct Type
+    {
+    BindFunction bind;
+    xsize size;
+
+    static void bindFloat(xuint32 location, const xuint8 *data8)
+      {
+      glUniform1fv(location, 1, (const float*)data8);
+      }
+
+    static void bindFloat3(xuint32 location, const xuint8 *data8)
+      {
+      glUniform3fv(location, 1, (const float*)data8);
+      }
+
+    static void bindFloat4(xuint32 location, const xuint8 *data8)
+      {
+      glUniform4fv(location, 1, (const float*)data8);
+      }
+
+    static void bindMat4x4(xuint32 location, const xuint8 *data8)
+      {
+      glUniformMatrix4fv(location, 1, false, (const float*)data8);
+      }
+    };
+
+  Type typeMap[] =
+  {
+    { Type::bindFloat, sizeof(float) },
+    { Type::bindFloat3, sizeof(float) * 3 },
+    { Type::bindFloat4, sizeof(float) * 4 },
+    { Type::bindMat4x4, sizeof(float) * 16 },
+  };
+  xCompileTimeAssert(X_ARRAY_COUNT(typeMap) == ShaderConstantDataDescription::TypeCount);
+
+  xsize size = 0;
+  _binders.resize(descCount);
+  for(xsize i = 0; i < descCount; ++i)
+    {
+    const Type &type = typeMap[desc->type];
+
+    Binder &b = _binders[i];
+    b.name = Eks::String(desc->name, r->_allocator);
+    b.offset = size;
+    b.bind = type.bind;
+
+    size += type.size;
+    }
+
+  if(data)
+    {
+    _data.resizeAndCopy(size, (xuint8*)data);
+    }
+  else
+    {
+    _data.resize(size, 0);
+    }
+
+  return true;
+  }
+
+void XGLShaderData::update(Renderer *, ShaderConstantData *constant, void *data)
+  {
+  XGLShaderData* sData = constant->data<XGLShaderData>();
+
+  memcpy(sData->_data.data(), data, sData->_data.size());
+  ++sData->_revision;
+  }
+
+void XGLShaderData::bind(xuint32 program, xuint32 index) const
+  {
+  char str[256];
+#ifdef Q_OS_WIN
+  xsize pos = sprintf_s(str, X_ARRAY_COUNT(str), "cb%d.", index);
+#else
+  xsize pos = sprintf(str, "cb%d.", index);
+#endif
+
+  const xuint8* data = _data.data();
+  xForeach(const Binder &b, _binders)
+    {
+    xsize strl = b.name.length();
+    memcpy(str + pos, b.name.data(), strl);
+    str[strl + pos] = '\0';
+
+    xuint32 location = glGetUniformLocation(program, str);
+    if(location != -1)
+      {
+      b.bind(location, data);
+      }
+    }
+  }
+
+// this implementation uses uniform buffers...
+#if 0
 bool XGLShaderData::init(GLRendererImpl *r, xsize size, void *data)
   {
   _size = size;
@@ -1040,6 +1182,7 @@ void XGLShaderData::bind(xuint32 index) const
   {
   glBindBufferRange(GL_UNIFORM_BUFFER, index, _buffer, 0, _size);
   }
+#endif
 
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER
@@ -1051,6 +1194,7 @@ XGLShader::~XGLShader()
 
 bool XGLShader::init( GLRendererImpl *impl, XGLShaderComponent *v, XGLShaderComponent *f)
   {
+  _buffers.allocator() = TypedAllocator<Buffer>(impl->_allocator);
   maxSetupResources = 0;
   shader = glCreateProgram();
   glAttachShader(shader, v->_component);
@@ -1096,29 +1240,6 @@ void XGLShader::bind(Renderer *ren, const Shader *shader, const ShaderVertexLayo
 
     const XGLVertexLayout* newLayout = layout->data<XGLVertexLayout>();
     newLayout->bind();
-
-    xAssertFail();
-    /*
-    xAssert(shaderInt->shader.isLinked());
-
-    shaderInt->shader.bind() GLE;
-
-    int x=0;
-    Q_FOREACH( ShaderVariable *var, shader->variables() )
-      {
-      XGLShaderVariable *glVar( static_cast<XGLShaderVariable*>(var->internal()) );
-      if( glVar->_texture )
-        {
-        const XTexture *tex( glVar->_texture );
-        tex->prepareInternal( this );
-        const XGLTexture2D *glTex( static_cast<const XGLTexture2D*>(tex->internal()) );
-        xAssert( glTex );
-        glActiveTexture( GL_TEXTURE0 + x ) GLE;
-        glBindTexture( GL_TEXTURE_2D, glTex->_id ) GLE;
-        shaderInt->shader.setUniformValue( glVar->_location, x );
-        }
-      x++;
-      }*/
     }
   else if( shader == 0 && r->_currentShader != 0 )
     {
@@ -1128,6 +1249,7 @@ void XGLShader::bind(Renderer *ren, const Shader *shader, const ShaderVertexLayo
     }
   }
 
+#if 0
 void XGLShader::setConstantBuffers(
     Renderer *,
     Shader *shader,
@@ -1143,6 +1265,37 @@ void XGLShader::setConstantBuffers(
 
     glUniformBlockBinding(shaderImpl->shader, blockIndex, blockIndex);
     sImpl->bind(blockIndex);
+    }
+  }
+#endif
+
+void XGLShader::setConstantBuffers(
+  Renderer *r,
+  Shader *s,
+  xsize index,
+  xsize count,
+  const ShaderConstantData * const* data)
+  {
+  XGLShader* shader = s->data<XGLShader>();
+
+  if(GL_REND(r)->_currentShader != s)
+    {
+    glUseProgram(shader->shader);
+    GL_REND(r)->_currentShader = 0;
+    }
+
+  for(xsize i = 0; i < count; ++i)
+    {
+    const ShaderConstantData *cb = data[i];
+    const XGLShaderData* cbImpl = cb->data<XGLShaderData>();
+
+    Buffer &buf = shader->_buffers[i];
+
+    if(buf.data != cbImpl || buf.revision != cbImpl->_revision)
+      {
+      cbImpl->bind(shader->shader, i + index);
+      buf.revision = cbImpl->_revision;
+      }
     }
   }
 

@@ -81,15 +81,37 @@ private:
   Renderer *_renderer;
   };
 
-class EKS3D_EXPORT ShaderConstantData : public PrivateImpl<sizeof(void*) * 2>
+class ShaderConstantDataDescription
   {
 public:
-  ShaderConstantData(Renderer *r=0, xsize sizeOfData=0, void *data=0);
+  enum Type
+    {
+    Float,
+    Float3,
+    Float4,
+    Matrix4x4,
+
+    TypeCount
+    };
+  const char* name;
+  Type type;
+  };
+
+class EKS3D_EXPORT ShaderConstantData : public PrivateImpl<sizeof(void*) * 9>
+  {
+public:
+  typedef ShaderConstantDataDescription Description;
+
+  ShaderConstantData(Renderer *r=0,
+                     Description *desc = 0,
+                     xsize descCount = 0,
+                     void *data=0);
   ~ShaderConstantData();
 
   static bool delayedCreate(ShaderConstantData &ths,
                             Renderer *r,
-                            xsize size,
+                            Description *desc = 0,
+                            xsize descCount = 0,
                             void *data = 0);
 
   void update(void *data);
@@ -147,7 +169,7 @@ private:
   Renderer *_renderer;
   };
 
-class EKS3D_EXPORT Shader : public PrivateImpl<sizeof(void*)*2>
+class EKS3D_EXPORT Shader : public PrivateImpl<sizeof(void*)*6>
   {
 public:
   typedef ShaderConstantData ConstantData;

@@ -10,6 +10,7 @@ namespace Eks
 
 class Renderer;
 class ShaderConstantData;
+class ShaderConstantDataDescription;
 class Colour;
 class Shader;
 class Geometry;
@@ -108,7 +109,8 @@ struct RendererCreateFunctions
   bool (*shaderConstantData)(
       Renderer *r,
       ShaderConstantData *,
-      xsize size,
+      ShaderConstantDataDescription *desc,
+      xsize descCount,
       void *data);
   };
 
