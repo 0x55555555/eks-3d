@@ -6,6 +6,7 @@
 #include "XGLRenderer.h"
 #include "XD3DRenderer.h"
 #include "XFramebuffer.h"
+#include <QtOpenGL>
 
 #define ALLOC Eks::GlobalAllocator::instance()
 
@@ -39,7 +40,6 @@ void GL3DCanvas::initializeGL()
   _buffer = ALLOC->create<ScreenFrameBuffer>();
   
   _renderer = GLRenderer::createGLRenderer(_buffer, ALLOC);
-
   initialise3D(_renderer);
   }
 

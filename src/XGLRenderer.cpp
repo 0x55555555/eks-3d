@@ -76,8 +76,8 @@ public:
 
   static void setTransform(Renderer *r, const Transform &trans)
     {
-    GL_REND(r)->model = trans;
-    GL_REND(r)->modelDataDirty = true;
+    GL_REND(r)->modelViewData.model = trans.matrix();
+    GL_REND(r)->_modelViewDataDirty = true;
     }
 
   static void setClearColour(Renderer *, const Colour &col)
@@ -96,14 +96,14 @@ public:
 
   static void setViewTransform(Renderer *r, const Eks::Transform &trans)
     {
-    GL_REND(r)->view = trans;
-    GL_REND(r)->viewDataDirty = true;
+    GL_REND(r)->modelViewData.view = trans.matrix();
+    GL_REND(r)->_modelViewDataDirty = true;
     }
 
   static void setProjectionTransform(Renderer *r, const Eks::ComplexTransform &trans)
     {
-    GL_REND(r)->projection = trans;
-    GL_REND(r)->viewDataDirty = true;
+    Matrix4x4 mat = trans.matrix();
+    GL_REND(r)->projection.update(&mat);
     }
 
   static void drawIndexedTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert);
@@ -117,12 +117,20 @@ public:
 
   Eks::AllocatorBase *_allocator;
 
-  Eks::Transform model;
-  bool modelDataDirty;
+  Eks::ShaderConstantData modelView;
+  Eks::ShaderConstantData projection;
 
-  Eks::Transform view;
-  Eks::ComplexTransform projection;
-  bool viewDataDirty;
+  struct ModelViewMatrices
+    {
+    Eks::Matrix4x4 model;
+    Eks::Matrix4x4 view;
+    Eks::Matrix4x4 modelView;
+    };
+  ModelViewMatrices modelViewData;
+  bool _modelViewDataDirty;
+
+  void updateViewData();
+
 
   QGLContext *_context;
   Shader *_currentShader;
@@ -253,7 +261,7 @@ public:
     GLRendererImpl *rend = GL_REND(r);
     XGLFramebuffer *fb = buffer->data<XGLFramebuffer>();
     xAssert(rend->_currentFramebuffer == fb);
-  #endif
+#endif
 
     xuint32 mask = ((mode&FrameBuffer::ClearColour) != 0 ? GL_COLOR_BUFFER_BIT : 0) |
                    ((mode&FrameBuffer::ClearDepth) != 0 ? GL_DEPTH_BUFFER_BIT : 0);
@@ -413,24 +421,25 @@ public:
   static void bind(Renderer *ren, const Shader *shader, const ShaderVertexLayout *layout);
 
   static void setConstantBuffers(
-    Renderer *r,
-    Shader *shader,
-    xsize index,
-    xsize count,
-    const ShaderConstantData * const* data);
+      Renderer *r,
+      Shader *shader,
+      xsize index,
+      xsize count,
+      const ShaderConstantData * const* data);
 
   static void setResources(
-    Renderer *r,
-    Shader *shader,
-    xsize index,
-    xsize count,
-    const Resource * const* data);
+      Renderer *r,
+      Shader *shader,
+      xsize index,
+      xsize count,
+      const Resource * const* data);
 
   xuint32 shader;
   xuint8 maxSetupResources;
 
   struct Buffer
     {
+    Buffer() : data(0), revision(0) { }
     XGLShaderData *data;
     xuint8 revision;
     };
@@ -460,17 +469,19 @@ public:
       Attribute &attr = _attrs[i];
 
       attr.offset = desc.offset;
+      attr.semantic = desc.semantic;
       if(attr.offset == ShaderVertexLayoutDescription::OffsetPackTight)
         {
         attr.offset = stride;
         }
-      stride += attr.offset;
 
       xCompileTimeAssert(ShaderVertexLayoutDescription::FormatFloat1 == 0);
       xCompileTimeAssert(ShaderVertexLayoutDescription::FormatFloat2 == 1);
       xCompileTimeAssert(ShaderVertexLayoutDescription::FormatFloat3 == 2);
       xCompileTimeAssert(ShaderVertexLayoutDescription::FormatFloat4 == 3);
       attr.components = desc.format + 1;
+
+      stride += attr.components * sizeof(float);
       }
 
     return true;
@@ -479,16 +490,20 @@ public:
   bool init2(GLRendererImpl *, XGLShader* shader)
     {
     const char *semanticNames[] =
-      {
+    {
       "position",
       "colour",
       "textureCoordinate",
       "normal"
-      };
+    };
+    xCompileTimeAssert(4 == ShaderVertexLayoutDescription::SemanticCount);
 
     for(xsize i = 0, s = _attrs.size(); i < s; ++i)
       {
-      glBindAttribLocation(shader->shader, i, semanticNames[i]);
+      const Attribute &attr = _attrs[i];
+      xsize idx = attr.semantic;
+
+      glBindAttribLocation(shader->shader, i, semanticNames[idx]);
       }
 
     return true;
@@ -499,6 +514,7 @@ public:
     {
     xsize offset;
     xuint8 components;
+    ShaderVertexLayoutDescription::Semantic semantic;
     // type is currently always float.
     };
 
@@ -513,12 +529,12 @@ public:
 
       glEnableVertexAttribArray(i) GLE;
       glVertexAttribPointer(
-        i,
-        attr.components,
-        GL_FLOAT,
-        GL_FALSE,
-        stride,
-        (GLvoid*)attr.offset) GLE;
+            i,
+            attr.components,
+            GL_FLOAT,
+            GL_FALSE,
+            stride,
+            (GLvoid*)attr.offset) GLE;
       }
     }
 
@@ -690,7 +706,8 @@ GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns)
   : _context(0),
     _currentShader(0),
     _currentFramebuffer(0),
-    _vertexLayout(0)
+    _vertexLayout(0),
+    _modelViewDataDirty(true)
   {
   setFunctions(fns);
   }
@@ -774,6 +791,23 @@ void setViewportSize(Renderer *, QSize size)
   glViewport( 0, 0, size.width(), size.height() ) GLE;
   }*/
 
+void GLRendererImpl::updateViewData()
+  {
+  if(_modelViewDataDirty)
+    {
+    modelViewData.modelView = modelViewData.view * modelViewData.model;
+    modelView.update(&modelViewData);
+    }
+
+  ShaderConstantData *data[] =
+  {
+    &modelView,
+    &projection
+  };
+  xAssert(_currentShader);
+  _currentShader->setShaderConstantDatas(0, 2, data);
+  }
+
 void GLRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert)
   {
   GLRendererImpl* r = GL_REND(ren);
@@ -785,6 +819,8 @@ void GLRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *in
   const XGLIndexGeometryCache *idx = indices->data<XGLIndexGeometryCache>();
   const XGLGeometryCache *gC = vert->data<XGLGeometryCache>();
 
+
+  r->updateViewData();
 
   glBindBuffer( GL_ARRAY_BUFFER, idx->_buffer ) GLE;
   glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, gC->_buffer ) GLE;
@@ -802,70 +838,72 @@ void GLRendererImpl::drawTriangles(Renderer *ren, const Geometry *vert)
 
   const XGLGeometryCache *gC = vert->data<XGLGeometryCache>();
 
+  r->updateViewData();
+
   glBindBuffer( GL_ARRAY_BUFFER, gC->_buffer ) GLE;
   glDrawArrays( GL_TRIANGLES, 0, gC->_elementCount) GLE;
   glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
   }
 
 detail::RendererFunctions glfns =
+{
   {
-    {
-      XGLFramebuffer::create,
-      XGLGeometryCache::create,
-      XGLIndexGeometryCache::create,
-      XGLTexture2D::create,
-      XGLShader::create,
-      XGLShaderComponent::createVertex,
-      XGLShaderComponent::createFragment,
-      XGLRasteriserState::create,
-      XGLDepthStencilState::create,
-      XGLBlendState::create,
-      XGLShaderData::create
-    },
-    {
-      destroy<FrameBuffer, XGLFramebuffer>,
-      destroy<Geometry, XGLGeometryCache>,
-      destroy<IndexGeometry, XGLIndexGeometryCache>,
-      destroy<Texture2D, XGLTexture2D>,
-      XGLShader::destroy,
-      destroy<ShaderVertexLayout, XGLVertexLayout>,
-      destroy<ShaderVertexComponent, XGLShaderComponent>,
-      destroy<ShaderFragmentComponent, XGLShaderComponent>,
-      destroy<RasteriserState, XGLRasteriserState>,
-      destroy<DepthStencilState, XGLDepthStencilState>,
-      destroy<BlendState, XGLBlendState>,
-      destroy<ShaderConstantData, XGLShaderData>
-    },
-    {
-      GLRendererImpl::setClearColour,
-      XGLShaderData::update,
-      GLRendererImpl::setViewTransform,
-      GLRendererImpl::setProjectionTransform,
-      XGLShader::setConstantBuffers,
-      XGLShader::setResources,
-      XGLShader::bind,
-      XGLRasteriserState::bind,
-      XGLDepthStencilState::bind,
-      XGLBlendState::bind,
-      GLRendererImpl::setTransform
-    },
-    {
-      XGLTexture2D::getInfo
-    },
-    {
-      GLRendererImpl::drawIndexedTriangles,
-      GLRendererImpl::drawTriangles,
-      GLRendererImpl::debugRenderLocator
-    },
-    {
-      XGLFramebuffer::clear,
-      XGLFramebuffer::resize,
-      XGLFramebuffer::beginRender,
-      XGLFramebuffer::endRender,
-      XGLFramebuffer::present,
-      XGLFramebuffer::getTexture
-    }
-  };
+    XGLFramebuffer::create,
+    XGLGeometryCache::create,
+    XGLIndexGeometryCache::create,
+    XGLTexture2D::create,
+    XGLShader::create,
+    XGLShaderComponent::createVertex,
+    XGLShaderComponent::createFragment,
+    XGLRasteriserState::create,
+    XGLDepthStencilState::create,
+    XGLBlendState::create,
+    XGLShaderData::create
+  },
+  {
+    destroy<FrameBuffer, XGLFramebuffer>,
+    destroy<Geometry, XGLGeometryCache>,
+    destroy<IndexGeometry, XGLIndexGeometryCache>,
+    destroy<Texture2D, XGLTexture2D>,
+    XGLShader::destroy,
+    destroy<ShaderVertexLayout, XGLVertexLayout>,
+    destroy<ShaderVertexComponent, XGLShaderComponent>,
+    destroy<ShaderFragmentComponent, XGLShaderComponent>,
+    destroy<RasteriserState, XGLRasteriserState>,
+    destroy<DepthStencilState, XGLDepthStencilState>,
+    destroy<BlendState, XGLBlendState>,
+    destroy<ShaderConstantData, XGLShaderData>
+  },
+  {
+    GLRendererImpl::setClearColour,
+    XGLShaderData::update,
+    GLRendererImpl::setViewTransform,
+    GLRendererImpl::setProjectionTransform,
+    XGLShader::setConstantBuffers,
+    XGLShader::setResources,
+    XGLShader::bind,
+    XGLRasteriserState::bind,
+    XGLDepthStencilState::bind,
+    XGLBlendState::bind,
+    GLRendererImpl::setTransform
+  },
+  {
+    XGLTexture2D::getInfo
+  },
+  {
+    GLRendererImpl::drawIndexedTriangles,
+    GLRendererImpl::drawTriangles,
+    GLRendererImpl::debugRenderLocator
+  },
+  {
+    XGLFramebuffer::clear,
+    XGLFramebuffer::resize,
+    XGLFramebuffer::beginRender,
+    XGLFramebuffer::endRender,
+    XGLFramebuffer::present,
+    XGLFramebuffer::getTexture
+  }
+};
 
 Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::AllocatorBase* alloc)
   {
@@ -876,6 +914,20 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::Allocator
   XGLFramebuffer* fb = buffer->create<XGLFramebuffer>();
   fb->init(r);
   buffer->setRenderer(r);
+
+  ShaderConstantDataDescription modelViewDesc[] =
+  {
+    { "model", ShaderConstantDataDescription::Matrix4x4 },
+    { "view", ShaderConstantDataDescription::Matrix4x4 },
+    { "modelView", ShaderConstantDataDescription::Matrix4x4 }
+  };
+  ShaderConstantDataDescription projDesc[] =
+  {
+    { "proj", ShaderConstantDataDescription::Matrix4x4 }
+  };
+
+  ShaderConstantData::delayedCreate(r->modelView, r, modelViewDesc, X_ARRAY_COUNT(modelViewDesc));
+  ShaderConstantData::delayedCreate(r->projection, r, projDesc, X_ARRAY_COUNT(projDesc));
 
   return r;
   }
@@ -1018,13 +1070,30 @@ void XGLFramebuffer::unbind()
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER COMPONENT
 //----------------------------------------------------------------------------------------------------------------------
-bool XGLShaderComponent::init(GLRendererImpl *, xuint32 type, const char *data, xsize size)
+bool XGLShaderComponent::init(GLRendererImpl *impl, xuint32 type, const char *data, xsize size)
   {
   _component = glCreateShader(type) GLE;
 
   int length = size;
-  glShaderSource(_component,1, &data, &length) GLE;
-  return true;
+  glShaderSource(_component, 1, &data, &length) GLE;
+  glCompileShader(_component) GLE;
+  
+  int infoLogLength = 0;
+  glGetShaderiv(_component, GL_INFO_LOG_LENGTH, &infoLogLength);
+
+  if (infoLogLength > 0)
+    {
+    Eks::String infoLog(impl->_allocator);
+    infoLog.resize(infoLogLength, '\0');
+    int charsWritten  = 0;
+    glGetShaderInfoLog(_component, infoLogLength, &charsWritten, infoLog.data());
+    qDebug() << infoLog.toQString();
+    }
+
+  int success = 0;
+  glGetShaderiv(_component, GL_COMPILE_STATUS, &success);
+
+  return success;
   }
 
 bool XGLShaderComponent::createVertex(
@@ -1067,6 +1136,7 @@ bool XGLShaderData::init(
   {
   _revision = 0;
   _data.allocator() = TypedAllocator<xuint8>(r->_allocator);
+  _binders.allocator() = TypedAllocator<Binder>(r->_allocator);
 
   struct Type
     {
@@ -1156,7 +1226,7 @@ void XGLShaderData::bind(xuint32 program, xuint32 index) const
     xuint32 location = glGetUniformLocation(program, str);
     if(location != -1)
       {
-      b.bind(location, data);
+      b.bind(location, data + b.offset);
       }
     }
   }
@@ -1203,16 +1273,24 @@ bool XGLShader::init( GLRendererImpl *impl, XGLShaderComponent *v, XGLShaderComp
   glLinkProgram(shader);
 
   int infologLength = 0;
-  int charsWritten  = 0;
-  Eks::String infoLog(impl->_allocator);
 
   glGetProgramiv(shader, GL_INFO_LOG_LENGTH, &infologLength);
 
   if (infologLength > 0)
-  {
+    {
+    Eks::String infoLog(impl->_allocator);
     infoLog.resize(infologLength, '\0');
+    int charsWritten  = 0;
     glGetProgramInfoLog(shader, infologLength, &charsWritten, infoLog.data());
-  }
+    qDebug() << infoLog.toQString();
+    }
+  
+  int success = 0;
+  glGetProgramiv(shader, GL_LINK_STATUS, &success);
+  if(!success)
+    {
+    return false;
+    }
 
   xAssert(!f->_layout);
   if(v->_layout)
@@ -1270,11 +1348,11 @@ void XGLShader::setConstantBuffers(
 #endif
 
 void XGLShader::setConstantBuffers(
-  Renderer *r,
-  Shader *s,
-  xsize index,
-  xsize count,
-  const ShaderConstantData * const* data)
+    Renderer *r,
+    Shader *s,
+    xsize index,
+    xsize count,
+    const ShaderConstantData * const* data)
   {
   XGLShader* shader = s->data<XGLShader>();
 
@@ -1282,6 +1360,11 @@ void XGLShader::setConstantBuffers(
     {
     glUseProgram(shader->shader);
     GL_REND(r)->_currentShader = 0;
+    }
+
+  if(count > shader->_buffers.size())
+    {
+    shader->_buffers.resize(count, Buffer());
     }
 
   for(xsize i = 0; i < count; ++i)
@@ -1382,9 +1465,9 @@ bool XGLIndexGeometryCache::init(GLRendererImpl *r, const void *data, IndexGeome
     };
 
   Type typeMap[] =
-    {
+  {
     { GL_UNSIGNED_SHORT, sizeof(xuint16) }
-    };
+  };
   xCompileTimeAssert(IndexGeometry::TypeCount == X_ARRAY_COUNT(typeMap));
 
   _indexType = typeMap[type].type;
