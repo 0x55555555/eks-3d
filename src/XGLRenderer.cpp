@@ -1223,7 +1223,7 @@ void XGLShaderData::bind(xuint32 program, xuint32 index) const
     memcpy(str + pos, b.name.data(), strl);
     str[strl + pos] = '\0';
 
-    xuint32 location = glGetUniformLocation(program, str);
+    xint32 location = glGetUniformLocation(program, str);
     if(location != -1)
       {
       b.bind(location, data + b.offset);
@@ -1392,7 +1392,19 @@ void XGLShader::setResources(
   XGLShader* shader = s->data<XGLShader>();
   for(xsize i = shader->maxSetupResources; i < count; ++i)
     {
-    glUniform1i(i, i);
+    char str[256];
+  #ifdef Q_OS_WIN
+    sprintf_s(str, X_ARRAY_COUNT(str), "rsc%d", index);
+  #else
+    sprintf(str, "rsc%d", index);
+  #endif
+
+    xint32 location = glGetUniformLocation(shader->shader, str);
+
+    if(location != -1)
+      {
+      glUniform1i(location, i);
+      }
     }
 
   for(xsize i = 0; i < count; ++i)
