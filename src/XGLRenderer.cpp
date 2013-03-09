@@ -131,6 +131,15 @@ public:
   ShaderVertexLayout *_vertexLayout;
   QSize _size;
   XGLFramebuffer *_currentFramebuffer;
+
+  struct FramebufferFns
+    {
+    PFNGLGENFRAMEBUFFERSPROC gen;
+    PFNGLDELETEFRAMEBUFFERSPROC destroy;
+    PFNGLFRAMEBUFFERTEXTURE2DPROC texture2D;
+    PFNGLBINDFRAMEBUFFERPROC bind;
+    PFNGLCHECKFRAMEBUFFERSTATUSPROC checkStatus;
+    } framebuffer;
   };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -204,10 +213,10 @@ public:
   bool init(GLRendererImpl *);
   ~XGLFramebuffer( );
 
-  void bind();
-  void unbind();
+  void bind(GLRendererImpl *r);
+  void unbind(GLRendererImpl *r);
 
-  virtual bool isValid() const;
+  virtual bool isValid(GLRendererImpl *impl) const;
 
   const Texture2D *colour() const;
   const Texture2D *depth() const;
@@ -232,7 +241,7 @@ public:
     xAssert(fb);
     r->_currentFramebuffer = fb->data<XGLFramebuffer>();
 
-    r->_currentFramebuffer->bind();
+    r->_currentFramebuffer->bind(r);
 
     clear(ren, fb, FrameBuffer::ClearColour|FrameBuffer::ClearDepth);
     }
@@ -246,7 +255,7 @@ public:
 
     if(r->_currentFramebuffer)
       {
-      r->_currentFramebuffer->unbind();
+      r->_currentFramebuffer->unbind(r);
       r->_currentFramebuffer = 0;
       }
     }
@@ -287,6 +296,7 @@ public:
 private:
   Texture2D _textures[FrameBuffer::TextureIdCount];
   unsigned int _buffer;
+  GLRendererImpl *_impl;
 
   friend class XGLShaderVariable;
   };
@@ -924,6 +934,24 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::Allocator
   glEnable( GL_DEPTH_TEST ) GLE;
   GLRendererImpl::setClearColour(r, Colour(0.0f, 0.0f, 0.0f, 1.0f));
 
+  if(glCheckFramebufferStatus)
+    {
+    r->framebuffer.gen = glGenFramebuffers;
+    r->framebuffer.bind = glBindFramebuffer;
+    r->framebuffer.checkStatus = glCheckFramebufferStatus;
+    r->framebuffer.destroy = glDeleteFramebuffers;
+    r->framebuffer.texture2D = glFramebufferTexture2D;
+    }
+  else
+    {
+    r->framebuffer.gen = glGenFramebuffersEXT;
+    r->framebuffer.bind = glBindFramebufferEXT;
+    r->framebuffer.checkStatus = glCheckFramebufferStatusEXT;
+    r->framebuffer.destroy = glDeleteFramebuffersEXT;
+    r->framebuffer.texture2D = glFramebufferTexture2DEXT;
+    }
+
+
   XGLFramebuffer* fb = buffer->create<XGLFramebuffer>();
   fb->init(r);
   buffer->setRenderer(r);
@@ -1008,30 +1036,33 @@ void XGLTexture2D::clear()
 //----------------------------------------------------------------------------------------------------------------------
 bool XGLFramebuffer::init(Renderer *r, TextureFormat cF, TextureFormat dF, xuint32 width, xuint32 height)
   {
-  glGenFramebuffers(1, &_buffer) GLE;
-  glBindFramebuffer(GL_FRAMEBUFFER, _buffer) GLE;
+  GLRendererImpl *impl = GL_REND(r);
+
+  impl->framebuffer.gen(1, &_buffer) GLE;
+  impl->framebuffer.bind(GL_FRAMEBUFFER, _buffer) GLE;
 
   if(!Texture2D::delayedCreate(_textures[FrameBuffer::TextureColour], r, width, height, cF, 0))
     {
     return false;
     }
   XGLTexture2D* c = _textures[FrameBuffer::TextureColour].data<XGLTexture2D>();
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, c->_id, 0) GLE;
+  impl->framebuffer.texture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, c->_id, 0) GLE;
 
   if(!Texture2D::delayedCreate(_textures[FrameBuffer::TextureDepthStencil], r, width, height, dF, 0))
     {
     return false;
     }
   XGLTexture2D* d = _textures[FrameBuffer::TextureDepthStencil].data<XGLTexture2D>();
-  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, d->_id, 0) GLE;
+  impl->framebuffer.texture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, d->_id, 0) GLE;
 
-  glBindFramebuffer(GL_FRAMEBUFFER, 0) GLE;
-  return isValid();
+  impl->framebuffer.bind(GL_FRAMEBUFFER, 0) GLE;
+  return isValid(impl);
   }
 
-bool XGLFramebuffer::init(GLRendererImpl *)
+bool XGLFramebuffer::init(GLRendererImpl *r)
   {
   _buffer = 0;
+  _impl = r;
   return true;
   }
 
@@ -1039,14 +1070,19 @@ XGLFramebuffer::~XGLFramebuffer( )
   {
   if( _buffer )
     {
-    glDeleteFramebuffers( 1, &_buffer ) GLE;
+    _impl->framebuffer.destroy( 1, &_buffer ) GLE;
     }
   }
 
-bool XGLFramebuffer::isValid() const
+bool XGLFramebuffer::isValid(GLRendererImpl *impl) const
   {
-  glBindFramebuffer( GL_FRAMEBUFFER, _buffer ) GLE;
-  int status = glCheckFramebufferStatus(GL_FRAMEBUFFER) GLE;
+  if(!_buffer)
+    {
+    return true;
+    }
+
+  impl->framebuffer.bind( GL_FRAMEBUFFER, _buffer ) GLE;
+  int status = impl->framebuffer.checkStatus(GL_FRAMEBUFFER) GLE;
 
   if( status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT )
     {
@@ -1065,20 +1101,20 @@ bool XGLFramebuffer::isValid() const
     qWarning() << "Framebuffer unsupported attachment";
     }
 
-  glBindFramebuffer( GL_FRAMEBUFFER, 0 ) GLE;
+  impl->framebuffer.bind( GL_FRAMEBUFFER, 0 ) GLE;
 
   return status == GL_FRAMEBUFFER_COMPLETE;
   }
 
-void XGLFramebuffer::bind()
+void XGLFramebuffer::bind(GLRendererImpl *r)
   {
-  xAssert( isValid() );
-  glBindFramebuffer( GL_FRAMEBUFFER, _buffer ) GLE;
+  xAssert( isValid(r) );
+  r->framebuffer.bind( GL_FRAMEBUFFER, _buffer ) GLE;
   }
 
-void XGLFramebuffer::unbind()
+void XGLFramebuffer::unbind(GLRendererImpl *r)
   {
-  glBindFramebuffer( GL_FRAMEBUFFER, 0 ) GLE;
+  r->framebuffer.bind( GL_FRAMEBUFFER, 0 ) GLE;
   }
 
 //----------------------------------------------------------------------------------------------------------------------

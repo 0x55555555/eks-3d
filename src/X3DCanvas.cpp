@@ -70,10 +70,23 @@ public:
     wglMakeCurrent( _hDC, _hRC );
     }
 
+  void begin()
+    {
+    BeginPaint(_hWnd, &_ps);
+    }
+
+  void end()
+    {
+    SwapBuffers(_hDC);
+    EndPaint(_hWnd, &_ps);
+    }
+
 private:
   HWND _hWnd;
   HDC _hDC;
   HGLRC _hRC;
+
+  PAINTSTRUCT _ps;
   };
 #endif
 
@@ -125,13 +138,15 @@ void GL3DCanvas::resizeEvent(QResizeEvent* evt)
 void GL3DCanvas::paintEvent(QPaintEvent *)
   {
   xAssert(_context);
-  _context->bind();
+  _context->begin();
 
   emit paint3D(_renderer, _buffer);
 
   bool deviceLost = false;
   _buffer->present(&deviceLost);
   xAssert(!deviceLost);
+
+  _context->end();
   }
 
 void GL3DCanvas::doInitialise3D()
