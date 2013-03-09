@@ -1,6 +1,10 @@
 #ifndef X3DGLOBAL_H
 #define X3DGLOBAL_H
 
+#if defined(Q_OS_WIN32) || defined(Q_OS_WIN64)
+#define QT_NO_OPENGL_ES
+#endif
+
 #include "XGlobal"
 
 #ifndef EKS3D_STATIC
@@ -32,6 +36,7 @@
 # define X_ENABLE_GL_RENDERER 1
 # define X_ENABLE_DX_RENDERER 0
 #endif
+
 
 namespace Eks
 {

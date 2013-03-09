@@ -7,6 +7,7 @@ TEMPLATE = lib
 
 QT += widgets
 
+
 include("../../EksCore/GeneralOptions.pri")
 
 SOURCES += \

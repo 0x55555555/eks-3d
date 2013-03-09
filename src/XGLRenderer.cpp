@@ -2,8 +2,11 @@
 
 #if X_ENABLE_GL_RENDERER
 
-#include "QtGui/qopengl.h"
-// #include "GL/glew.h"
+#define USE_GLEW
+
+#ifdef USE_GLEW
+# include "GL/glew.h"
+#endif
 
 #include "XFramebuffer.h"
 #include "XGeometry.h"
@@ -45,7 +48,7 @@ const char *glErrorString( int err )
   return "GL Error: No Error";
   }
 
-#if 0 //def X_DEBUG
+#if def X_DEBUG
 # define GLE ; { int _GL = glGetError(); xAssertMessage(!_GL, "GL Error", _GL, glErrorString( _GL )); }
 # define GLE_QUIET ; glGetError()
 #else
@@ -76,7 +79,7 @@ public:
 
   static void setTransform(Renderer *r, const Transform &trans)
     {
-    GL_REND(r)->modelViewData.model = trans.matrix();
+    GL_REND(r)->_modelViewData.model = trans.matrix();
     GL_REND(r)->_modelViewDataDirty = true;
     }
 
@@ -85,25 +88,16 @@ public:
     glClearColor(col.x(), col.y(), col.z(), col.w());
     }
 
-  static void clear(Renderer *r, FrameBuffer *fb, int c)
-    {
-    xAssert(GL_REND(r)->_currentFramebuffer == fb->data<XGLFramebuffer>());
-    int realMode = ((c&FrameBuffer::ClearColour) != false) ? GL_COLOR_BUFFER_BIT : 0;
-    realMode |= ((c&FrameBuffer::ClearDepth) != false) ? GL_DEPTH_BUFFER_BIT : 0;
-    glClear( realMode ) GLE;
-    }
-
-
   static void setViewTransform(Renderer *r, const Eks::Transform &trans)
     {
-    GL_REND(r)->modelViewData.view = trans.matrix();
+    GL_REND(r)->_modelViewData.view = trans.matrix();
     GL_REND(r)->_modelViewDataDirty = true;
     }
 
   static void setProjectionTransform(Renderer *r, const Eks::ComplexTransform &trans)
     {
     Matrix4x4 mat = trans.matrix();
-    GL_REND(r)->projection.update(&mat);
+    GL_REND(r)->_projection.update(&mat);
     }
 
   static void drawIndexedTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert);
@@ -117,8 +111,8 @@ public:
 
   Eks::AllocatorBase *_allocator;
 
-  Eks::ShaderConstantData modelView;
-  Eks::ShaderConstantData projection;
+  Eks::ShaderConstantData _modelView;
+  Eks::ShaderConstantData _projection;
 
   struct ModelViewMatrices
     {
@@ -126,7 +120,7 @@ public:
     Eks::Matrix4x4 view;
     Eks::Matrix4x4 modelView;
     };
-  ModelViewMatrices modelViewData;
+  ModelViewMatrices _modelViewData;
   bool _modelViewDataDirty;
 
   void updateViewData();
@@ -239,6 +233,8 @@ public:
     r->_currentFramebuffer = fb->data<XGLFramebuffer>();
 
     r->_currentFramebuffer->bind();
+
+    clear(ren, fb, FrameBuffer::ClearColour|FrameBuffer::ClearDepth);
     }
 
   static void endRender(Renderer *ren, FrameBuffer *fb)
@@ -795,14 +791,14 @@ void GLRendererImpl::updateViewData()
   {
   if(_modelViewDataDirty)
     {
-    modelViewData.modelView = modelViewData.view * modelViewData.model;
-    modelView.update(&modelViewData);
+    _modelViewData.modelView = _modelViewData.model * _modelViewData.view;
+    _modelView.update(&_modelViewData);
     }
 
   ShaderConstantData *data[] =
   {
-    &modelView,
-    &projection
+    &_modelView,
+    &_projection
   };
   xAssert(_currentShader);
   _currentShader->setShaderConstantDatas(0, 2, data);
@@ -822,11 +818,15 @@ void GLRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *in
 
   r->updateViewData();
 
-  glBindBuffer( GL_ARRAY_BUFFER, idx->_buffer ) GLE;
-  glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, gC->_buffer ) GLE;
-  glDrawElements( GL_TRIANGLES, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
-  glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 ) GLE;
-  glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
+  glBindBuffer(GL_ARRAY_BUFFER, idx->_buffer) GLE;
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gC->_buffer) GLE;
+
+  XGLVertexLayout *l = r->_vertexLayout->data<XGLVertexLayout>();
+  l->bind();
+
+  glDrawElements(GL_TRIANGLES, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0) GLE;
+  glBindBuffer(GL_ARRAY_BUFFER, 0) GLE;
   }
 
 void GLRendererImpl::drawTriangles(Renderer *ren, const Geometry *vert)
@@ -841,6 +841,10 @@ void GLRendererImpl::drawTriangles(Renderer *ren, const Geometry *vert)
   r->updateViewData();
 
   glBindBuffer( GL_ARRAY_BUFFER, gC->_buffer ) GLE;
+
+  XGLVertexLayout *l = r->_vertexLayout->data<XGLVertexLayout>();
+  l->bind();
+
   glDrawArrays( GL_TRIANGLES, 0, gC->_elementCount) GLE;
   glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
   }
@@ -906,10 +910,19 @@ detail::RendererFunctions glfns =
 };
 
 Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::AllocatorBase* alloc)
-  {
+  {  
+#ifdef USE_GLEW
+  glewInit();
+#endif
+
+  const char* ven = (const char *)glGetString(GL_VENDOR);
+  const char* ver = (const char *)glGetString(GL_VERSION);
+  qDebug() << ven << ver;
+
   GLRendererImpl *r = alloc->create<GLRendererImpl>(glfns);
   r->_allocator = alloc;
   glEnable( GL_DEPTH_TEST ) GLE;
+  GLRendererImpl::setClearColour(r, Colour(0.0f, 0.0f, 0.0f, 1.0f));
 
   XGLFramebuffer* fb = buffer->create<XGLFramebuffer>();
   fb->init(r);
@@ -926,8 +939,8 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::Allocator
     { "proj", ShaderConstantDataDescription::Matrix4x4 }
   };
 
-  ShaderConstantData::delayedCreate(r->modelView, r, modelViewDesc, X_ARRAY_COUNT(modelViewDesc));
-  ShaderConstantData::delayedCreate(r->projection, r, projDesc, X_ARRAY_COUNT(projDesc));
+  ShaderConstantData::delayedCreate(r->_modelView, r, modelViewDesc, X_ARRAY_COUNT(modelViewDesc));
+  ShaderConstantData::delayedCreate(r->_projection, r, projDesc, X_ARRAY_COUNT(projDesc));
 
   return r;
   }
@@ -935,6 +948,7 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::Allocator
 void GLRenderer::destroyGLRenderer(Renderer *r, ScreenFrameBuffer *buffer, Eks::AllocatorBase* alloc)
   {
   buffer->destroy<XGLFramebuffer>();
+  buffer->setRenderer(0);
 
   alloc->destroy(GL_REND(r));
   }
@@ -961,12 +975,12 @@ bool XGLTexture2D::init(GLRendererImpl *, int format, int width, int height, con
   int formatMap[] =
   {
     GL_RGBA,
-    GL_DEPTH_COMPONENT24_OES
+    GL_DEPTH_COMPONENT24
   };
   xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == TextureFormatCount);
 
   // 0 at end could be data to unsigned byte...
-  glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, formatMap[format], GL_UNSIGNED_BYTE, data) GLE;
+  glTexImage2D(GL_TEXTURE_2D, 0, formatMap[format], width, height, 0, formatMap[format], GL_UNSIGNED_BYTE, data) GLE;
 
   glBindTexture(GL_TEXTURE_2D, 0) GLE;
 
@@ -1038,10 +1052,10 @@ bool XGLFramebuffer::isValid() const
     {
     qWarning() << "Framebuffer Incomplete attachment";
     }
-  else if( status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS )
+  /*else if( status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS )
     {
     qWarning() << "Framebuffer Incomplete dimensions";
-    }
+    }*/
   else if( status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT )
     {
     qWarning() << "Framebuffer Incomplete missing attachment";
@@ -1314,10 +1328,9 @@ void XGLShader::bind(Renderer *ren, const Shader *shader, const ShaderVertexLayo
     {
     r->_currentShader = const_cast<Shader *>(shader);
     r->_vertexLayout = const_cast<ShaderVertexLayout *>(layout);
-    //XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
+    XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
 
-    const XGLVertexLayout* newLayout = layout->data<XGLVertexLayout>();
-    newLayout->bind();
+    glUseProgram(shaderInt->shader);
     }
   else if( shader == 0 && r->_currentShader != 0 )
     {

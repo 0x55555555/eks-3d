@@ -8,15 +8,141 @@
 #include "XFramebuffer.h"
 #include <QtOpenGL>
 
-#define ALLOC Eks::GlobalAllocator::instance()
-
 namespace Eks
 {
 
+#ifdef X_GL_EXTERNAL_CONTEXT
+#ifdef Q_OS_WIN32
+class WinGLContext
+  {
+public:
+  WinGLContext(WId id)
+    {
+    _hWnd = (HWND)id;
+
+    // get the device context (DC)
+    _hDC = GetDC( _hWnd );
+
+    // set the pixel format for the DC
+    PIXELFORMATDESCRIPTOR pfd;
+    ZeroMemory( &pfd, sizeof( pfd ) );
+    pfd.nSize = sizeof( pfd );
+    pfd.nVersion = 1;
+    pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL |
+                  PFD_DOUBLEBUFFER;
+    pfd.iPixelType = PFD_TYPE_RGBA;
+    pfd.cColorBits = 24;
+    pfd.cDepthBits = 16;
+    pfd.iLayerType = PFD_MAIN_PLANE;
+    int format = ChoosePixelFormat( _hDC, &pfd );
+    SetPixelFormat( _hDC, format, &pfd );
+
+    // create the render context (RC)
+    _hRC = wglCreateContext( _hDC );
+    }
+
+  ~WinGLContext()
+    {
+    destroy();
+    }
+
+  void destroy()
+    {
+    if (_hRC)
+      {
+      wglMakeCurrent(NULL, NULL);
+      wglDeleteContext(_hRC);
+      }
+
+    if (_hWnd && _hDC)
+      {
+      ReleaseDC(_hWnd, _hDC);
+      }
+
+    _hWnd = NULL;
+    _hDC = NULL;
+    _hRC = NULL;
+    }
+
+  void bind()
+    {
+    // make it the current render context
+    wglMakeCurrent( _hDC, _hRC );
+    }
+
+private:
+  HWND _hWnd;
+  HDC _hDC;
+  HGLRC _hRC;
+  };
+#endif
+
+#endif
+
+#define ALLOC Eks::GlobalAllocator::instance()
+
 #if X_ENABLE_GL_RENDERER
 
+#ifdef X_GL_EXTERNAL_CONTEXT
+
 GL3DCanvas::GL3DCanvas(QWidget *parent) :
-  QGLWidget(parent)
+  QWidget(parent)
+  {
+  setAttribute(Qt::WA_PaintOnScreen, true);
+  setAttribute(Qt::WA_NativeWindow, true);
+
+  WId handle = winId();
+  _context = ALLOC->create<X_GL_EXTERNAL_CONTEXT>(handle);
+
+  _context->bind();
+  _buffer = ALLOC->create<ScreenFrameBuffer>();
+  _renderer = GLRenderer::createGLRenderer(_buffer, ALLOC);
+
+  QTimer::singleShot(0, Qt::CoarseTimer, this, SLOT(doInitialise3D()));
+  }
+
+GL3DCanvas::~GL3DCanvas()
+  {
+  xAssert(_context);
+  _context->bind();
+
+  Eks::GLRenderer::destroyGLRenderer(_renderer, _buffer, ALLOC);
+  ALLOC->destroy(_buffer);
+  _buffer = 0;
+
+  ALLOC->destroy(_context);
+  }
+
+void GL3DCanvas::resizeEvent(QResizeEvent* evt)
+  {
+  xAssert(_context);
+  _context->bind();
+
+  _buffer->resize(evt->size().width(), evt->size().height(), ScreenFrameBuffer::RotateNone);
+  emit resize3D(_renderer, evt->size().width(), evt->size().height());
+  }
+
+void GL3DCanvas::paintEvent(QPaintEvent *)
+  {
+  xAssert(_context);
+  _context->bind();
+
+  emit paint3D(_renderer, _buffer);
+
+  bool deviceLost = false;
+  _buffer->present(&deviceLost);
+  xAssert(!deviceLost);
+  }
+
+void GL3DCanvas::doInitialise3D()
+  {
+  emit initialise3D(_renderer);
+  }
+
+#else
+
+GL3DCanvas::GL3DCanvas(QWidget *parent) :
+  QGLWidget(getContext(), parent)
   {
   _buffer = 0;
   _renderer = 0;
@@ -31,28 +157,28 @@ GL3DCanvas::~GL3DCanvas()
 
 void GL3DCanvas::paintGL()
   {
-  paint3D(_renderer, _buffer);
+  emit paint3D(_renderer, _buffer);
   }
 
 void GL3DCanvas::initializeGL()
   {
-  qDebug() << format().majorVersion() << format().minorVersion();
   _buffer = ALLOC->create<ScreenFrameBuffer>();
   
   _renderer = GLRenderer::createGLRenderer(_buffer, ALLOC);
-  initialise3D(_renderer);
+  emit initialise3D(_renderer);
   }
 
 void GL3DCanvas::resizeGL(int w, int h)
   {
-  resize3D(_renderer, w, h);
+  emit resize3D(_renderer, w, h);
   }
+
+#endif
 
 void GL3DCanvas::update3D()
   {
   update();
   }
-
 
 #endif
 
@@ -72,7 +198,7 @@ D3D3DCanvas::D3D3DCanvas(QWidget* parent, Renderer **r)
   _buffer = ALLOC->create<ScreenFrameBuffer>();
   _renderer = renderer = Eks::D3DRenderer::createD3DRenderer((void*)handle, _buffer, ALLOC);
 
-
+  QTimer::singleShot(0, Qt::CoarseTimer, this, SLOT(doInitialise3D()));
   }
 
 D3D3DCanvas::~D3D3DCanvas()
@@ -102,6 +228,11 @@ void D3D3DCanvas::paintEvent(QPaintEvent *)
   xAssert(!deviceLost);
   }
 
+void D3D3DCanvas::doInitialise3D()
+  {
+  emit initialise3D(_renderer);
+  }
+
 #endif
 
 QWidget* Canvas3D::createBest(QWidget* parent)
@@ -112,7 +243,6 @@ QWidget* Canvas3D::createBest(QWidget* parent)
     {
     Renderer *ren = 0;
     D3D3DCanvas *can = new D3D3DCanvas(parent, &ren);
-    can->initialise3D(ren);
     return can;
     }
 #endif

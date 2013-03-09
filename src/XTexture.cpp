@@ -13,6 +13,7 @@ Texture2D::Texture2D(
     xsize height,
     TextureFormat fmt,
     const void *data)
+    : _renderer(0)
   {
   if(r)
     {
