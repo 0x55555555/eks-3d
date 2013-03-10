@@ -932,7 +932,7 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::Allocator
   GLRendererImpl *r = alloc->create<GLRendererImpl>(glfns);
   r->_allocator = alloc;
   glEnable( GL_DEPTH_TEST ) GLE;
-  GLRendererImpl::setClearColour(r, Colour(0.0f, 0.0f, 0.0f, 1.0f));
+  GLRendererImpl::setClearColour(r, Colour(1.0f, 0.0f, 0.0f, 1.0f));
 
   if(glCheckFramebufferStatus)
     {
@@ -1124,8 +1124,21 @@ bool XGLShaderComponent::init(GLRendererImpl *impl, xuint32 type, const char *da
   {
   _component = glCreateShader(type) GLE;
 
-  int length = size;
-  glShaderSource(_component, 1, &data, &length) GLE;
+  const char *extra = "#define X_GLSL_VERSION 120\n";
+
+  int lengths[] =
+    {
+    strlen(extra),
+    size,
+    };
+
+  const char *strs[] =
+    {
+    extra,
+    data,
+    };
+
+  glShaderSource(_component, X_ARRAY_COUNT(lengths), strs, lengths) GLE;
   glCompileShader(_component) GLE;
   
   int infoLogLength = 0;
