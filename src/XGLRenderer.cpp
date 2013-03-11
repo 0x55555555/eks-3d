@@ -79,8 +79,8 @@ public:
 
   static void setTransform(Renderer *r, const Transform &trans)
     {
-    GL_REND(r)->_modelViewData.model = trans.matrix();
-    GL_REND(r)->_modelViewDataDirty = true;
+    GL_REND(r)->_modelData.model = trans.matrix();
+    GL_REND(r)->_modelDataDirty = true;
     }
 
   static void setClearColour(Renderer *, const Colour &col)
@@ -90,14 +90,14 @@ public:
 
   static void setViewTransform(Renderer *r, const Eks::Transform &trans)
     {
-    GL_REND(r)->_modelViewData.view = trans.matrix();
-    GL_REND(r)->_modelViewDataDirty = true;
+    GL_REND(r)->_viewData.view = trans.matrix();
+    GL_REND(r)->_viewDataDirty = true;
     }
 
   static void setProjectionTransform(Renderer *r, const Eks::ComplexTransform &trans)
     {
-    Matrix4x4 mat = trans.matrix();
-    GL_REND(r)->_projection.update(&mat);
+    GL_REND(r)->_viewData.proj = trans.matrix();
+    GL_REND(r)->_viewDataDirty = true;
     }
 
   static void drawIndexedTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert);
@@ -111,17 +111,24 @@ public:
 
   Eks::AllocatorBase *_allocator;
 
-  Eks::ShaderConstantData _modelView;
-  Eks::ShaderConstantData _projection;
+  Eks::ShaderConstantData _model;
+  Eks::ShaderConstantData _view;
 
-  struct ModelViewMatrices
+  struct ModelMatrices
     {
     Eks::Matrix4x4 model;
-    Eks::Matrix4x4 view;
     Eks::Matrix4x4 modelView;
+    Eks::Matrix4x4 modelViewProj;
     };
-  ModelViewMatrices _modelViewData;
-  bool _modelViewDataDirty;
+  struct ViewMatrices
+    {
+    Eks::Matrix4x4 view;
+    Eks::Matrix4x4 proj;
+    };
+  ModelMatrices _modelData;
+  ViewMatrices _viewData;
+  bool _modelDataDirty;
+  bool _viewDataDirty;
 
   void updateViewData();
 
@@ -274,9 +281,8 @@ public:
     glClear(mask);
     }
 
-  static bool resize(Renderer *, ScreenFrameBuffer *, xuint32, xuint32 w, xuint32 h)
+  static bool resize(Renderer *, ScreenFrameBuffer *, xuint32 w, xuint32 h, xuint32)
     {
-    // nothing to do?
     glViewport(0,0,w,h);
     return true;
     }
@@ -468,7 +474,7 @@ public:
     _attrs.resize(count);
     xCompileTimeAssert(4 == ShaderVertexLayoutDescription::SemanticCount);
 
-    stride = 0;
+    vertexSize = 0;
     for(xsize i = 0; i < count; ++i)
       {
       const ShaderVertexLayoutDescription &desc = descs[i];
@@ -478,7 +484,7 @@ public:
       attr.semantic = desc.semantic;
       if(attr.offset == ShaderVertexLayoutDescription::OffsetPackTight)
         {
-        attr.offset = stride;
+        attr.offset = vertexSize;
         }
 
       xCompileTimeAssert(ShaderVertexLayoutDescription::FormatFloat1 == 0);
@@ -487,7 +493,7 @@ public:
       xCompileTimeAssert(ShaderVertexLayoutDescription::FormatFloat4 == 3);
       attr.components = desc.format + 1;
 
-      stride += attr.components * sizeof(float);
+      vertexSize += attr.size();
       }
 
     return true;
@@ -515,13 +521,18 @@ public:
     return true;
     }
 
-  xsize stride;
+  xsize vertexSize;
   struct Attribute
     {
     xsize offset;
     xuint8 components;
     ShaderVertexLayoutDescription::Semantic semantic;
     // type is currently always float.
+
+    inline xsize size() const
+      {
+      return components * sizeof(float);
+      }
     };
 
   Eks::Vector<Attribute> _attrs;
@@ -533,6 +544,7 @@ public:
       {
       const Attribute &attr = _attrs[i];
 
+      xsize stride = vertexSize - attr.size();
       glEnableVertexAttribArray(i) GLE;
       glVertexAttribPointer(
             i,
@@ -713,7 +725,8 @@ GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns)
     _currentShader(0),
     _currentFramebuffer(0),
     _vertexLayout(0),
-    _modelViewDataDirty(true)
+    _modelDataDirty(true),
+    _viewDataDirty(true)
   {
   setFunctions(fns);
   }
@@ -799,16 +812,23 @@ void setViewportSize(Renderer *, QSize size)
 
 void GLRendererImpl::updateViewData()
   {
-  if(_modelViewDataDirty)
+  if(_viewDataDirty)
     {
-    _modelViewData.modelView = _modelViewData.model * _modelViewData.view;
-    _modelView.update(&_modelViewData);
+    _view.update(&_viewData);
+    _modelDataDirty = true;
+    }
+
+  if(_modelDataDirty)
+    {
+    _modelData.modelView = _viewData.view * _modelData.model;
+    _modelData.modelViewProj = _viewData.proj * _modelData.modelView;
+    _model.update(&_modelData);
     }
 
   ShaderConstantData *data[] =
   {
-    &_modelView,
-    &_projection
+    &_model,
+    &_view
   };
   xAssert(_currentShader);
   _currentShader->setShaderConstantDatas(0, 2, data);
@@ -835,6 +855,8 @@ void GLRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *in
   l->bind();
 
   glDrawElements(GL_TRIANGLES, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
+  l->unbind();
+
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0) GLE;
   glBindBuffer(GL_ARRAY_BUFFER, 0) GLE;
   }
@@ -856,6 +878,8 @@ void GLRendererImpl::drawTriangles(Renderer *ren, const Geometry *vert)
   l->bind();
 
   glDrawArrays( GL_TRIANGLES, 0, gC->_elementCount) GLE;
+  l->unbind();
+
   glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
   }
 
@@ -920,7 +944,7 @@ detail::RendererFunctions glfns =
 };
 
 Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::AllocatorBase* alloc)
-  {  
+  {
 #ifdef USE_GLEW
   glewInit();
 #endif
@@ -956,19 +980,20 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::Allocator
   fb->init(r);
   buffer->setRenderer(r);
 
-  ShaderConstantDataDescription modelViewDesc[] =
+  ShaderConstantDataDescription modelDesc[] =
   {
     { "model", ShaderConstantDataDescription::Matrix4x4 },
-    { "view", ShaderConstantDataDescription::Matrix4x4 },
-    { "modelView", ShaderConstantDataDescription::Matrix4x4 }
+    { "modelView", ShaderConstantDataDescription::Matrix4x4 },
+    { "modelViewProj", ShaderConstantDataDescription::Matrix4x4 },
   };
-  ShaderConstantDataDescription projDesc[] =
+  ShaderConstantDataDescription viewDesc[] =
   {
-    { "proj", ShaderConstantDataDescription::Matrix4x4 }
+    { "view", ShaderConstantDataDescription::Matrix4x4 },
+    { "proj", ShaderConstantDataDescription::Matrix4x4 },
   };
 
-  ShaderConstantData::delayedCreate(r->_modelView, r, modelViewDesc, X_ARRAY_COUNT(modelViewDesc));
-  ShaderConstantData::delayedCreate(r->_projection, r, projDesc, X_ARRAY_COUNT(projDesc));
+  ShaderConstantData::delayedCreate(r->_model, r, modelDesc, X_ARRAY_COUNT(modelDesc));
+  ShaderConstantData::delayedCreate(r->_view, r, viewDesc, X_ARRAY_COUNT(viewDesc));
 
   return r;
   }
@@ -1140,7 +1165,7 @@ bool XGLShaderComponent::init(GLRendererImpl *impl, xuint32 type, const char *da
 
   glShaderSource(_component, X_ARRAY_COUNT(lengths), strs, lengths) GLE;
   glCompileShader(_component) GLE;
-  
+
   int infoLogLength = 0;
   glGetShaderiv(_component, GL_INFO_LOG_LENGTH, &infoLogLength);
 
@@ -1240,10 +1265,11 @@ bool XGLShaderData::init(
   _binders.resize(descCount);
   for(xsize i = 0; i < descCount; ++i)
     {
-    const Type &type = typeMap[desc->type];
+    const ShaderConstantDataDescription &description = desc[i];
+    const Type &type = typeMap[description.type];
 
     Binder &b = _binders[i];
-    b.name = Eks::String(desc->name, r->_allocator);
+    b.name = Eks::String(description.name, r->_allocator);
     b.offset = size;
     b.bind = type.bind;
 
@@ -1347,7 +1373,7 @@ bool XGLShader::init( GLRendererImpl *impl, XGLShaderComponent *v, XGLShaderComp
     glGetProgramInfoLog(shader, infologLength, &charsWritten, infoLog.data());
     qDebug() << infoLog.toQString();
     }
-  
+
   int success = 0;
   glGetProgramiv(shader, GL_LINK_STATUS, &success);
   if(!success)
@@ -1367,11 +1393,6 @@ bool XGLShader::init( GLRendererImpl *impl, XGLShaderComponent *v, XGLShaderComp
 void XGLShader::bind(Renderer *ren, const Shader *shader, const ShaderVertexLayout *layout)
   {
   GLRendererImpl* r = GL_REND(ren);
-  if(r->_vertexLayout)
-    {
-    XGLVertexLayout* oldLayout = r->_vertexLayout->data<XGLVertexLayout>();
-    oldLayout->unbind();
-    }
   if( shader &&
       ( r->_currentShader == 0 || r->_currentShader != shader || r->_vertexLayout != layout) )
     {
