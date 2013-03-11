@@ -515,7 +515,7 @@ public:
       const Attribute &attr = _attrs[i];
       xsize idx = attr.semantic;
 
-      glBindAttribLocation(shader->shader, i, semanticNames[idx]);
+      glBindAttribLocation(shader->shader, i, semanticNames[idx]) GLE;
       }
 
     return true;
@@ -544,14 +544,13 @@ public:
       {
       const Attribute &attr = _attrs[i];
 
-      xsize stride = vertexSize - attr.size();
       glEnableVertexAttribArray(i) GLE;
       glVertexAttribPointer(
             i,
             attr.components,
             GL_FLOAT,
             GL_FALSE,
-            stride,
+            vertexSize,
             (GLvoid*)attr.offset) GLE;
       }
     }
@@ -956,7 +955,7 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::Allocator
   GLRendererImpl *r = alloc->create<GLRendererImpl>(glfns);
   r->_allocator = alloc;
   glEnable( GL_DEPTH_TEST ) GLE;
-  GLRendererImpl::setClearColour(r, Colour(1.0f, 0.0f, 0.0f, 1.0f));
+  GLRendererImpl::setClearColour(r, Colour(0.0f, 0.0f, 0.0f, 1.0f));
 
   if(glCheckFramebufferStatus)
     {
@@ -1359,6 +1358,15 @@ bool XGLShader::init( GLRendererImpl *impl, XGLShaderComponent *v, XGLShaderComp
   glAttachShader(shader, v->_component);
   glAttachShader(shader, f->_component);
 
+  xAssert(!f->_layout);
+  if(v->_layout)
+    {
+    if(!v->_layout->init2(impl, this))
+      {
+      return false;
+      }
+    }
+
   glLinkProgram(shader);
 
   int infologLength = 0;
@@ -1379,12 +1387,6 @@ bool XGLShader::init( GLRendererImpl *impl, XGLShaderComponent *v, XGLShaderComp
   if(!success)
     {
     return false;
-    }
-
-  xAssert(!f->_layout);
-  if(v->_layout)
-    {
-    return v->_layout->init2(impl, this);
     }
 
   return true;
