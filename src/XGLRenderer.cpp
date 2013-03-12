@@ -60,7 +60,7 @@ const char *glErrorString( int err )
 
 namespace Eks
 {
-class XGLShaderData;
+class XGL21ShaderData;
 class XGLVertexLayout;
 
 template <typename X, typename T> void destroy(Renderer *, X *x)
@@ -138,15 +138,6 @@ public:
   ShaderVertexLayout *_vertexLayout;
   QSize _size;
   XGLFramebuffer *_currentFramebuffer;
-
-  struct FramebufferFns
-    {
-    PFNGLGENFRAMEBUFFERSPROC gen;
-    PFNGLDELETEFRAMEBUFFERSPROC destroy;
-    PFNGLFRAMEBUFFERTEXTURE2DPROC texture2D;
-    PFNGLBINDFRAMEBUFFERPROC bind;
-    PFNGLCHECKFRAMEBUFFERSTATUSPROC checkStatus;
-    } framebuffer;
   };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -216,56 +207,10 @@ private:
 class XGLFramebuffer
   {
 public:
-  bool init(Renderer *, TextureFormat colourFormat, TextureFormat depthFormat, xuint32 width, xuint32 height);
   bool init(GLRendererImpl *);
-  ~XGLFramebuffer( );
-
-  void bind(GLRendererImpl *r);
-  void unbind(GLRendererImpl *r);
-
-  virtual bool isValid(GLRendererImpl *impl) const;
 
   const Texture2D *colour() const;
   const Texture2D *depth() const;
-
-  static bool create(
-      Renderer *r,
-      FrameBuffer *b,
-      xuint32 w,
-      xuint32 h,
-      xuint32 colourFormat,
-      xuint32 depthFormat)
-    {
-    XGLFramebuffer* fb = b->create<XGLFramebuffer>();
-    return fb->init(GL_REND(r), (TextureFormat)colourFormat, (TextureFormat)depthFormat, w, h );
-    }
-
-  static void beginRender(Renderer *ren, FrameBuffer *fb)
-    {
-    GLRendererImpl *r = GL_REND(ren);
-    xAssert(!r->_currentFramebuffer);
-
-    xAssert(fb);
-    r->_currentFramebuffer = fb->data<XGLFramebuffer>();
-
-    r->_currentFramebuffer->bind(r);
-
-    clear(ren, fb, FrameBuffer::ClearColour|FrameBuffer::ClearDepth);
-    }
-
-  static void endRender(Renderer *ren, FrameBuffer *fb)
-    {
-    GLRendererImpl *r = GL_REND(ren);
-
-    XGLFramebuffer* iFb = fb->data<XGLFramebuffer>();;
-    xAssert(r->_currentFramebuffer == iFb);
-
-    if(r->_currentFramebuffer)
-      {
-      r->_currentFramebuffer->unbind(r);
-      r->_currentFramebuffer = 0;
-      }
-    }
 
   static void clear(Renderer *r, FrameBuffer *buffer, xuint32 mode)
     {
@@ -299,12 +244,114 @@ public:
     return fb->_textures + mode;
     }
 
-private:
+protected:
   Texture2D _textures[FrameBuffer::TextureIdCount];
   unsigned int _buffer;
   GLRendererImpl *_impl;
+  };
 
-  friend class XGLShaderVariable;
+
+class XGL21Framebuffer : public XGLFramebuffer
+  {
+public:
+  bool init(Renderer *, TextureFormat colourFormat, TextureFormat depthFormat, xuint32 width, xuint32 height);
+  ~XGL21Framebuffer( );
+
+  static bool create(
+      Renderer *r,
+      FrameBuffer *b,
+      xuint32 w,
+      xuint32 h,
+      xuint32 colourFormat,
+      xuint32 depthFormat)
+    {
+    XGL21Framebuffer* fb = b->create<XGL21Framebuffer>();
+    return fb->init(GL_REND(r), (TextureFormat)colourFormat, (TextureFormat)depthFormat, w, h );
+    }
+
+  static void beginRender(Renderer *ren, FrameBuffer *fb)
+    {
+    GLRendererImpl *r = GL_REND(ren);
+    xAssert(!r->_currentFramebuffer);
+
+    XGL21Framebuffer *fbImpl = fb->data<XGL21Framebuffer>();
+    xAssert(fb);
+    r->_currentFramebuffer = fbImpl;
+    fbImpl->bind(r);
+
+    clear(ren, fb, FrameBuffer::ClearColour|FrameBuffer::ClearDepth);
+    }
+
+  static void endRender(Renderer *ren, FrameBuffer *fb)
+    {
+    GLRendererImpl *r = GL_REND(ren);
+
+    XGL21Framebuffer *iFb = fb->data<XGL21Framebuffer>();
+    xAssert(r->_currentFramebuffer == iFb);
+
+    if(r->_currentFramebuffer)
+      {
+      iFb->unbind(r);
+      r->_currentFramebuffer = 0;
+      }
+    }
+
+  void bind(GLRendererImpl *r);
+  void unbind(GLRendererImpl *r);
+
+  bool isValid(GLRendererImpl *impl) const;
+  };
+
+
+class XGL33Framebuffer : public XGLFramebuffer
+  {
+public:
+  bool init(Renderer *, TextureFormat colourFormat, TextureFormat depthFormat, xuint32 width, xuint32 height);
+  ~XGL33Framebuffer( );
+
+  static void beginRender(Renderer *ren, FrameBuffer *fb)
+    {
+    GLRendererImpl *r = GL_REND(ren);
+    xAssert(!r->_currentFramebuffer);
+
+    XGL33Framebuffer *fbImpl = fb->data<XGL33Framebuffer>();
+    xAssert(fb);
+    r->_currentFramebuffer = fbImpl;
+    fbImpl->bind(r);
+
+    clear(ren, fb, FrameBuffer::ClearColour|FrameBuffer::ClearDepth);
+    }
+
+  static void endRender(Renderer *ren, FrameBuffer *fb)
+    {
+    GLRendererImpl *r = GL_REND(ren);
+
+    XGL33Framebuffer *iFb = fb->data<XGL33Framebuffer>();
+    xAssert(r->_currentFramebuffer == iFb);
+
+    if(r->_currentFramebuffer)
+      {
+      iFb->unbind(r);
+      r->_currentFramebuffer = 0;
+      }
+    }
+
+  static bool create(
+      Renderer *r,
+      FrameBuffer *b,
+      xuint32 w,
+      xuint32 h,
+      xuint32 colourFormat,
+      xuint32 depthFormat)
+    {
+    XGL33Framebuffer* fb = b->create<XGL33Framebuffer>();
+    return fb->init(GL_REND(r), (TextureFormat)colourFormat, (TextureFormat)depthFormat, w, h );
+    }
+
+  void bind(GLRendererImpl *r);
+  void unbind(GLRendererImpl *r);
+
+  bool isValid(GLRendererImpl *impl) const;
   };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -439,7 +486,14 @@ public:
       xsize count,
       const ShaderConstantData * const* data);
 
-  static void setResources(
+  static void setResources21(
+      Renderer *r,
+      Shader *shader,
+      xsize index,
+      xsize count,
+      const Resource * const* data);
+
+  static void setResources33(
       Renderer *r,
       Shader *shader,
       xsize index,
@@ -452,7 +506,7 @@ public:
   struct Buffer
     {
     Buffer() : data(0), revision(0) { }
-    XGLShaderData *data;
+    XGL21ShaderData *data;
     xuint8 revision;
     };
 
@@ -571,7 +625,7 @@ public:
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER DATA
 //----------------------------------------------------------------------------------------------------------------------
-class XGLShaderData
+class XGL21ShaderData
   {
 public:
   bool init(GLRendererImpl *, ShaderConstantDataDescription *desc, xsize descCount, void *data);
@@ -585,7 +639,7 @@ public:
       xsize descCount,
       void *data)
     {
-    XGLShaderData *glD = d->create<XGLShaderData>();
+    XGL21ShaderData *glD = d->create<XGL21ShaderData>();
     return glD->init(GL_REND(r), desc, descCount, data);
     }
 
@@ -606,9 +660,32 @@ public:
   friend class XGLRenderer;
   };
 
+class XGL33ShaderData
+  {
+public:
+  bool init(GLRendererImpl *, ShaderConstantDataDescription *desc, xsize descCount, void *data);
+
+  static void update(Renderer *r, ShaderConstantData *, void *data);
+
+  static bool create(
+      Renderer *r,
+      ShaderConstantData *d,
+      ShaderConstantDataDescription *desc,
+      xsize descCount,
+      void *data)
+    {
+    XGL33ShaderData *glD = d->create<XGL33ShaderData>();
+    return glD->init(GL_REND(r), desc, descCount, data);
+    }
+
+  void bind(xuint32 program, xuint32 index) const;
+
+  friend class XGLRenderer;
+  };
+
 // thi uses uniform buffers
 #if 0
-class XGLShaderData : public XGLBuffer
+class XGL21ShaderData : public XGLBuffer
   {
 public:
   bool init(GLRendererImpl *, xsize size, void *data);
@@ -621,7 +698,7 @@ public:
       xsize size,
       void *data)
     {
-    XGLShaderData *glD = d->create<XGLShaderData>();
+    XGL21ShaderData *glD = d->create<XGL21ShaderData>();
     return glD->init(GL_REND(r), size, data);
     }
 
@@ -886,10 +963,10 @@ void GLRendererImpl::drawTriangles(Renderer *ren, const Geometry *vert)
   glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
   }
 
-detail::RendererFunctions glfns =
+detail::RendererFunctions gl21fns =
 {
   {
-    XGLFramebuffer::create,
+    XGL21Framebuffer::create,
     XGLGeometryCache::create,
     XGLIndexGeometryCache::create,
     XGLTexture2D::create,
@@ -899,10 +976,10 @@ detail::RendererFunctions glfns =
     XGLRasteriserState::create,
     XGLDepthStencilState::create,
     XGLBlendState::create,
-    XGLShaderData::create
+    XGL21ShaderData::create
   },
   {
-    destroy<FrameBuffer, XGLFramebuffer>,
+    destroy<FrameBuffer, XGL21Framebuffer>,
     destroy<Geometry, XGLGeometryCache>,
     destroy<IndexGeometry, XGLIndexGeometryCache>,
     destroy<Texture2D, XGLTexture2D>,
@@ -913,15 +990,15 @@ detail::RendererFunctions glfns =
     destroy<RasteriserState, XGLRasteriserState>,
     destroy<DepthStencilState, XGLDepthStencilState>,
     destroy<BlendState, XGLBlendState>,
-    destroy<ShaderConstantData, XGLShaderData>
+    destroy<ShaderConstantData, XGL21ShaderData>
   },
   {
     GLRendererImpl::setClearColour,
-    XGLShaderData::update,
+    XGL21ShaderData::update,
     GLRendererImpl::setViewTransform,
     GLRendererImpl::setProjectionTransform,
     XGLShader::setConstantBuffers,
-    XGLShader::setResources,
+    XGLShader::setResources21,
     XGLShader::bind,
     XGLRasteriserState::bind,
     XGLDepthStencilState::bind,
@@ -937,12 +1014,72 @@ detail::RendererFunctions glfns =
     GLRendererImpl::debugRenderLocator
   },
   {
-    XGLFramebuffer::clear,
-    XGLFramebuffer::resize,
-    XGLFramebuffer::beginRender,
-    XGLFramebuffer::endRender,
-    XGLFramebuffer::present,
-    XGLFramebuffer::getTexture
+    XGL21Framebuffer::clear,
+    XGL21Framebuffer::resize,
+    XGL21Framebuffer::beginRender,
+    XGL21Framebuffer::endRender,
+    XGL21Framebuffer::present,
+    XGL21Framebuffer::getTexture
+  }
+};
+
+detail::RendererFunctions gl33fns =
+{
+  {
+    XGL33Framebuffer::create,
+    XGLGeometryCache::create,
+    XGLIndexGeometryCache::create,
+    XGLTexture2D::create,
+    XGLShader::create,
+    XGLShaderComponent::createVertex,
+    XGLShaderComponent::createFragment,
+    XGLRasteriserState::create,
+    XGLDepthStencilState::create,
+    XGLBlendState::create,
+    XGL33ShaderData::create
+  },
+  {
+    destroy<FrameBuffer, XGL33Framebuffer>,
+    destroy<Geometry, XGLGeometryCache>,
+    destroy<IndexGeometry, XGLIndexGeometryCache>,
+    destroy<Texture2D, XGLTexture2D>,
+    XGLShader::destroy,
+    destroy<ShaderVertexLayout, XGLVertexLayout>,
+    destroy<ShaderVertexComponent, XGLShaderComponent>,
+    destroy<ShaderFragmentComponent, XGLShaderComponent>,
+    destroy<RasteriserState, XGLRasteriserState>,
+    destroy<DepthStencilState, XGLDepthStencilState>,
+    destroy<BlendState, XGLBlendState>,
+    destroy<ShaderConstantData, XGL33ShaderData>
+  },
+  {
+    GLRendererImpl::setClearColour,
+    XGL33ShaderData::update,
+    GLRendererImpl::setViewTransform,
+    GLRendererImpl::setProjectionTransform,
+    XGLShader::setConstantBuffers,
+    XGLShader::setResources21,
+    XGLShader::bind,
+    XGLRasteriserState::bind,
+    XGLDepthStencilState::bind,
+    XGLBlendState::bind,
+    GLRendererImpl::setTransform
+  },
+  {
+    XGLTexture2D::getInfo
+  },
+  {
+    GLRendererImpl::drawIndexedTriangles,
+    GLRendererImpl::drawTriangles,
+    GLRendererImpl::debugRenderLocator
+  },
+  {
+    XGL33Framebuffer::clear,
+    XGL33Framebuffer::resize,
+    XGL33Framebuffer::beginRender,
+    XGL33Framebuffer::endRender,
+    XGL33Framebuffer::present,
+    XGL33Framebuffer::getTexture
   }
 };
 
@@ -956,28 +1093,16 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::Allocator
   const char* ver = (const char *)glGetString(GL_VERSION);
   qDebug() << ven << ver;
 
-  GLRendererImpl *r = alloc->create<GLRendererImpl>(glfns);
+  const detail::RendererFunctions &fns = gl21fns;
+  //... if gl33...
+
+  GLRendererImpl *r = alloc->create<GLRendererImpl>(fns);
+
+
+
   r->_allocator = alloc;
   glEnable( GL_DEPTH_TEST ) GLE;
   GLRendererImpl::setClearColour(r, Colour(0.0f, 0.0f, 0.0f, 1.0f));
-
-  if(glCheckFramebufferStatus)
-    {
-    r->framebuffer.gen = glGenFramebuffers;
-    r->framebuffer.bind = glBindFramebuffer;
-    r->framebuffer.checkStatus = glCheckFramebufferStatus;
-    r->framebuffer.destroy = glDeleteFramebuffers;
-    r->framebuffer.texture2D = glFramebufferTexture2D;
-    }
-  else
-    {
-    r->framebuffer.gen = glGenFramebuffersEXT;
-    r->framebuffer.bind = glBindFramebufferEXT;
-    r->framebuffer.checkStatus = glCheckFramebufferStatusEXT;
-    r->framebuffer.destroy = glDeleteFramebuffersEXT;
-    r->framebuffer.texture2D = glFramebufferTexture2DEXT;
-    }
-
 
   XGLFramebuffer* fb = buffer->create<XGLFramebuffer>();
   fb->init(r);
@@ -1062,28 +1187,53 @@ void XGLTexture2D::clear()
 //----------------------------------------------------------------------------------------------------------------------
 // FRAMEBUFFER
 //----------------------------------------------------------------------------------------------------------------------
-bool XGLFramebuffer::init(Renderer *r, TextureFormat cF, TextureFormat dF, xuint32 width, xuint32 height)
+bool XGL21Framebuffer::init(Renderer *r, TextureFormat cF, TextureFormat dF, xuint32 width, xuint32 height)
   {
   GLRendererImpl *impl = GL_REND(r);
 
-  impl->framebuffer.gen(1, &_buffer) GLE;
-  impl->framebuffer.bind(GL_FRAMEBUFFER, _buffer) GLE;
+  glGenFramebuffersEXT(1, &_buffer) GLE;
+  glBindFramebufferEXT(GL_FRAMEBUFFER, _buffer) GLE;
 
   if(!Texture2D::delayedCreate(_textures[FrameBuffer::TextureColour], r, width, height, cF, 0))
     {
     return false;
     }
   XGLTexture2D* c = _textures[FrameBuffer::TextureColour].data<XGLTexture2D>();
-  impl->framebuffer.texture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, c->_id, 0) GLE;
+  glFramebufferTexture2DEXT(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, c->_id, 0) GLE;
 
   if(!Texture2D::delayedCreate(_textures[FrameBuffer::TextureDepthStencil], r, width, height, dF, 0))
     {
     return false;
     }
   XGLTexture2D* d = _textures[FrameBuffer::TextureDepthStencil].data<XGLTexture2D>();
-  impl->framebuffer.texture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, d->_id, 0) GLE;
+  glFramebufferTexture2DEXT(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, d->_id, 0) GLE;
 
-  impl->framebuffer.bind(GL_FRAMEBUFFER, 0) GLE;
+  glBindFramebufferEXT(GL_FRAMEBUFFER, 0) GLE;
+  return isValid(impl);
+  }
+
+bool XGL33Framebuffer::init(Renderer *r, TextureFormat cF, TextureFormat dF, xuint32 width, xuint32 height)
+  {
+  GLRendererImpl *impl = GL_REND(r);
+
+  glGenFramebuffers(1, &_buffer) GLE;
+  glBindFramebuffer(GL_FRAMEBUFFER, _buffer) GLE;
+
+  if(!Texture2D::delayedCreate(_textures[FrameBuffer::TextureColour], r, width, height, cF, 0))
+    {
+    return false;
+    }
+  XGLTexture2D* c = _textures[FrameBuffer::TextureColour].data<XGLTexture2D>();
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, c->_id, 0) GLE;
+
+  if(!Texture2D::delayedCreate(_textures[FrameBuffer::TextureDepthStencil], r, width, height, dF, 0))
+    {
+    return false;
+    }
+  XGLTexture2D* d = _textures[FrameBuffer::TextureDepthStencil].data<XGLTexture2D>();
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, d->_id, 0) GLE;
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0) GLE;
   return isValid(impl);
   }
 
@@ -1094,23 +1244,31 @@ bool XGLFramebuffer::init(GLRendererImpl *r)
   return true;
   }
 
-XGLFramebuffer::~XGLFramebuffer( )
+XGL21Framebuffer::~XGL21Framebuffer( )
   {
   if( _buffer )
     {
-    _impl->framebuffer.destroy( 1, &_buffer ) GLE;
+    glDeleteFramebuffersEXT( 1, &_buffer ) GLE;
     }
   }
 
-bool XGLFramebuffer::isValid(GLRendererImpl *impl) const
+XGL33Framebuffer::~XGL33Framebuffer( )
+  {
+  if( _buffer )
+    {
+    glDeleteFramebuffersEXT( 1, &_buffer ) GLE;
+    }
+  }
+
+bool XGL21Framebuffer::isValid(GLRendererImpl *) const
   {
   if(!_buffer)
     {
     return true;
     }
 
-  impl->framebuffer.bind( GL_FRAMEBUFFER, _buffer ) GLE;
-  int status = impl->framebuffer.checkStatus(GL_FRAMEBUFFER) GLE;
+  glBindFramebufferEXT( GL_FRAMEBUFFER, _buffer ) GLE;
+  int status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER) GLE;
 
   if( status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT )
     {
@@ -1125,20 +1283,59 @@ bool XGLFramebuffer::isValid(GLRendererImpl *impl) const
     qWarning() << "Framebuffer unsupported attachment";
     }
 
-  impl->framebuffer.bind( GL_FRAMEBUFFER, 0 ) GLE;
+  glBindFramebufferEXT( GL_FRAMEBUFFER, 0 ) GLE;
 
   return status == GL_FRAMEBUFFER_COMPLETE;
   }
 
-void XGLFramebuffer::bind(GLRendererImpl *r)
+bool XGL33Framebuffer::isValid(GLRendererImpl *) const
   {
-  xAssert( isValid(r) );
-  r->framebuffer.bind( GL_FRAMEBUFFER, _buffer ) GLE;
+  if(!_buffer)
+    {
+    return true;
+    }
+
+  glBindFramebuffer( GL_FRAMEBUFFER, _buffer ) GLE;
+  int status = glCheckFramebufferStatus(GL_FRAMEBUFFER) GLE;
+
+  if( status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT )
+    {
+    qWarning() << "Framebuffer Incomplete attachment";
+    }
+  else if( status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT )
+    {
+    qWarning() << "Framebuffer Incomplete missing attachment";
+    }
+  else if( status == GL_FRAMEBUFFER_UNSUPPORTED )
+    {
+    qWarning() << "Framebuffer unsupported attachment";
+    }
+
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 ) GLE;
+
+  return status == GL_FRAMEBUFFER_COMPLETE;
   }
 
-void XGLFramebuffer::unbind(GLRendererImpl *r)
+void XGL21Framebuffer::bind(GLRendererImpl *r)
   {
-  r->framebuffer.bind( GL_FRAMEBUFFER, 0 ) GLE;
+  xAssert( isValid(r) );
+  glBindFramebufferEXT( GL_FRAMEBUFFER, _buffer ) GLE;
+  }
+
+void XGL33Framebuffer::bind(GLRendererImpl *r)
+  {
+  xAssert( isValid(r) );
+  glBindFramebufferEXT( GL_FRAMEBUFFER, _buffer ) GLE;
+  }
+
+void XGL21Framebuffer::unbind(GLRendererImpl *)
+  {
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 ) GLE;
+  }
+
+void XGL33Framebuffer::unbind(GLRendererImpl *)
+  {
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 ) GLE;
   }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -1215,7 +1412,7 @@ bool XGLShaderComponent::createVertex(
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER DATA
 //----------------------------------------------------------------------------------------------------------------------
-bool XGLShaderData::init(
+bool XGL21ShaderData::init(
     GLRendererImpl *r,
     ShaderConstantDataDescription* desc,
     xsize descCount,
@@ -1287,15 +1484,15 @@ bool XGLShaderData::init(
   return true;
   }
 
-void XGLShaderData::update(Renderer *, ShaderConstantData *constant, void *data)
+void XGL21ShaderData::update(Renderer *, ShaderConstantData *constant, void *data)
   {
-  XGLShaderData* sData = constant->data<XGLShaderData>();
+  XGL21ShaderData* sData = constant->data<XGL21ShaderData>();
 
   memcpy(sData->_data.data(), data, sData->_data.size());
   ++sData->_revision;
   }
 
-void XGLShaderData::bind(xuint32 program, xuint32 index) const
+void XGL21ShaderData::bind(xuint32 program, xuint32 index) const
   {
   char str[256];
 #ifdef Q_OS_WIN
@@ -1321,22 +1518,22 @@ void XGLShaderData::bind(xuint32 program, xuint32 index) const
 
 // this implementation uses uniform buffers...
 #if 0
-bool XGLShaderData::init(GLRendererImpl *r, xsize size, void *data)
+bool XGL21ShaderData::init(GLRendererImpl *r, xsize size, void *data)
   {
   _size = size;
   return XGLBuffer::init(r, data, GL_UNIFORM_BUFFER, GL_STREAM_DRAW, size);
   }
 
-void XGLShaderData::update(Renderer *, ShaderConstantData *constant, void *data)
+void XGL21ShaderData::update(Renderer *, ShaderConstantData *constant, void *data)
   {
-  XGLShaderData *c = constant->data<XGLShaderData>();
+  XGL21ShaderData *c = constant->data<XGL21ShaderData>();
 
   glBindBuffer(GL_UNIFORM_BUFFER, c->_buffer);
   glBufferData(GL_UNIFORM_BUFFER, c->_size, data, GL_STREAM_DRAW);
   glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }
 
-void XGLShaderData::bind(xuint32 index) const
+void XGL21ShaderData::bind(xuint32 index) const
   {
   glBindBufferRange(GL_UNIFORM_BUFFER, index, _buffer, 0, _size);
   }
@@ -1424,7 +1621,7 @@ void XGLShader::setConstantBuffers(
   for(xsize i = 0; i < count; ++i)
     {
     xsize blockIndex = i + index + GLRendererImpl::ConstantBufferIndexOffset;
-    const XGLShaderData* sImpl = data[i]->data<XGLShaderData>();
+    const XGL21ShaderData* sImpl = data[i]->data<XGL21ShaderData>();
 
     glUniformBlockBinding(shaderImpl->shader, blockIndex, blockIndex);
     sImpl->bind(blockIndex);
@@ -1455,7 +1652,7 @@ void XGLShader::setConstantBuffers(
   for(xsize i = 0; i < count; ++i)
     {
     const ShaderConstantData *cb = data[i];
-    const XGLShaderData* cbImpl = cb->data<XGLShaderData>();
+    const XGL21ShaderData* cbImpl = cb->data<XGL21ShaderData>();
 
     Buffer &buf = shader->_buffers[i];
 
@@ -1467,7 +1664,7 @@ void XGLShader::setConstantBuffers(
     }
   }
 
-void XGLShader::setResources(
+void XGLShader::setResources21(
     Renderer *,
     Shader *s,
     xsize index,
@@ -1499,36 +1696,6 @@ void XGLShader::setResources(
     rscImpl->bindResource(i+index);
     }
   }
-
-//bool XGLShader::build(QStringList &log)
-//  {
-//  bool result = shader.link() GLE;
-
-//  QString logEntry = shader.log();
-//  if(!logEntry.isEmpty())
-//    {
-//    log << logEntry;
-//    }
-
-//  return result;
-//  }
-
-//bool XGLShader::isValid()
-//  {
-//  bool result = shader.isLinked() GLE;
-//  return result;
-//  }
-
-//XAbstractShaderVariable *XGLShader::createVariable( QString in, XAbstractShader *s )
-//  {
-//  XGLShaderVariable* var = new XGLShaderVariable( s, in );
-//  return var;
-//  }
-
-//void XGLShader::destroyVariable( XAbstractShaderVariable *var )
-//  {
-//  delete var;
-//  }
 
 //----------------------------------------------------------------------------------------------------------------------
 // BUFFER
