@@ -64,7 +64,8 @@ HEADERS += \
     ../include/XBlendState.h \
     ../3rdParty/GL/wglew.h \
     ../3rdParty/GL/glxew.h \
-    ../3rdParty/GL/glew.h
+    ../3rdParty/GL/glew.h \
+    ../examples/Simple3DExample.h
 
 INCLUDEPATH += ../include/ \
     $$ROOT/Eks/EksCore/

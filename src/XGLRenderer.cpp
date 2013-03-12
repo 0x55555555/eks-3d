@@ -470,9 +470,9 @@ public:
   bool init1(GLRendererImpl *r, const ShaderVertexLayoutDescription *descs, xsize count)
     {
     _renderer = r;
-    _attrs.allocator() = Eks::TypedAllocator<Attribute>(_renderer->_allocator);
-    _attrs.resize(count);
+    _attrCount = count;
     xCompileTimeAssert(4 == ShaderVertexLayoutDescription::SemanticCount);
+    xAssert(count < ShaderVertexLayoutDescription::SemanticCount)
 
     vertexSize = 0;
     for(xsize i = 0; i < count; ++i)
@@ -480,9 +480,10 @@ public:
       const ShaderVertexLayoutDescription &desc = descs[i];
       Attribute &attr = _attrs[i];
 
+      xAssert(desc.offset < X_UINT8_SENTINEL || desc.offset == ShaderVertexLayoutDescription::OffsetPackTight);
       attr.offset = desc.offset;
       attr.semantic = desc.semantic;
-      if(attr.offset == ShaderVertexLayoutDescription::OffsetPackTight)
+      if(desc.offset == ShaderVertexLayoutDescription::OffsetPackTight)
         {
         attr.offset = vertexSize;
         }
@@ -492,8 +493,10 @@ public:
       xCompileTimeAssert(ShaderVertexLayoutDescription::FormatFloat3 == 2);
       xCompileTimeAssert(ShaderVertexLayoutDescription::FormatFloat4 == 3);
       attr.components = desc.format + 1;
+      xAssert(attr.components <= 4);
 
-      vertexSize += attr.size();
+      xAssert(vertexSize < X_UINT8_SENTINEL);
+      vertexSize = std::max(vertexSize, attr.offset + attr.size());
       }
 
     return true;
@@ -510,7 +513,7 @@ public:
     };
     xCompileTimeAssert(4 == ShaderVertexLayoutDescription::SemanticCount);
 
-    for(xsize i = 0, s = _attrs.size(); i < s; ++i)
+    for(xsize i = 0; i < _attrCount; ++i)
       {
       const Attribute &attr = _attrs[i];
       xsize idx = attr.semantic;
@@ -524,9 +527,9 @@ public:
   xsize vertexSize;
   struct Attribute
     {
-    xsize offset;
+    xuint8 offset;
     xuint8 components;
-    ShaderVertexLayoutDescription::Semantic semantic;
+    xuint8 semantic;
     // type is currently always float.
 
     inline xsize size() const
@@ -535,12 +538,13 @@ public:
       }
     };
 
-  Eks::Vector<Attribute> _attrs;
+  Attribute _attrs[ShaderVertexLayoutDescription::SemanticCount];
+  xuint8 _attrCount;
   Eks::GLRendererImpl* _renderer;
 
   void bind() const
     {
-    for(xsize i = 0, s = _attrs.size(); i < s; ++i)
+    for(xsize i = 0, s = _attrCount; i < s; ++i)
       {
       const Attribute &attr = _attrs[i];
 
@@ -557,7 +561,7 @@ public:
 
   void unbind() const
     {
-    for(xsize i = 0, s = _attrs.size(); i < s; ++i)
+    for(xsize i = 0, s = _attrCount; i < s; ++i)
       {
       glDisableVertexAttribArray(i) GLE;
       }
@@ -1112,10 +1116,6 @@ bool XGLFramebuffer::isValid(GLRendererImpl *impl) const
     {
     qWarning() << "Framebuffer Incomplete attachment";
     }
-  /*else if( status == GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS )
-    {
-    qWarning() << "Framebuffer Incomplete dimensions";
-    }*/
   else if( status == GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT )
     {
     qWarning() << "Framebuffer Incomplete missing attachment";
