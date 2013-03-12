@@ -660,7 +660,7 @@ public:
   friend class XGLRenderer;
   };
 
-class XGL33ShaderData
+class XGL33ShaderData : public XGLBuffer
   {
 public:
   bool init(GLRendererImpl *, ShaderConstantDataDescription *desc, xsize descCount, void *data);
@@ -680,35 +680,10 @@ public:
 
   void bind(xuint32 program, xuint32 index) const;
 
-  friend class XGLRenderer;
-  };
-
-// thi uses uniform buffers
-#if 0
-class XGL21ShaderData : public XGLBuffer
-  {
-public:
-  bool init(GLRendererImpl *, xsize size, void *data);
-
-  static void update(Renderer *r, ShaderConstantData *, void *data);
-
-  static bool create(
-      Renderer *r,
-      ShaderConstantData *d,
-      xsize size,
-      void *data)
-    {
-    XGL21ShaderData *glD = d->create<XGL21ShaderData>();
-    return glD->init(GL_REND(r), size, data);
-    }
-
-  void bind(xuint32 index) const;
-
   xsize _size;
 
   friend class XGLRenderer;
   };
-#endif
 
 //----------------------------------------------------------------------------------------------------------------------
 // BLEND STATE
@@ -1516,28 +1491,30 @@ void XGL21ShaderData::bind(xuint32 program, xuint32 index) const
     }
   }
 
-// this implementation uses uniform buffers...
-#if 0
-bool XGL21ShaderData::init(GLRendererImpl *r, xsize size, void *data)
+bool XGL33ShaderData::init(GLRendererImpl *r, ShaderConstantDataDescription *desc, xsize descCount, void *data)
   {
+  (void)descCount;
+  (void)desc;
+  xAssertFail();
+  xsize size = 0;
   _size = size;
   return XGLBuffer::init(r, data, GL_UNIFORM_BUFFER, GL_STREAM_DRAW, size);
   }
 
-void XGL21ShaderData::update(Renderer *, ShaderConstantData *constant, void *data)
+void XGL33ShaderData::update(Renderer *, ShaderConstantData *constant, void *data)
   {
-  XGL21ShaderData *c = constant->data<XGL21ShaderData>();
+  XGL33ShaderData *c = constant->data<XGL33ShaderData>();
 
   glBindBuffer(GL_UNIFORM_BUFFER, c->_buffer);
   glBufferData(GL_UNIFORM_BUFFER, c->_size, data, GL_STREAM_DRAW);
   glBindBuffer(GL_UNIFORM_BUFFER, 0);
   }
 
-void XGL21ShaderData::bind(xuint32 index) const
+void XGL33ShaderData::bind(xuint32 program, xuint32 index) const
   {
+  (void)program;
   glBindBufferRange(GL_UNIFORM_BUFFER, index, _buffer, 0, _size);
   }
-#endif
 
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER
