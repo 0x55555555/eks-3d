@@ -92,7 +92,7 @@ private:
 
 #endif
 
-#define ALLOC Eks::GlobalAllocator::instance()
+#define ALLOC Eks::Core::defaultAllocator()
 
 #if X_ENABLE_GL_RENDERER
 
@@ -218,7 +218,7 @@ D3D3DCanvas::D3D3DCanvas(QWidget* parent, Renderer **r)
 
 D3D3DCanvas::~D3D3DCanvas()
   {
-  Eks::D3DRenderer::destroyD3DRenderer(_renderer, _buffer, Eks::GlobalAllocator::instance());
+  Eks::D3DRenderer::destroyD3DRenderer(_renderer, _buffer, ALLOC);
   ALLOC->destroy(_buffer);
   _buffer = 0;
   }
