@@ -1300,12 +1300,12 @@ void XGL21Framebuffer::bind(GLRendererImpl *r)
 void XGL33Framebuffer::bind(GLRendererImpl *r)
   {
   xAssert( isValid(r) );
-  glBindFramebufferEXT( GL_FRAMEBUFFER, _buffer ) GLE;
+  glBindFramebuffer( GL_FRAMEBUFFER, _buffer ) GLE;
   }
 
 void XGL21Framebuffer::unbind(GLRendererImpl *)
   {
-  glBindFramebuffer( GL_FRAMEBUFFER, 0 ) GLE;
+  glBindFramebufferEXT( GL_FRAMEBUFFER, 0 ) GLE;
   }
 
 void XGL33Framebuffer::unbind(GLRendererImpl *)

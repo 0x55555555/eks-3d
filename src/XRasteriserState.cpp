@@ -5,6 +5,7 @@ namespace Eks
 {
 
 RasteriserState::RasteriserState(Renderer *r, CullMode cull)
+    : _renderer(0)
   {
   if(r)
     {
