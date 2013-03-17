@@ -903,8 +903,8 @@ void GLRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *in
 
   r->updateViewData();
 
-  glBindBuffer(GL_ARRAY_BUFFER, idx->_buffer) GLE;
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, gC->_buffer) GLE;
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idx->_buffer) GLE;
+  glBindBuffer(GL_ARRAY_BUFFER, gC->_buffer) GLE;
 
   XGLVertexLayout *l = r->_vertexLayout->data<XGLVertexLayout>();
   l->bind();
@@ -912,8 +912,8 @@ void GLRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *in
   glDrawElements(GL_TRIANGLES, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
   l->unbind();
 
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0) GLE;
   glBindBuffer(GL_ARRAY_BUFFER, 0) GLE;
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0) GLE;
   }
 
 void GLRendererImpl::drawTriangles(Renderer *ren, const Geometry *vert)

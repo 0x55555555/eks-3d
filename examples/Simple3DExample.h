@@ -18,7 +18,7 @@ public:
     _t = 0.0f;
     }
 
-  void intialise(Renderer* r)
+  void intialise(Renderer* r, const float *vert, xsize vertCount)
     {
     const char *fsrc =
         "#if X_GLSL_VERSION >= 130 || defined(X_GLES)\n"
@@ -51,8 +51,6 @@ public:
         ShaderVertexLayoutDescription::FormatFloat3),
       ShaderVertexLayoutDescription(ShaderVertexLayoutDescription::Normal,
         ShaderVertexLayoutDescription::FormatFloat3),
-      ShaderVertexLayoutDescription(ShaderVertexLayoutDescription::TextureCoordinate,
-        ShaderVertexLayoutDescription::FormatFloat2),
       };
 
     ShaderVertexComponent::delayedCreate(_v, r, vsrc, strlen(vsrc), desc, X_ARRAY_COUNT(desc), &_layout);
@@ -60,24 +58,15 @@ public:
 
     Shader::delayedCreate(_shader, r, &_v, &_f);
 
-    float vert[] =
-    {
-      0, 10, -5,  1, 0, 0,  0, 0,
-      10, 5, -5,  0, 1, 0,  0, 0,
-      0,  0, -5,  0, 0, 1,  0, 0,
-      10, 5,  5,  1, 1, 1,  0, 0,
-      0, 10,  5,  1, 1, 1,  0, 0,
-      0,  0,  5,  1, 1, 1,  0, 0,
-    };
 
-    Geometry::delayedCreate(_geo, r, vert, sizeof(float) * 8, 6);
+    Geometry::delayedCreate(_geo, r, vert, sizeof(float) * 6, vertCount);
     }
 
   void resize(Renderer*, xuint32 width, xuint32 height)
     {
     float aspect = (float)width / (float)height;
 
-    _proj = TransformUtilities::perspective(45.0f, aspect, 0.1f, 1000.0f);
+    _proj = TransformUtilities::perspective(45.0f, aspect, 0.1f, 100.0f);
 
     }
 
