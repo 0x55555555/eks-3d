@@ -27,7 +27,7 @@ public:
         "varying vec3 colOut;"
         "void main(void)"
         "  {"
-        "  gl_FragColor = vec4(colOut, 1.0);"
+        "  gl_FragColor = vec4(abs(colOut), 1.0);"
         "  }";
 
     const char *vsrc =
@@ -74,11 +74,11 @@ public:
     {
     r->setProjectionTransform(_proj);
 
-    _t += 0.01f;
+    _t += 0.002f;
 
     Transform l = TransformUtilities::lookAt(
-          Vector3D(sinf(_t) * 20.0f, 10, cosf(_t) * 20.0f),
-      Vector3D(0, 5, 0),
+          Vector3D(sinf(_t) * 12.0f, 0, cosf(_t) * 12.0f),
+      Vector3D(0, 0, 0),
       Vector3D(0, 1, 0));
     r->setViewTransform(l);
 
