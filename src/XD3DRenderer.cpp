@@ -114,6 +114,12 @@ void getTexture2DInfo(const Renderer *, const Texture2D* t, Eks::VectorUI2D& v)
   v.y() = dsc.Height;
   }
 
+
+Shader *getStockShader(Renderer *, RendererShaderType, ShaderVertexLayout **)
+  {
+  return 0;
+  }
+
 bool createFramebuffer(
     Renderer *r,
     FrameBuffer *buffer,
@@ -489,6 +495,28 @@ void drawTriangles(Renderer *r, const Geometry *vert)
     );
   }
 
+void drawLines(Renderer *r, const Geometry *vert)
+  {
+  const XD3DVertexBufferImpl *geo = vert->data<XD3DVertexBufferImpl>();
+
+  UINT stride = (UINT)geo->elementSize;
+  UINT offset = 0;
+  D3D(r)->_d3dContext->IASetVertexBuffers(
+    0,
+    1,
+    geo->buffer.GetAddressOf(),
+    &stride,
+    &offset
+    );
+
+  D3D(r)->_d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+
+  D3D(r)->_d3dContext->Draw(
+    (UINT)geo->elementCount,
+    0
+    );
+  }
+
 void drawIndexedTriangles(Renderer *r, const IndexGeometry *indices, const Geometry *vert)
   {
   const XD3DVertexBufferImpl *geo = vert->data<XD3DVertexBufferImpl>();
@@ -685,11 +713,13 @@ detail::RendererFunctions d3dfns =
       setTransform
     },
     {
-      getTexture2DInfo
+      getTexture2DInfo,
+      getStockShader
     },
     {
       drawIndexedTriangles,
       drawTriangles,
+      drawLines,
       debugRenderLocator
     },
     {

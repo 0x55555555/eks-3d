@@ -30,6 +30,13 @@ class Resource;
 
 class RendererStackTransform;
 
+enum RendererShaderType
+  {
+  PlainColour,
+
+  ShaderTypeCount
+  };
+
 enum RendererDebugLocatorMode
   {
   DebugLocatorBasic=0,
@@ -168,6 +175,7 @@ struct RendererSetFunctions
 struct RendererGetFunctions
   {
   void (*texture2DInfo)(const Renderer *r, const Texture2D *tex, Eks::VectorUI2D& v);
+  Shader *(*stockShader)(Renderer *r, RendererShaderType t, ShaderVertexLayout **);
   };
 
 struct RendererDrawFunctions
@@ -175,6 +183,7 @@ struct RendererDrawFunctions
   // draw the given geometry
   void (*indexedTriangles)(Renderer *r, const IndexGeometry *indices, const Geometry *vert);
   void (*triangles)(Renderer *r, const Geometry *vert);
+  void (*lines)(Renderer *r, const Geometry *vert);
   void (*drawDebugLocator)(Renderer *r, RendererDebugLocatorMode);
   };
 
@@ -243,6 +252,16 @@ public:
   void drawTriangles(const IndexGeometry *i, const Geometry *g)
     {
     functions().draw.indexedTriangles(this, i, g);
+    }
+
+  void drawLines(const Geometry *g)
+    {
+    functions().draw.lines(this, g);
+    }
+
+  Shader *stockShader(RendererShaderType t, ShaderVertexLayout **lay)
+    {
+    return functions().get.stockShader(this, t, lay);
     }
 
 XProperties:

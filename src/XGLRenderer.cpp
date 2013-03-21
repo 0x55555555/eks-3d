@@ -101,8 +101,12 @@ public:
     }
 
   static void drawIndexedTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert);
+  static void drawPrimitive(xuint32 prim, Renderer *r, const Geometry *vert);
   static void drawTriangles(Renderer *r, const Geometry *vert);
+  static void drawLines(Renderer *r, const Geometry *vert);
   static void debugRenderLocator(Renderer *r, RendererDebugLocatorMode);
+
+  static Shader *stockShader(Renderer *r, RendererShaderType t, ShaderVertexLayout **);
 
   enum
     {
@@ -132,6 +136,10 @@ public:
 
   void updateViewData();
 
+  ShaderFragmentComponent stockFrags[ShaderTypeCount];
+  ShaderVertexComponent stockVerts[ShaderTypeCount];
+  Shader stockShaders[ShaderTypeCount];
+  ShaderVertexLayout stockLayouts[ShaderTypeCount];
 
   QGLContext *_context;
   Shader *_currentShader;
@@ -785,6 +793,60 @@ GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns)
   {
   _modelData.model = Eks::Matrix4x4::Identity();
   setFunctions(fns);
+
+  const char *fsrc =
+      "#if X_GLSL_VERSION >= 130 || defined(X_GLES)\n"
+      "precision mediump float;\n"
+      "#endif\n"
+      "varying vec3 colOut;"
+      "void main(void)"
+      "  {"
+      "  gl_FragColor = vec4(abs(colOut), 1.0);"
+      "  }";
+
+  const char *vsrc =
+      "struct Model { mat4 model; mat4 modelView; mat4 modelViewProj; };"
+      "struct View { mat4 view; mat4 proj; };"
+      "struct Colour { vec4 colour; };"
+      "uniform Model cb0;"
+      "uniform View cb1;"
+      "uniform Colour cb2;"
+      "attribute vec3 position;"
+      "varying vec3 colOut;"
+      "void main(void)"
+      "  {"
+      "  colOut = cb2.colour;"
+      "  gl_Position = cb0.modelViewProj * vec4(position, 1.0);"
+      "  }";
+
+  ShaderVertexLayoutDescription vdsc[] =
+  {
+    ShaderVertexLayoutDescription(
+      ShaderVertexLayoutDescription::Position,
+      ShaderVertexLayoutDescription::FormatFloat3)
+  };
+
+  bool fres = ShaderFragmentComponent::delayedCreate(
+    stockFrags[PlainColour],
+    this,
+    fsrc,
+    strlen(fsrc));
+
+  bool vres = ShaderVertexComponent::delayedCreate(
+    stockVerts[PlainColour],
+    this,
+    vsrc,
+    strlen(vsrc),
+    vdsc,
+    X_ARRAY_COUNT(vdsc),
+    &stockLayouts[PlainColour]);
+
+  xAssert(fres && vres);
+
+  for(xsize i = 0; i < ShaderTypeCount; ++i)
+    {
+    Shader::delayedCreate(stockShaders[i], this, &stockVerts[i], &stockFrags[i]);
+    }
   }
 
 
@@ -917,7 +979,7 @@ void GLRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *in
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0) GLE;
   }
 
-void GLRendererImpl::drawTriangles(Renderer *ren, const Geometry *vert)
+void GLRendererImpl::drawPrimitive(xuint32 primitive, Renderer *ren, const Geometry *vert)
   {
   GLRendererImpl* r = GL_REND(ren);
   xAssert(r->_currentShader);
@@ -933,10 +995,27 @@ void GLRendererImpl::drawTriangles(Renderer *ren, const Geometry *vert)
   XGLVertexLayout *l = r->_vertexLayout->data<XGLVertexLayout>();
   l->bind();
 
-  glDrawArrays( GL_TRIANGLES, 0, gC->_elementCount) GLE;
+  glDrawArrays( primitive, 0, gC->_elementCount) GLE;
   l->unbind();
 
   glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
+  }
+
+void GLRendererImpl::drawTriangles(Renderer *ren, const Geometry *vert)
+  {
+  drawPrimitive(GL_TRIANGLES, ren, vert);
+  }
+
+void GLRendererImpl::drawLines(Renderer *ren, const Geometry *vert)
+  {
+  drawPrimitive(GL_LINES, ren, vert);
+  }
+
+Shader *GLRendererImpl::stockShader(Renderer *r, RendererShaderType t, ShaderVertexLayout **l)
+  {
+  xAssert(l);
+  *l = &(GL_REND(r)->stockLayouts[t]);
+  return &(GL_REND(r)->stockShaders[t]);
   }
 
 detail::RendererFunctions gl21fns =
@@ -982,11 +1061,13 @@ detail::RendererFunctions gl21fns =
     GLRendererImpl::setTransform
   },
   {
-    XGLTexture2D::getInfo
+    XGLTexture2D::getInfo,
+    GLRendererImpl::stockShader,
   },
   {
     GLRendererImpl::drawIndexedTriangles,
     GLRendererImpl::drawTriangles,
+    GLRendererImpl::drawLines,
     GLRendererImpl::debugRenderLocator
   },
   {
@@ -1042,11 +1123,13 @@ detail::RendererFunctions gl33fns =
     GLRendererImpl::setTransform
   },
   {
-    XGLTexture2D::getInfo
+    XGLTexture2D::getInfo,
+    GLRendererImpl::stockShader,
   },
   {
     GLRendererImpl::drawIndexedTriangles,
     GLRendererImpl::drawTriangles,
+    GLRendererImpl::drawLines,
     GLRendererImpl::debugRenderLocator
   },
   {
