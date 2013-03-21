@@ -27,7 +27,7 @@ public:
 
   X_CANVAS_GENERAL_MOUSEHANDLERS()
 
-  virtual void update(Eks::AbstractRenderModel::UpdateMode);
+  //virtual void update(Eks::AbstractRenderModel::UpdateMode);
 
   virtual bool isShown();
 

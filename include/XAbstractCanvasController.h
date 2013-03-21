@@ -17,7 +17,7 @@ virtual void function(QMouseEvent *event) { \
                                                   event->buttons(), \
                                                   event->modifiers()); \
     if((result.hasFlag(Eks::AbstractCanvasController::Used))) { event->accept(); } \
-    if((result.hasFlag(Eks::AbstractCanvasController::NeedsUpdate))) { update(Eks::AbstractRenderModel::RenderChange); } \
+    if((result.hasFlag(Eks::AbstractCanvasController::NeedsUpdate))) { update(); } \
     return; } \
   event->ignore(); }
 
@@ -35,7 +35,7 @@ virtual void function(QMouseEvent *event) { \
                                                     event->buttons(), \
                                                     event->modifiers()); \
       if((result.hasFlag(Eks::AbstractCanvasController::Used))) { event->accept(); } \
-      if((result.hasFlag(Eks::AbstractCanvasController::NeedsUpdate))) { update(Eks::AbstractRenderModel::RenderChange); } \
+      if((result.hasFlag(Eks::AbstractCanvasController::NeedsUpdate))) { update(); } \
       return; } \
     event->ignore(); }
 
@@ -47,7 +47,7 @@ class AbstractCanvas;
 class EKS3D_EXPORT AbstractCanvasController
   {
 XProperties:
-  XROProperty(AbstractCanvas *, canvas);
+  XProperty(AbstractCanvas *, canvas, setCanvas);
   XROProperty(QPoint, lastKnownMousePosition);
 
 public:

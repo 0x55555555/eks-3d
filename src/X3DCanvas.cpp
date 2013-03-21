@@ -178,7 +178,7 @@ void GL3DCanvas::paintGL()
 void GL3DCanvas::initializeGL()
   {
   _buffer = ALLOC->create<ScreenFrameBuffer>();
-  
+
   _renderer = GLRenderer::createGLRenderer(_buffer, ALLOC);
   emit initialise3D(_renderer);
   }
@@ -250,7 +250,7 @@ void D3D3DCanvas::doInitialise3D()
 
 #endif
 
-QWidget* Canvas3D::createBest(QWidget* parent)
+QWidget* Canvas3D::createBest(QWidget* parent, AbstractCanvas **canvasOut)
   {
 
 #if X_ENABLE_DX_RENDERER
@@ -258,12 +258,14 @@ QWidget* Canvas3D::createBest(QWidget* parent)
     {
     Renderer *ren = 0;
     D3D3DCanvas *can = new D3D3DCanvas(parent, &ren);
+    *canvasOut = can;
     return can;
     }
 #endif
 
 #if X_ENABLE_GL_RENDERER
   GL3DCanvas *can = new GL3DCanvas(parent);
+  *canvasOut = can;
   return can;
 #else
   return 0;

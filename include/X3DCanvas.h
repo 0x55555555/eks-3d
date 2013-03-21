@@ -32,13 +32,16 @@ class WinGLContext;
 #ifdef X_GL_EXTERNAL_CONTEXT
 
 class EKS3D_EXPORT GL3DCanvas
-    : public QWidget
+    : public QWidget,
+      public AbstractCanvas
   {
   Q_OBJECT
 
 public:
   GL3DCanvas(QWidget *parent=0);
   ~GL3DCanvas();
+
+  X_CANVAS_GENERAL_MOUSEHANDLERS()
 
   QPaintEngine* paintEngine() const X_OVERRIDE { return 0; }
 
@@ -74,6 +77,8 @@ public:
   GL3DCanvas(QWidget *parent=0);
   ~GL3DCanvas();
 
+  X_CANVAS_GENERAL_MOUSEHANDLERS()
+
   void resizeGL(int w, int h) X_OVERRIDE;
   void initializeGL() X_OVERRIDE;
   void paintGL() X_OVERRIDE;
@@ -104,13 +109,17 @@ class QPaintEngine;
 namespace Eks
 {
 
-class EKS3D_EXPORT D3D3DCanvas : public QWidget
+class EKS3D_EXPORT D3D3DCanvas
+    : public QWidget,
+      public AbstractCanvas
   {
   Q_OBJECT
 
 public:
   D3D3DCanvas(QWidget* parent = 0, Eks::Renderer **r = 0);
   ~D3D3DCanvas();
+
+  X_CANVAS_GENERAL_MOUSEHANDLERS()
 
   QPaintEngine* paintEngine() const X_OVERRIDE
     {
@@ -147,10 +156,10 @@ private:
 namespace Eks
 {
 
-class EKS3D_EXPORT Canvas3D : public AbstractCanvas
+class EKS3D_EXPORT Canvas3D
   {
 public:
-  static QWidget* createBest(QWidget *parent);
+  static QWidget* createBest(QWidget *parent, AbstractCanvas **canvasOut);
   };
 
 }

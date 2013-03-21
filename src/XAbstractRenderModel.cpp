@@ -10,17 +10,17 @@ AbstractRenderModel::Iterator::~Iterator()
 
 AbstractRenderModel::~AbstractRenderModel()
   {
-  xForeach(AbstractCanvas *canvas, _canvases)
+  //xForeach(AbstractCanvas *canvas, _canvases)
     {
-    canvas->setModel(0);
+    //canvas->setModel(0);
     }
   }
 
-void AbstractRenderModel::update(UpdateMode m) const
+void AbstractRenderModel::update(UpdateMode) const
   {
-  xForeach(AbstractCanvas *canvas, _canvases)
+  //xForeach(AbstractCanvas *canvas, _canvases)
     {
-    canvas->update(m);
+    //canvas->update(m);
     }
   }
 }

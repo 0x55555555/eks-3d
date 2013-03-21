@@ -23,15 +23,9 @@ void X2DCanvas::paintEvent(QPaintEvent *event)
 
   painter.setTransform(_transform);
 
-  paint();
+  //paint();
 
   _currentPainter = 0;
-  }
-
-void X2DCanvas::update(Eks::AbstractRenderModel::UpdateMode c)
-  {
-  Eks::AbstractCanvas::update(c);
-  QWidget::update();
   }
 
 bool X2DCanvas::isShown()

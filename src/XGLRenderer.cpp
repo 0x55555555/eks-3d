@@ -783,6 +783,7 @@ GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns)
     _modelDataDirty(true),
     _viewDataDirty(true)
   {
+  _modelData.model = Eks::Matrix4x4::Identity();
   setFunctions(fns);
   }
 
