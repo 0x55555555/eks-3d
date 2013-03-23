@@ -75,7 +75,7 @@ template <typename X, typename T> void destroy(Renderer *, X *x)
 class GLRendererImpl : public Renderer
   {
 public:
-  GLRendererImpl(const detail::RendererFunctions& fns);
+  GLRendererImpl(const detail::RendererFunctions& fns, AllocatorBase *alloc);
 
   static void setTransform(Renderer *r, const Transform &trans)
     {
@@ -783,13 +783,14 @@ public:
   RasteriserState::CullMode _cull;
   };
 
-GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns)
+GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns, Eks::AllocatorBase *alloc)
   : _context(0),
     _currentShader(0),
     _currentFramebuffer(0),
     _vertexLayout(0),
     _modelDataDirty(true),
-    _viewDataDirty(true)
+    _viewDataDirty(true),
+    _allocator(alloc)
   {
   _modelData.model = Eks::Matrix4x4::Identity();
   setFunctions(fns);
@@ -798,10 +799,10 @@ GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns)
       "#if X_GLSL_VERSION >= 130 || defined(X_GLES)\n"
       "precision mediump float;\n"
       "#endif\n"
-      "varying vec3 colOut;"
+      "varying vec4 colOut;"
       "void main(void)"
       "  {"
-      "  gl_FragColor = vec4(abs(colOut), 1.0);"
+      "  gl_FragColor = colOut;"
       "  }";
 
   const char *vsrc =
@@ -812,7 +813,7 @@ GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns)
       "uniform View cb1;"
       "uniform Colour cb2;"
       "attribute vec3 position;"
-      "varying vec3 colOut;"
+      "varying vec4 colOut;"
       "void main(void)"
       "  {"
       "  colOut = cb2.colour;"
@@ -1155,11 +1156,10 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::Allocator
   const detail::RendererFunctions &fns = gl21fns;
   //... if gl33...
 
-  GLRendererImpl *r = alloc->create<GLRendererImpl>(fns);
+  GLRendererImpl *r = alloc->create<GLRendererImpl>(fns, alloc);
 
 
 
-  r->_allocator = alloc;
   glEnable( GL_DEPTH_TEST ) GLE;
   GLRendererImpl::setClearColour(r, Colour(0.0f, 0.0f, 0.0f, 1.0f));
 
