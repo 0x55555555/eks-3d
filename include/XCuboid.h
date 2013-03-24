@@ -46,7 +46,8 @@ public:
 
   Real maximumDistanceSquared() const;
 
-  bool isInside( const Vector3D & ) const;
+  bool contains( const Vector3D & ) const;
+  bool contains( const Cuboid & ) const;
   bool intersects( const Cuboid & ) const;
   bool intersects( const Line &, float &distance ) const;
 
