@@ -433,7 +433,7 @@ bool createShaderConstantData(
     ShaderConstantData *s,
     ShaderConstantDataDescription *desc,
     xsize descCount,
-    void *data)
+    const void *data)
   {
   XD3DBufferImpl *b = s->create<XD3DBufferImpl>();
 
@@ -539,6 +539,37 @@ void drawIndexedTriangles(Renderer *r, const IndexGeometry *indices, const Geome
     );
 
   D3D(r)->_d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+  D3D(r)->_d3dContext->DrawIndexed(
+    (UINT)idx->count,
+    0,
+    0
+    );
+  }
+
+
+void drawIndexedLines(Renderer *r, const IndexGeometry *indices, const Geometry *vert)
+  {
+  const XD3DVertexBufferImpl *geo = vert->data<XD3DVertexBufferImpl>();
+  const XD3DIndexBufferImpl *idx = indices->data<XD3DIndexBufferImpl>();
+
+  UINT stride = (UINT)geo->elementSize;
+  UINT offset = 0;
+  D3D(r)->_d3dContext->IASetVertexBuffers(
+    0,
+    1,
+    geo->buffer.GetAddressOf(),
+    &stride,
+    &offset
+    );
+
+  D3D(r)->_d3dContext->IASetIndexBuffer(
+    idx->buffer.Get(),
+    idx->format,
+    0
+    );
+
+  D3D(r)->_d3dContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 
   D3D(r)->_d3dContext->DrawIndexed(
     (UINT)idx->count,
@@ -719,6 +750,7 @@ detail::RendererFunctions d3dfns =
     {
       drawIndexedTriangles,
       drawTriangles,
+      drawIndexedLines,
       drawLines,
       debugRenderLocator
     },

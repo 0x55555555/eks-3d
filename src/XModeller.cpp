@@ -51,10 +51,10 @@ public:
     }
   };
 
-void Modeller::bakeTriangles(Renderer *r,
+void Modeller::bakeVertices(
+    Renderer *r,
     ShaderVertexLayoutDescription::Semantic *semanticOrder,
     xsize semanticCount,
-    IndexGeometry *index,
     Geometry *geo)
   {
   Vector<xuint8> data(_allocator);
@@ -107,6 +107,15 @@ void Modeller::bakeTriangles(Renderer *r,
   xAssert((data.size() % vertSize) == 0);
 
   Geometry::delayedCreate(*geo, r, data.data(), vertSize, elementCount);
+  }
+
+void Modeller::bakeTriangles(Renderer *r,
+    ShaderVertexLayoutDescription::Semantic *semanticOrder,
+    xsize semanticCount,
+    IndexGeometry *index,
+    Geometry *geo)
+  {
+  bakeVertices(r, semanticOrder, semanticCount, geo);
 
   if(index)
     {
@@ -118,6 +127,27 @@ void Modeller::bakeTriangles(Renderer *r,
       IndexGeometry::Unsigned16,
       _triIndices.data(),
       _triIndices.size());
+    }
+  }
+
+void Modeller::bakeLines(Renderer *r,
+    ShaderVertexLayoutDescription::Semantic *semanticOrder,
+    xsize semanticCount,
+    IndexGeometry *index,
+    Geometry *geo)
+  {
+  bakeVertices(r, semanticOrder, semanticCount, geo);
+
+  if(index)
+    {
+    xAssert(_linIndices.size() < X_UINT16_SENTINEL);
+
+    IndexGeometry::delayedCreate(
+      *index,
+      r,
+      IndexGeometry::Unsigned16,
+      _linIndices.data(),
+      _linIndices.size());
     }
   }
 
@@ -271,7 +301,7 @@ void Modeller::drawWireCube( const Cuboid &cube )
           << min + Vector3D(0.0f, size.y(), size.z());
 
   Vector3D n;
-  Eks::Vector2D t;
+  Vector2D t;
   _normals << n << n << n << n << n << n << n << n;
   _texture << t << t << t << t << t << t << t << t;
   _linIndices << sI << sI+1
@@ -288,6 +318,30 @@ void Modeller::drawWireCube( const Cuboid &cube )
               << sI+5 << sI+1
               << sI+6 << sI+2
               << sI+7 << sI+3;
+  }
+
+void Modeller::drawWireCircle(const Vector3D &pos, const Vector3D &normal, float radius, xsize pts)
+  {
+  _areLineIndicesSequential = false;
+
+  Vector3D up = Vector3D(0,1,0);
+  if(normal.dot(up) > 0.9f)
+    {
+    up = Vector3D(1, 0, 0);
+    }
+  Vector3D x = up.cross(normal);
+  Vector3D y = normal.cross(x);
+
+  for(xsize i = 0; i < pts; ++i)
+    {
+    float angle = i * (X_PI * 2.0f / (float)pts);
+    xsize otherIndex = (i+1) % pts;
+
+    _normals << Vector3D();
+    _texture << Vector2D();
+    _vertex << pos + (radius * (x * sinf(angle) + y * cosf(angle)));
+    _linIndices << i << otherIndex;
+    }
   }
 
 void Modeller::drawCone(const Vector3D &point, const Vector3D &direction, float length, float radius, xuint32 divs)

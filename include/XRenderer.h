@@ -118,7 +118,7 @@ struct RendererCreateFunctions
       ShaderConstantData *,
       ShaderConstantDataDescription *desc,
       xsize descCount,
-      void *data);
+      const void *data);
   };
 
 // destroy types
@@ -183,6 +183,7 @@ struct RendererDrawFunctions
   // draw the given geometry
   void (*indexedTriangles)(Renderer *r, const IndexGeometry *indices, const Geometry *vert);
   void (*triangles)(Renderer *r, const Geometry *vert);
+  void (*indexedLines)(Renderer *r, const IndexGeometry *indices, const Geometry *vert);
   void (*lines)(Renderer *r, const Geometry *vert);
   void (*drawDebugLocator)(Renderer *r, RendererDebugLocatorMode);
   };
@@ -257,6 +258,11 @@ public:
   void drawLines(const Geometry *g)
     {
     functions().draw.lines(this, g);
+    }
+
+  void drawLines(const IndexGeometry *i, const Geometry *g)
+    {
+    functions().draw.indexedLines(this, i, g);
     }
 
   Shader *stockShader(RendererShaderType t, ShaderVertexLayout **lay)
