@@ -22,7 +22,7 @@ public:
       Pan = 8,
       AllMovementTypes = Zoom | Track | Dolly | Pan
       };
-    typedef XFlags<MovementType> MovementFlags;
+    typedef Flags<MovementType> MovementFlags;
 
     virtual ~CameraInterface() { }
     virtual MovementFlags supportedMovements() const { return AllMovementTypes; }
