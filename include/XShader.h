@@ -105,14 +105,14 @@ public:
   ShaderConstantData(Renderer *r=0,
                      Description *desc = 0,
                      xsize descCount = 0,
-                     void *data=0);
+                     const void *data=0);
   ~ShaderConstantData();
 
   static bool delayedCreate(ShaderConstantData &ths,
                             Renderer *r,
                             Description *desc = 0,
                             xsize descCount = 0,
-                            void *data = 0);
+                            const void *data = 0);
 
   void update(void *data);
 

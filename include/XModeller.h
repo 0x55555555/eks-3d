@@ -26,7 +26,21 @@ public:
   Modeller(AllocatorBase *, xsize initialSize);
   ~Modeller();
 
-  void bakeTriangles(Renderer *r,
+  void bakeVertices(
+      Renderer *r,
+      ShaderVertexLayoutDescription::Semantic *semanticOrder,
+      xsize semanticCount,
+      Geometry *geo);
+
+  void bakeTriangles(
+      Renderer *r,
+      ShaderVertexLayoutDescription::Semantic *semanticOrder,
+      xsize semanticCount,
+      IndexGeometry *index,
+      Geometry *geo);
+
+  void bakeLines(
+      Renderer *r,
       ShaderVertexLayoutDescription::Semantic *semanticOrder,
       xsize semanticCount,
       IndexGeometry *index,
@@ -50,7 +64,8 @@ public:
   bool normalsAutomatic( ) const;
 
   // Draw Functions
-  void drawWireCube( const Cuboid &cube );
+  void drawWireCube(const Cuboid &cube);
+  void drawWireCircle(const Vector3D &pos, const Vector3D &normal, float radius, xsize pts=24);
 
   void drawCone(
       const Vector3D &point,

@@ -98,7 +98,7 @@ ShaderConstantData::ShaderConstantData(
     Renderer *r,
     Description *desc,
     xsize descCount,
-    void *data)
+    const void *data)
    : _renderer(0)
   {
   if(r)
@@ -120,7 +120,7 @@ bool ShaderConstantData::delayedCreate(
     Renderer *r,
     Description *desc,
     xsize descCount,
-    void *data)
+    const void *data)
   {
   xAssert(!ths.isValid());
   xAssert(r);

@@ -101,9 +101,11 @@ public:
     }
 
   static void drawIndexedTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert);
+  static void drawIndexedPrimitive(xuint32 prim, Renderer *r, const IndexGeometry *indices, const Geometry *vert);
   static void drawPrimitive(xuint32 prim, Renderer *r, const Geometry *vert);
   static void drawTriangles(Renderer *r, const Geometry *vert);
   static void drawLines(Renderer *r, const Geometry *vert);
+  static void drawIndexedLines(Renderer *r, const IndexGeometry *indices, const Geometry *vert);
   static void debugRenderLocator(Renderer *r, RendererDebugLocatorMode);
 
   static Shader *stockShader(Renderer *r, RendererShaderType t, ShaderVertexLayout **);
@@ -636,7 +638,7 @@ public:
 class XGL21ShaderData
   {
 public:
-  bool init(GLRendererImpl *, ShaderConstantDataDescription *desc, xsize descCount, void *data);
+  bool init(GLRendererImpl *, ShaderConstantDataDescription *desc, xsize descCount, const void *data);
 
   static void update(Renderer *r, ShaderConstantData *, void *data);
 
@@ -645,7 +647,7 @@ public:
       ShaderConstantData *d,
       ShaderConstantDataDescription *desc,
       xsize descCount,
-      void *data)
+      const void *data)
     {
     XGL21ShaderData *glD = d->create<XGL21ShaderData>();
     return glD->init(GL_REND(r), desc, descCount, data);
@@ -671,7 +673,7 @@ public:
 class XGL33ShaderData : public XGLBuffer
   {
 public:
-  bool init(GLRendererImpl *, ShaderConstantDataDescription *desc, xsize descCount, void *data);
+  bool init(GLRendererImpl *, ShaderConstantDataDescription *desc, xsize descCount, const void *data);
 
   static void update(Renderer *r, ShaderConstantData *, void *data);
 
@@ -680,7 +682,7 @@ public:
       ShaderConstantData *d,
       ShaderConstantDataDescription *desc,
       xsize descCount,
-      void *data)
+      const void *data)
     {
     XGL33ShaderData *glD = d->create<XGL33ShaderData>();
     return glD->init(GL_REND(r), desc, descCount, data);
@@ -953,7 +955,11 @@ void GLRendererImpl::updateViewData()
   _currentShader->setShaderConstantDatas(0, 2, data);
   }
 
-void GLRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert)
+void GLRendererImpl::drawIndexedPrimitive(
+    xuint32 primitive,
+    Renderer *ren,
+    const IndexGeometry *indices,
+    const Geometry *vert)
   {
   GLRendererImpl* r = GL_REND(ren);
   xAssert(r->_currentShader);
@@ -973,11 +979,27 @@ void GLRendererImpl::drawIndexedTriangles(Renderer *ren, const IndexGeometry *in
   XGLVertexLayout *l = r->_vertexLayout->data<XGLVertexLayout>();
   l->bind();
 
-  glDrawElements(GL_TRIANGLES, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
+  glDrawElements(primitive, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
   l->unbind();
 
   glBindBuffer(GL_ARRAY_BUFFER, 0) GLE;
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0) GLE;
+  }
+
+void GLRendererImpl::drawIndexedTriangles(
+    Renderer *ren,
+    const IndexGeometry *indices,
+    const Geometry *vert)
+  {
+  drawIndexedPrimitive(GL_TRIANGLES, ren, indices, vert);
+  }
+
+void GLRendererImpl::drawIndexedLines(
+    Renderer *ren,
+    const IndexGeometry *indices,
+    const Geometry *vert)
+  {
+  drawIndexedPrimitive(GL_LINES, ren, indices, vert);
   }
 
 void GLRendererImpl::drawPrimitive(xuint32 primitive, Renderer *ren, const Geometry *vert)
@@ -1011,6 +1033,7 @@ void GLRendererImpl::drawLines(Renderer *ren, const Geometry *vert)
   {
   drawPrimitive(GL_LINES, ren, vert);
   }
+
 
 Shader *GLRendererImpl::stockShader(Renderer *r, RendererShaderType t, ShaderVertexLayout **l)
   {
@@ -1068,6 +1091,7 @@ detail::RendererFunctions gl21fns =
   {
     GLRendererImpl::drawIndexedTriangles,
     GLRendererImpl::drawTriangles,
+    GLRendererImpl::drawIndexedLines,
     GLRendererImpl::drawLines,
     GLRendererImpl::debugRenderLocator
   },
@@ -1130,6 +1154,7 @@ detail::RendererFunctions gl33fns =
   {
     GLRendererImpl::drawIndexedTriangles,
     GLRendererImpl::drawTriangles,
+    GLRendererImpl::drawIndexedLines,
     GLRendererImpl::drawLines,
     GLRendererImpl::debugRenderLocator
   },
@@ -1475,7 +1500,7 @@ bool XGL21ShaderData::init(
     GLRendererImpl *r,
     ShaderConstantDataDescription* desc,
     xsize descCount,
-    void *data)
+    const void *data)
   {
   _revision = 0;
   _data.allocator() = TypedAllocator<xuint8>(r->_allocator);
@@ -1575,7 +1600,11 @@ void XGL21ShaderData::bind(xuint32 program, xuint32 index) const
     }
   }
 
-bool XGL33ShaderData::init(GLRendererImpl *r, ShaderConstantDataDescription *desc, xsize descCount, void *data)
+bool XGL33ShaderData::init(
+    GLRendererImpl *r,
+    ShaderConstantDataDescription *desc,
+    xsize descCount,
+    const void *data)
   {
   (void)descCount;
   (void)desc;
