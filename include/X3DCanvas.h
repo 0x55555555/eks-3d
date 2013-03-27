@@ -45,15 +45,15 @@ public:
 
   QPaintEngine* paintEngine() const X_OVERRIDE { return 0; }
 
-signals:
+Q_SIGNALS:
   void initialise3D(Eks::Renderer *r);
   void paint3D(Eks::Renderer *r, Eks::FrameBuffer *buffer);
   void resize3D(Eks::Renderer *r, xuint32 w, xuint32 h);
 
-public slots:
+public Q_SLOTS:
   void update3D();
 
-protected slots:
+protected Q_SLOTS:
   void doInitialise3D();
 
 private:
@@ -83,12 +83,12 @@ public:
   void initializeGL() X_OVERRIDE;
   void paintGL() X_OVERRIDE;
 
-signals:
+Q_SIGNALS:
   void initialise3D(Eks::Renderer *r);
   void paint3D(Eks::Renderer *r, Eks::FrameBuffer *buffer);
   void resize3D(Eks::Renderer *r, xuint32 w, xuint32 h);
 
-public slots:
+public Q_SLOTS:
   void update3D();
 
 private:
@@ -129,10 +129,10 @@ public:
   Renderer *renderer() { return _renderer; }
   ScreenFrameBuffer *buffer() { return _buffer; }
 
-public slots:
+public Q_SLOTS:
   void update3D();
 
-signals:
+Q_SIGNALS:
   void initialise3D(Eks::Renderer *r);
   void paint3D(Eks::Renderer *r, Eks::FrameBuffer *buffer);
   void resize3D(Eks::Renderer *r, xuint32 w, xuint32 h);
@@ -141,7 +141,7 @@ protected:
   void resizeEvent(QResizeEvent* evt) X_OVERRIDE;
   void paintEvent(QPaintEvent*) X_OVERRIDE;
 
-protected slots:
+protected Q_SLOTS:
   void doInitialise3D();
 
 private:
