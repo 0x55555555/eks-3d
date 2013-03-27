@@ -494,6 +494,16 @@ public:
       Shader *shader,
       xsize index,
       xsize count,
+      const ShaderConstantData * const* data)
+    {
+    setConstantBuffersInternal(r, shader, index + GLRendererImpl::ConstantBufferIndexOffset, count, data);
+    }
+
+  static void setConstantBuffersInternal(
+      Renderer *r,
+      Shader *shader,
+      xsize index,
+      xsize count,
       const ShaderConstantData * const* data);
 
   static void setResources21(
@@ -952,7 +962,7 @@ void GLRendererImpl::updateViewData()
     &_view
   };
   xAssert(_currentShader);
-  _currentShader->setShaderConstantDatas(0, 2, data);
+  XGLShader::setConstantBuffersInternal(this, _currentShader, 0, 2, data);
   }
 
 void GLRendererImpl::drawIndexedPrimitive(
@@ -1719,7 +1729,7 @@ void XGLShader::setConstantBuffers(
   }
 #endif
 
-void XGLShader::setConstantBuffers(
+void XGLShader::setConstantBuffersInternal(
     Renderer *r,
     Shader *s,
     xsize index,

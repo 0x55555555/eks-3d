@@ -300,8 +300,8 @@ void Modeller::drawWireCube( const Cuboid &cube )
           << min + size
           << min + Vector3D(0.0f, size.y(), size.z());
 
-  Vector3D n;
-  Vector2D t;
+  Vector3D n(Vector3D::Zero());
+  Vector2D t(Vector2D::Zero());
   _normals << n << n << n << n << n << n << n << n;
   _texture << t << t << t << t << t << t << t << t;
   _linIndices << sI << sI+1
@@ -332,15 +332,16 @@ void Modeller::drawWireCircle(const Vector3D &pos, const Vector3D &normal, float
   Vector3D x = up.cross(normal);
   Vector3D y = normal.cross(x);
 
+  xsize initialIndex = _vertex.size();
   for(xsize i = 0; i < pts; ++i)
     {
     float angle = i * (X_PI * 2.0f / (float)pts);
     xsize otherIndex = (i+1) % pts;
 
-    _normals << Vector3D();
-    _texture << Vector2D();
+    _normals << Vector3D::Zero();
+    _texture << Vector2D::Zero();
     _vertex << pos + (radius * (x * sinf(angle) + y * cosf(angle)));
-    _linIndices << i << otherIndex;
+    _linIndices << initialIndex + i << initialIndex + otherIndex;
     }
   }
 
