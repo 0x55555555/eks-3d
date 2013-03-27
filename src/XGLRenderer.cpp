@@ -622,6 +622,8 @@ public:
       {
       const Attribute &attr = _attrs[i];
 
+      xsize offset = attr.offset;
+
       glEnableVertexAttribArray(i) GLE;
       glVertexAttribPointer(
             i,
@@ -629,7 +631,7 @@ public:
             GL_FLOAT,
             GL_FALSE,
             vertexSize,
-            (GLvoid*)attr.offset) GLE;
+            (GLvoid*)offset) GLE;
       }
     }
 
@@ -768,9 +770,6 @@ public:
     const XGLRasteriserState* s = state->data<XGLRasteriserState>();
     switch(s->_cull)
       {
-    case RasteriserState::CullNone:
-      glDisable(GL_CULL_FACE);
-      break;
     case RasteriserState::CullFront:
       glEnable(GL_CULL_FACE);
       glCullFace(GL_FRONT);
@@ -778,6 +777,10 @@ public:
     case RasteriserState::CullBack:
       glEnable(GL_CULL_FACE);
       glCullFace(GL_BACK);
+      break;
+    case RasteriserState::CullNone:
+    default:
+      glDisable(GL_CULL_FACE);
       break;
       }
     }
@@ -796,13 +799,13 @@ public:
   };
 
 GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns, Eks::AllocatorBase *alloc)
-  : _context(0),
-    _currentShader(0),
-    _currentFramebuffer(0),
-    _vertexLayout(0),
+  : _allocator(alloc),
     _modelDataDirty(true),
     _viewDataDirty(true),
-    _allocator(alloc)
+    _context(0),
+    _currentShader(0),
+    _vertexLayout(0),
+    _currentFramebuffer(0)
   {
   _modelData.model = Eks::Matrix4x4::Identity();
   setFunctions(fns);
@@ -1443,7 +1446,7 @@ bool XGLShaderComponent::init(GLRendererImpl *impl, xuint32 type, const char *da
 
   int lengths[] =
     {
-    strlen(extra),
+    (int)strlen(extra),
     size,
     };
 
@@ -1776,7 +1779,7 @@ void XGLShader::setResources21(
     {
     char str[256];
   #ifdef Q_OS_WIN
-    sprintf_s(str, X_ARRAY_COUNT(str), "rsc%d", index);
+    sprintf_s(str, X_ARRAY_COUNT(str), "rsc%d", (int)index);
   #else
     sprintf(str, "rsc%d", index);
   #endif
