@@ -10,12 +10,12 @@ namespace Eks
 
 Modeller::Modeller(AllocatorBase *a, xsize initialSize )
   : _allocator(a),
+    _triIndices(a),
+    _linIndices(a),
     _vertex(a),
     _texture(a),
     _normals(a),
     _colours(a),
-    _triIndices(a),
-    _linIndices(a),
     _states(a),
     _transform(Transform::Identity())
   {
