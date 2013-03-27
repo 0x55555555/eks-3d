@@ -1447,7 +1447,7 @@ bool XGLShaderComponent::init(GLRendererImpl *impl, xuint32 type, const char *da
   int lengths[] =
     {
     (int)strlen(extra),
-    size,
+    (int)size,
     };
 
   const char *strs[] =
@@ -1781,7 +1781,7 @@ void XGLShader::setResources21(
   #ifdef Q_OS_WIN
     sprintf_s(str, X_ARRAY_COUNT(str), "rsc%d", (int)index);
   #else
-    sprintf(str, "rsc%d", index);
+    sprintf(str, "rsc%d", (int)index);
   #endif
 
     xint32 location = glGetUniformLocation(shader->shader, str);
