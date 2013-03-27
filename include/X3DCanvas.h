@@ -69,7 +69,8 @@ private:
 #else
 
 class EKS3D_EXPORT GL3DCanvas
-    : public QGLWidget
+    : public QGLWidget,
+    public AbstractCanvas
   {
   Q_OBJECT
 
