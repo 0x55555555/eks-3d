@@ -157,7 +157,7 @@ void GL3DCanvas::doInitialise3D()
 #else
 
 GL3DCanvas::GL3DCanvas(QWidget *parent) :
-  QGLWidget(getContext(), parent)
+  QGLWidget(parent)
   {
   _buffer = 0;
   _renderer = 0;
@@ -172,7 +172,7 @@ GL3DCanvas::~GL3DCanvas()
 
 void GL3DCanvas::paintGL()
   {
-  emit paint3D(_renderer, _buffer);
+  Q_EMIT paint3D(_renderer, _buffer);
   }
 
 void GL3DCanvas::initializeGL()
@@ -180,12 +180,12 @@ void GL3DCanvas::initializeGL()
   _buffer = ALLOC->create<ScreenFrameBuffer>();
 
   _renderer = GLRenderer::createGLRenderer(_buffer, ALLOC);
-  emit initialise3D(_renderer);
+  Q_EMIT initialise3D(_renderer);
   }
 
 void GL3DCanvas::resizeGL(int w, int h)
   {
-  emit resize3D(_renderer, w, h);
+  Q_EMIT resize3D(_renderer, w, h);
   }
 
 #endif
