@@ -7,7 +7,11 @@
 
 #if X_QT_INTEROP
 
-#include "QtWidgets/QWidget"
+#if QT_VERSION >= 0x050000
+# include "QtWidgets/QWidget"
+#else
+# include "QtGui/QWidget"
+#endif
 #include "QtGui/QMouseEvent"
 
 namespace Eks

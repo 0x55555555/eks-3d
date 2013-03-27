@@ -7,12 +7,7 @@
 
 #if X_QT_INTEROP
 
-#if QT_VERSION >= 0x050000
-# include "QtWidgets/QWidget"
-#else
-# include "QtWidgets/QWidget"
-#endif
-
+#include "QtHelper/XQWidget"
 #include "QtGui/QMouseEvent"
 
 

@@ -4,7 +4,7 @@
 
 #include "QtGui/QPainter"
 #include "QtGui/QPaintEvent"
-#include "QtWidgets/QApplication"
+#include "QtHelper/XQApplication"
 #include "XAbstractCanvasController.h"
 #include "QDebug"
 
