@@ -56,7 +56,7 @@ public:
     SemanticCount
     };
 
-  ShaderVertexLayoutDescription(Semantic s, Format fmt, xsize off=OffsetPackTight, Slot sl=Slot())
+  ShaderVertexLayoutDescription(Semantic s=SemanticCount, Format fmt=FormatCount, xsize off=OffsetPackTight, Slot sl=Slot())
     : semantic(s), format(fmt), offset(off), slot(sl)
     {
     }
