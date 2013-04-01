@@ -388,11 +388,11 @@ void Modeller::drawCone(const Vector3D &point, const Vector3D &direction, float 
 
     if(i == divs-1)
       {
-      _triIndices << eIndex << eIndex + i + 1 << eIndex + 1;
+      _triIndices << eIndex << eIndex + 1 << eIndex + i + 1;
       }
     else
       {
-      _triIndices << eIndex << eIndex + i + 1 << eIndex + i + 2;
+      _triIndices << eIndex << eIndex + i + 2 << eIndex + i + 1;
       }
     }
   }
