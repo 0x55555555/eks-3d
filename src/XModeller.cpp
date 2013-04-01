@@ -115,7 +115,10 @@ void Modeller::bakeTriangles(Renderer *r,
     IndexGeometry *index,
     Geometry *geo)
   {
-  bakeVertices(r, semanticOrder, semanticCount, geo);
+  if(geo)
+    {
+    bakeVertices(r, semanticOrder, semanticCount, geo);
+    }
 
   if(index)
     {
@@ -136,7 +139,10 @@ void Modeller::bakeLines(Renderer *r,
     IndexGeometry *index,
     Geometry *geo)
   {
-  bakeVertices(r, semanticOrder, semanticCount, geo);
+  if(geo)
+    {
+    bakeVertices(r, semanticOrder, semanticCount, geo);
+    }
 
   if(index)
     {

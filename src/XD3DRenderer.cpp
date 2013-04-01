@@ -114,10 +114,13 @@ void getTexture2DInfo(const Renderer *, const Texture2D* t, Eks::VectorUI2D& v)
   v.y() = dsc.Height;
   }
 
-
-Shader *getStockShader(Renderer *, RendererShaderType, ShaderVertexLayout **)
+Shader *getStockShader(Renderer *, RendererShaderType, const ShaderVertexLayout **)
   {
   return 0;
+  }
+
+void setStockShader(Renderer *, RendererShaderType, Shader *, const ShaderVertexLayout *)
+  {
   }
 
 bool createFramebuffer(
@@ -741,7 +744,8 @@ detail::RendererFunctions d3dfns =
       setRasteriserState,
       setDepthStencilState,
       setBlendState,
-      setTransform
+      setTransform,
+      setStockShader
     },
     {
       getTexture2DInfo,

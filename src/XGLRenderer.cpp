@@ -108,7 +108,8 @@ public:
   static void drawIndexedLines(Renderer *r, const IndexGeometry *indices, const Geometry *vert);
   static void debugRenderLocator(Renderer *r, RendererDebugLocatorMode);
 
-  static Shader *stockShader(Renderer *r, RendererShaderType t, ShaderVertexLayout **);
+  static Shader *stockShader(Renderer *r, RendererShaderType t, const ShaderVertexLayout **);
+  static void setStockShader(Renderer *, RendererShaderType, Shader *, const ShaderVertexLayout *);
 
   enum
     {
@@ -138,10 +139,8 @@ public:
 
   void updateViewData();
 
-  ShaderFragmentComponent stockFrags[ShaderTypeCount];
-  ShaderVertexComponent stockVerts[ShaderTypeCount];
-  Shader stockShaders[ShaderTypeCount];
-  ShaderVertexLayout stockLayouts[ShaderTypeCount];
+  Shader *stockShaders[ShaderTypeCount];
+  const ShaderVertexLayout *stockLayouts[ShaderTypeCount];
 
   QGLContext *_context;
   Shader *_currentShader;
@@ -809,60 +808,6 @@ GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns, Eks::Alloca
   {
   _modelData.model = Eks::Matrix4x4::Identity();
   setFunctions(fns);
-
-  const char *fsrc =
-      "#if X_GLSL_VERSION >= 130 || defined(X_GLES)\n"
-      "precision mediump float;\n"
-      "#endif\n"
-      "varying vec4 colOut;"
-      "void main(void)"
-      "  {"
-      "  gl_FragColor = colOut;"
-      "  }";
-
-  const char *vsrc =
-      "struct Model { mat4 model; mat4 modelView; mat4 modelViewProj; };"
-      "struct View { mat4 view; mat4 proj; };"
-      "struct Colour { vec4 colour; };"
-      "uniform Model cb0;"
-      "uniform View cb1;"
-      "uniform Colour cb2;"
-      "attribute vec3 position;"
-      "varying vec4 colOut;"
-      "void main(void)"
-      "  {"
-      "  colOut = cb2.colour;"
-      "  gl_Position = cb0.modelViewProj * vec4(position, 1.0);"
-      "  }";
-
-  ShaderVertexLayoutDescription vdsc[] =
-  {
-    ShaderVertexLayoutDescription(
-      ShaderVertexLayoutDescription::Position,
-      ShaderVertexLayoutDescription::FormatFloat3)
-  };
-
-  bool fres = ShaderFragmentComponent::delayedCreate(
-    stockFrags[PlainColour],
-    this,
-    fsrc,
-    strlen(fsrc));
-
-  bool vres = ShaderVertexComponent::delayedCreate(
-    stockVerts[PlainColour],
-    this,
-    vsrc,
-    strlen(vsrc),
-    vdsc,
-    X_ARRAY_COUNT(vdsc),
-    &stockLayouts[PlainColour]);
-
-  xAssert(fres && vres);
-
-  for(xsize i = 0; i < ShaderTypeCount; ++i)
-    {
-    Shader::delayedCreate(stockShaders[i], this, &stockVerts[i], &stockFrags[i]);
-    }
   }
 
 
@@ -1048,11 +993,24 @@ void GLRendererImpl::drawLines(Renderer *ren, const Geometry *vert)
   }
 
 
-Shader *GLRendererImpl::stockShader(Renderer *r, RendererShaderType t, ShaderVertexLayout **l)
+Shader *GLRendererImpl::stockShader(Renderer *r, RendererShaderType t, const ShaderVertexLayout **l)
   {
   xAssert(l);
-  *l = &(GL_REND(r)->stockLayouts[t]);
-  return &(GL_REND(r)->stockShaders[t]);
+  xAssert(GL_REND(r)->stockLayouts[t]);
+  xAssert(GL_REND(r)->stockShaders[t]);
+
+  *l = GL_REND(r)->stockLayouts[t];
+  return GL_REND(r)->stockShaders[t];
+  }
+
+void GLRendererImpl::setStockShader(
+    Renderer *r,
+    RendererShaderType t,
+    Shader *s,
+    const ShaderVertexLayout *l)
+  {
+  GL_REND(r)->stockShaders[t] = s;
+  GL_REND(r)->stockLayouts[t] = l;
   }
 
 detail::RendererFunctions gl21fns =
@@ -1095,7 +1053,8 @@ detail::RendererFunctions gl21fns =
     XGLRasteriserState::bind,
     XGLDepthStencilState::bind,
     XGLBlendState::bind,
-    GLRendererImpl::setTransform
+    GLRendererImpl::setTransform,
+    GLRendererImpl::setStockShader
   },
   {
     XGLTexture2D::getInfo,

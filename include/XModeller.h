@@ -37,14 +37,14 @@ public:
       ShaderVertexLayoutDescription::Semantic *semanticOrder,
       xsize semanticCount,
       IndexGeometry *index,
-      Geometry *geo);
+      Geometry *geo = 0);
 
   void bakeLines(
       Renderer *r,
       ShaderVertexLayoutDescription::Semantic *semanticOrder,
       xsize semanticCount,
       IndexGeometry *index,
-      Geometry *geo);
+      Geometry *geo = 0);
 
   // Fixed Functionality GL Emulation
   enum Type { None, Quads, Triangles, Lines };

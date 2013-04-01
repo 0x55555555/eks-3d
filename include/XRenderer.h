@@ -170,12 +170,14 @@ struct RendererSetFunctions
   void (*blendState)(Renderer *r, const BlendState *state);
 
   void (*transform)(Renderer *r, const Transform &);
+
+  void (*stockShader)(Renderer *r, RendererShaderType t, Shader *, const ShaderVertexLayout *);
   };
 
 struct RendererGetFunctions
   {
   void (*texture2DInfo)(const Renderer *r, const Texture2D *tex, Eks::VectorUI2D& v);
-  Shader *(*stockShader)(Renderer *r, RendererShaderType t, ShaderVertexLayout **);
+  Shader *(*stockShader)(Renderer *r, RendererShaderType t, const ShaderVertexLayout **);
   };
 
 struct RendererDrawFunctions
@@ -265,9 +267,14 @@ public:
     functions().draw.indexedLines(this, i, g);
     }
 
-  Shader *stockShader(RendererShaderType t, ShaderVertexLayout **lay)
+  Shader *stockShader(RendererShaderType t, const ShaderVertexLayout **lay)
     {
     return functions().get.stockShader(this, t, lay);
+    }
+
+  void setStockShader(RendererShaderType t, Shader *s, const ShaderVertexLayout *lay)
+    {
+    return functions().set.stockShader(this, t, s, lay);
     }
 
 XProperties:
