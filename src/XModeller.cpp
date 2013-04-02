@@ -351,7 +351,13 @@ void Modeller::drawWireCircle(const Vector3D &pos, const Vector3D &normal, float
     }
   }
 
-void Modeller::drawCone(const Vector3D &point, const Vector3D &direction, float length, float radius, xuint32 divs)
+void Modeller::drawCone(
+    const Vector3D &point,
+    const Vector3D &direction,
+    float length,
+    float radius,
+    xuint32 divs,
+    bool capped)
   {
   _areTriangleIndicesSequential = false;
   Vector3D dirNorm = direction.normalized();
@@ -388,11 +394,19 @@ void Modeller::drawCone(const Vector3D &point, const Vector3D &direction, float 
 
     if(i == divs-1)
       {
-      _triIndices << eIndex << eIndex + 1 << eIndex + i + 1;
+      _triIndices << eIndex + i + 1 << eIndex << eIndex + 1;
       }
     else
       {
-      _triIndices << eIndex << eIndex + i + 2 << eIndex + i + 1;
+      _triIndices << eIndex + i + 1 << eIndex << eIndex + i + 2;
+      }
+    }
+
+  if(capped)
+    {
+    for(xuint32 i=0; i<=(divs-2); ++i)
+      {
+      _triIndices << eIndex + 1 << eIndex + i + 1 << eIndex + i + 2;
       }
     }
   }

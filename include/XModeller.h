@@ -72,7 +72,8 @@ public:
       const Vector3D &direction,
       float length,
       float radius,
-      xuint32 divs=6);
+      xuint32 divs = 6,
+      bool capped = true);
 
   void drawSphere(float radius, int lats = 8, int longs = 12);
   void drawCube(
