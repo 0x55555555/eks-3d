@@ -171,7 +171,7 @@ public:
 class XGLTexture2D : public XGLShaderResource
   {
 public:
-  bool init(GLRendererImpl *, int format, int width, int height, const void *data);
+  bool init(GLRendererImpl *, xuint32 format, xsize width, xsize height, const void *data);
 
   ~XGLTexture2D();
 
@@ -369,7 +369,7 @@ public:
 class XGLBuffer
   {
 public:
-  bool init(GLRendererImpl *, const void *data, xuint32 type, xuint32 renderType, xuint32 size);
+  bool init(GLRendererImpl *, const void *data, xuint32 type, xuint32 renderType, xsize size);
   ~XGLBuffer();
 
   unsigned int _buffer;
@@ -395,7 +395,7 @@ public:
     return true;
     }
 
-  unsigned int _indexCount;
+  GLuint _indexCount;
   unsigned int _indexType;
   };
 
@@ -419,7 +419,7 @@ public:
     return true;
     }
 
-  xsize _elementCount;
+  GLuint _elementCount;
   };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -519,7 +519,7 @@ public:
       xsize count,
       const Resource * const* data);
 
-  xuint32 shader;
+  GLuint shader;
   xuint8 maxSetupResources;
 
   struct Buffer
@@ -543,7 +543,8 @@ public:
   bool init1(GLRendererImpl *r, const ShaderVertexLayoutDescription *descs, xsize count)
     {
     _renderer = r;
-    _attrCount = count;
+    xAssert(count < X_UINT8_SENTINEL);
+    _attrCount = (xuint8)count;
     xCompileTimeAssert(4 == ShaderVertexLayoutDescription::SemanticCount);
     xAssert(count < ShaderVertexLayoutDescription::SemanticCount)
 
@@ -554,11 +555,11 @@ public:
       Attribute &attr = _attrs[i];
 
       xAssert(desc.offset < X_UINT8_SENTINEL || desc.offset == ShaderVertexLayoutDescription::OffsetPackTight);
-      attr.offset = desc.offset;
+      attr.offset = (xuint8)desc.offset;
       attr.semantic = desc.semantic;
       if(desc.offset == ShaderVertexLayoutDescription::OffsetPackTight)
         {
-        attr.offset = vertexSize;
+        attr.offset = (xuint8)vertexSize;
         }
 
       xCompileTimeAssert(ShaderVertexLayoutDescription::FormatFloat1 == 0);
@@ -569,7 +570,7 @@ public:
       xAssert(attr.components <= 4);
 
       xAssert(vertexSize < X_UINT8_SENTINEL);
-      vertexSize = std::max(vertexSize, attr.offset + attr.size());
+      vertexSize = std::max(vertexSize, (xuint8)(attr.offset + attr.size()));
       }
 
     return true;
@@ -586,7 +587,7 @@ public:
     };
     xCompileTimeAssert(4 == ShaderVertexLayoutDescription::SemanticCount);
 
-    for(xsize i = 0; i < _attrCount; ++i)
+    for(GLuint i = 0; i < (GLuint)_attrCount; ++i)
       {
       const Attribute &attr = _attrs[i];
       xsize idx = attr.semantic;
@@ -597,7 +598,7 @@ public:
     return true;
     }
 
-  xsize vertexSize;
+  xuint8 vertexSize;
   struct Attribute
     {
     xuint8 offset;
@@ -617,11 +618,11 @@ public:
 
   void bind() const
     {
-    for(xsize i = 0, s = _attrCount; i < s; ++i)
+    for(GLuint i = 0, s = (GLuint)_attrCount; i < s; ++i)
       {
       const Attribute &attr = _attrs[i];
 
-      xsize offset = attr.offset;
+      xsize offset = (xsize)attr.offset;
 
       glEnableVertexAttribArray(i) GLE;
       glVertexAttribPointer(
@@ -636,7 +637,7 @@ public:
 
   void unbind() const
     {
-    for(xsize i = 0, s = _attrCount; i < s; ++i)
+    for(GLuint i = 0, s = (GLuint)_attrCount; i < s; ++i)
       {
       glDisableVertexAttribArray(i) GLE;
       }
@@ -1193,11 +1194,11 @@ void GLRenderer::destroyGLRenderer(Renderer *r, ScreenFrameBuffer *buffer, Eks::
 //----------------------------------------------------------------------------------------------------------------------
 // TEXTURE
 //----------------------------------------------------------------------------------------------------------------------
-bool XGLTexture2D::init(GLRendererImpl *, int format, int width, int height, const void *data)
+bool XGLTexture2D::init(GLRendererImpl *, xuint32 format, xsize width, xsize height, const void *data)
   {
   _type = GL_TEXTURE_2D;
 
-  size = VectorUI2D(width, height);
+  size = VectorUI2D((xuint32)width, (xuint32)height);
 
   glGenTextures(1, &_id) GLE;
   glBindTexture(GL_TEXTURE_2D, _id) GLE;
@@ -1217,7 +1218,7 @@ bool XGLTexture2D::init(GLRendererImpl *, int format, int width, int height, con
   xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == TextureFormatCount);
 
   // 0 at end could be data to unsigned byte...
-  glTexImage2D(GL_TEXTURE_2D, 0, formatMap[format], width, height, 0, formatMap[format], GL_UNSIGNED_BYTE, data) GLE;
+  glTexImage2D(GL_TEXTURE_2D, 0, formatMap[format], (GLsizei)width, (GLsizei)height, 0, formatMap[format], GL_UNSIGNED_BYTE, data) GLE;
 
   glBindTexture(GL_TEXTURE_2D, 0) GLE;
 
@@ -1711,7 +1712,7 @@ void XGLShader::setConstantBuffersInternal(
     shader->_buffers.resize(count, Buffer());
     }
 
-  for(xsize i = 0; i < count; ++i)
+  for(xuint32 i = 0; i < (xuint32)count; ++i)
     {
     const ShaderConstantData *cb = data[i];
     const XGL21ShaderData* cbImpl = cb->data<XGL21ShaderData>();
@@ -1720,7 +1721,7 @@ void XGLShader::setConstantBuffersInternal(
 
     if(buf.data != cbImpl || buf.revision != cbImpl->_revision)
       {
-      cbImpl->bind(shader->shader, i + index);
+      cbImpl->bind(shader->shader, i + (xuint32)index);
       buf.revision = cbImpl->_revision;
       }
     }
@@ -1734,7 +1735,7 @@ void XGLShader::setResources21(
     const Resource * const* data)
   {
   XGLShader* shader = s->data<XGLShader>();
-  for(xsize i = shader->maxSetupResources; i < count; ++i)
+  for(GLuint i = shader->maxSetupResources; i < (GLuint)count; ++i)
     {
     char str[256];
   #ifdef Q_OS_WIN
@@ -1751,18 +1752,18 @@ void XGLShader::setResources21(
       }
     }
 
-  for(xsize i = 0; i < count; ++i)
+  for(GLuint i = 0; i < (GLuint)count; ++i)
     {
     const Resource *rsc = data[i];
     const XGLShaderResource* rscImpl = rsc->data<XGLShaderResource>();
-    rscImpl->bindResource(i+index);
+    rscImpl->bindResource(i+(GLuint)index);
     }
   }
 
 //----------------------------------------------------------------------------------------------------------------------
 // BUFFER
 //----------------------------------------------------------------------------------------------------------------------
-bool XGLBuffer::init( GLRendererImpl *, const void *data, xuint32 type, xuint32 renderType, xuint32 size)
+bool XGLBuffer::init( GLRendererImpl *, const void *data, xuint32 type, xuint32 renderType, xsize size)
   {
   glGenBuffers(1, &_buffer);
 
@@ -1797,7 +1798,7 @@ bool XGLIndexGeometryCache::init(GLRendererImpl *r, const void *data, IndexGeome
   xCompileTimeAssert(IndexGeometry::TypeCount == X_ARRAY_COUNT(typeMap));
 
   _indexType = typeMap[type].type;
-  _indexCount = elementCount;
+  _indexCount = (GLuint)elementCount;
 
   xsize dataSize = elementCount * typeMap[type].size;
   return XGLBuffer::init(r, data, GL_ELEMENT_ARRAY_BUFFER, GL_STATIC_DRAW, dataSize);
@@ -1810,7 +1811,7 @@ bool XGLIndexGeometryCache::init(GLRendererImpl *r, const void *data, IndexGeome
 bool XGLGeometryCache::init(GLRendererImpl *r, const void *data, xsize elementSize, xsize elementCount)
   {
   xsize dataSize = elementSize * elementCount;
-  _elementCount = elementCount;
+  _elementCount = (GLuint)elementCount;
   return XGLBuffer::init(r, data, GL_ARRAY_BUFFER, GL_STATIC_DRAW, dataSize);
   }
 

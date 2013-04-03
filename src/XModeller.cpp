@@ -4,6 +4,7 @@
 #include "XCuboid.h"
 #include "XShader.h"
 #include "XGeometry.h"
+#include "XFrame"
 
 namespace Eks
 {
@@ -338,11 +339,11 @@ void Modeller::drawWireCircle(const Vector3D &pos, const Vector3D &normal, float
   Vector3D x = up.cross(normal);
   Vector3D y = normal.cross(x);
 
-  xsize initialIndex = _vertex.size();
-  for(xsize i = 0; i < pts; ++i)
+  xuint16 initialIndex = (xuint16)_vertex.size();
+  for(xuint16 i = 0; i < (xuint16)pts; ++i)
     {
     float angle = i * (X_PI * 2.0f / (float)pts);
-    xsize otherIndex = (i+1) % pts;
+    xuint16 otherIndex = (xuint16)(i+1) % pts;
 
     _normals << Vector3D::Zero();
     _texture << Vector2D::Zero();
@@ -373,20 +374,14 @@ void Modeller::drawCone(
 
   Eks::Vector2D t = Eks::Vector2D::Zero();
 
-  Vector3D up = Vector3D(0.0f, 1.0f, 0.0f);
-  if(up.dot(dirNorm) > 0.98f)
-    {
-    up = Vector3D(1.0f, 0.0f, 0.0f);
-    }
-  Vector3D across = dirNorm.cross(up).normalized();
-
+  Eks::Frame f(dirNorm);
   for(xuint32 i=0; i<divs; ++i)
     {
     float percent = (float)i/(float)divs * 2.0f * (float)M_PI;
     float c = cos(percent);
     float s = sin(percent);
 
-    Vector3D ptDir = (up * s) + (across * c);
+    Vector3D ptDir = (f.up() * s) + (f.across() * c);
 
     _vertex << transformPoint(point + (ptDir * radius));
     _normals << transformNormal(ptDir);
