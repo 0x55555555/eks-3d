@@ -69,4 +69,11 @@ inline Eks::Cuboid operator *( const Eks::Transform &mat, const Eks::Cuboid &cub
   return ret;
   }
 
+
+#if X_QT_INTEROP
+
+Q_DECLARE_METATYPE(Eks::Cuboid)
+
+#endif
+
 #endif // Cuboid_H
