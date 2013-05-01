@@ -193,16 +193,16 @@ bool Cuboid::intersects( const Line &in, float &dist ) const
 
 bool Cuboid::contains( const Vector3D &in ) const
   {
-  return in.x() < _minimum.x() && in.x() > _maximum.x() &&
-         in.y() < _minimum.y() && in.y() > _maximum.y() &&
-         in.z() < _minimum.z() && in.z() > _maximum.z();
+  return in.x() <= _minimum.x() && in.x() >= _maximum.x() &&
+         in.y() <= _minimum.y() && in.y() >= _maximum.y() &&
+         in.z() <= _minimum.z() && in.z() >= _maximum.z();
   }
 
 bool Cuboid::contains( const Cuboid &smaller ) const
   {
-  return smaller.minimum().x() > _minimum.x() && smaller.maximum().x() < _maximum.x() &&
-         smaller.minimum().y() > _minimum.y() && smaller.maximum().y() < _maximum.y() &&
-         smaller.minimum().z() > _minimum.z() && smaller.maximum().z() < _maximum.z();
+  return smaller.minimum().x() >= _minimum.x() && smaller.maximum().x() <= _maximum.x() &&
+         smaller.minimum().y() >= _minimum.y() && smaller.maximum().y() <= _maximum.y() &&
+         smaller.minimum().z() >= _minimum.z() && smaller.maximum().z() <= _maximum.z();
   }
 
 void Cuboid::expand(float amount)
