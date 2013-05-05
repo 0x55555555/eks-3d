@@ -13,6 +13,11 @@ Cuboid::Cuboid( Vector3D minimum, Vector3D maximum ) : _minimum( minimum ), _max
   {
   }
 
+void Cuboid::clear()
+  {
+  _isValid = false;
+  }
+
 bool Cuboid::operator==(const Cuboid& oth) const
   {
   return _isValid == oth._isValid ||

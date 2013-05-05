@@ -23,6 +23,8 @@ public:
   Cuboid( );
   Cuboid( Vector3D minimum, Vector3D maximum );
 
+  void clear();
+
   bool operator==(const Cuboid& oth) const;
   bool operator!=(const Cuboid& oth) const;
 
