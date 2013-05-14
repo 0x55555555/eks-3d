@@ -51,7 +51,7 @@ public:
   bool contains( const Vector3D & ) const;
   bool contains( const Cuboid & ) const;
   bool intersects( const Cuboid & ) const;
-  bool intersects( const Line &, float &distance ) const;
+  bool intersects( const Line &, float &t ) const;
 
   friend EKS3D_EXPORT QTextStream &operator<<(QTextStream &stream, const Cuboid &itemRequest);
   friend EKS3D_EXPORT QTextStream &operator>>(QTextStream &stream, Cuboid &itemRequest);

@@ -143,13 +143,13 @@ bool Cuboid::intersects( const Cuboid &in ) const
       in.maximum().z() < _minimum.z() && in.minimum().z() > _maximum.z();
   }
 
-bool Cuboid::intersects( const Line &in, float &dist ) const
+bool Cuboid::intersects(const Line &in, float &outT) const
   {
   Vector3D t = in.sample(Plane(maximum(), Vector3D(0, 1, 0)).intersection(in));
   if( t.x() <= maximum().x() && t.x() >= minimum().x() &&
       t.z() <= maximum().z() && t.z() >= minimum().z() )
     {
-    dist = (in.position() - t).norm();
+    outT = (t - in.position()).norm() / in.direction().norm();
     return true;
     }
 
@@ -157,7 +157,7 @@ bool Cuboid::intersects( const Line &in, float &dist ) const
   if( t.x() <= maximum().x() && t.x() >= minimum().x() &&
       t.z() <= maximum().z() && t.z() >= minimum().z() )
     {
-    dist = (in.position() - t).norm();
+    outT = (t - in.position()).norm() / in.direction().norm();
     return true;
     }
 
@@ -165,7 +165,7 @@ bool Cuboid::intersects( const Line &in, float &dist ) const
   if( t.y() <= maximum().y() && t.y() >= minimum().y() &&
       t.z() <= maximum().z() && t.z() >= minimum().z() )
     {
-    dist = (in.position() - t).norm();
+    outT = (t - in.position()).norm() / in.direction().norm();
     return true;
     }
 
@@ -173,7 +173,7 @@ bool Cuboid::intersects( const Line &in, float &dist ) const
   if( t.y() <= maximum().y() && t.y() >= minimum().y() &&
       t.z() <= maximum().z() && t.z() >= minimum().z() )
     {
-    dist = (in.position() - t).norm();
+    outT = (t - in.position()).norm() / in.direction().norm();
     return true;
     }
 
@@ -181,7 +181,7 @@ bool Cuboid::intersects( const Line &in, float &dist ) const
   if( t.x() <= maximum().x() && t.x() >= minimum().x() &&
       t.y() <= maximum().y() && t.y() >= minimum().y() )
     {
-    dist = (in.position() - t).norm();
+    outT = (t - in.position()).norm() / in.direction().norm();
     return true;
     }
 
@@ -189,7 +189,7 @@ bool Cuboid::intersects( const Line &in, float &dist ) const
   if( t.x() <= maximum().x() && t.x() >= minimum().x() &&
       t.y() <= maximum().y() && t.y() >= minimum().y() )
     {
-    dist = (in.position() - t).norm();
+    outT = (t - in.position()).norm() / in.direction().norm();
     return true;
     }
 

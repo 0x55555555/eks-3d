@@ -11,8 +11,8 @@ namespace Eks
 
 class EKS3D_EXPORT Line
   {
-  XProperty( Vector3D, position, setPosition );
-  XProperty( Vector3D, direction, setDirection );
+  XByRefProperty( Vector3D, position, setPosition );
+  XByRefProperty( Vector3D, direction, setDirection );
 public:
   enum ConstructionMode
     {
