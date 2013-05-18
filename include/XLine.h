@@ -31,6 +31,8 @@ public:
 
   // returns the closest t to l
   float closestPointTo(const Vector3D &l) const;
+
+  Vector3D pointAtDistance(float distAlongLine) const;
   };
 
 }

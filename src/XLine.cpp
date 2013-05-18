@@ -49,4 +49,8 @@ float Line::closestPointTo(const Eks::Vector3D &l) const
   return direction().dot(lineToPt) / direction().squaredNorm();
   }
 
+Vector3D Line::pointAtDistance(float distAlongLine) const
+  {
+  return position() + direction().normalized() * distAlongLine;
+  }
 }
