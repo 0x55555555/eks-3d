@@ -9,7 +9,7 @@
 namespace Eks
 {
 
-class Line;
+template <xsize Num> class LineBase;
 
 class EKS3D_EXPORT Plane
   {
@@ -28,7 +28,7 @@ public:
   void setNormal(const Vector3D & );
 
   float distanceToPlane( const Vector3D & ) const;
-  float intersection( const Line & ) const;
+  float intersection( const LineBase<3> & ) const;
 
   void transform( const Transform &tx );
 

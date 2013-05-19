@@ -9,10 +9,16 @@
 namespace Eks
 {
 
-class EKS3D_EXPORT Line
+template <xsize Num> class LineBase
   {
-  XByRefProperty( Vector3D, position, setPosition );
-  XByRefProperty( Vector3D, direction, setDirection );
+public:
+  typedef Eigen::Matrix<Real, Num, 1> VecType;
+  typedef Eigen::Transform<Real, Num, Eigen::Affine> Transform;
+
+XProperties:
+  XByRefProperty(VecType, position, setPosition);
+  XByRefProperty(VecType, direction, setDirection);
+
 public:
   enum ConstructionMode
     {
@@ -20,29 +26,63 @@ public:
     PointAndDirection
     };
 
-  Line( const Vector3D &, const Vector3D &, ConstructionMode=TwoPoints );
+  LineBase(const VecType &p1, const VecType &p2, ConstructionMode mode=TwoPoints) : _position(p1)
+    {
+    if(mode == TwoPoints)
+      {
+      _direction = (p2-p1).normalized();
+      }
+    else
+      {
+      _direction = p2;
+      }
+    }
 
-  void transform(const Eks::Transform &);
+  VecType sample( float t ) const
+    {
+    return position() + ( t * direction() );
+    }
 
-  Vector3D sample(float) const;
+  void transform(const Transform &tx)
+    {
+    _position = tx * _position;
+    _direction = tx.linear() * _direction;
+    }
 
-  // returns t for this line, for the closest point on that line
-  float closestPointOn(const Line &l) const;
+  float closestPointTo(const VecType &l) const
+    {
+    VecType lineToPt = l - position();
 
-  // returns the closest t to l
-  float closestPointTo(const Vector3D &l) const;
+    return direction().dot(lineToPt) / direction().squaredNorm();
+    }
 
-  Vector3D pointAtDistance(float distAlongLine) const;
+  VecType pointAtDistance(float distAlongLine) const
+    {
+    return position() + direction().normalized() * distAlongLine;
+    }
   };
 
-}
-
-inline Eks::Line operator*( const Eks::Transform &tx, const Eks::Line &line )
+typedef LineBase<2> Line2D;
+class EKS3D_EXPORT Line : public LineBase<3>
   {
-  Eks::Line l(line);
+public:
+  Line(const VecType &p1, const VecType &p2, ConstructionMode mode=TwoPoints)
+      : LineBase<3>(p1, p2, mode)
+    {
+    }
+
+  float closestPointOn(const Line &l) const;
+  };
+
+template <xsize Num>
+inline Eks::LineBase<Num> operator*( const typename LineBase<Num>::Transform &tx, const LineBase<Num> &line )
+  {
+  auto l(line);
   l.transform(tx);
   return l;
   }
+
+}
 
 
 #endif // XLINE_H

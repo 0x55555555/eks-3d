@@ -65,7 +65,7 @@ float Plane::distanceToPlane( const Vector3D &in ) const
   return in.dot(normal()) + d();
   }
 
-float Plane::intersection( const Line &a ) const
+float Plane::intersection( const LineBase<3> &a ) const
   {
   Real denominator = normal().dot(a.direction());
   if( !qFuzzyCompare( denominator, 0.0f ) )

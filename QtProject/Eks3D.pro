@@ -20,7 +20,6 @@ SOURCES += \
     ../src/XColladaFile.cpp \
     ../src/XFrustum.cpp \
     ../src/XPlane.cpp \
-    ../src/XLine.cpp \
     ../src/XTriangle.cpp \
     ../src/XAbstractCanvas.cpp \
     ../src/X2DCanvas.cpp \
@@ -33,7 +32,8 @@ SOURCES += \
     ../src/X3DCanvas.cpp \
     ../src/XShaderManager.cpp \
     ../src/XDepthStencilState.cpp \
-    ../src/XBlendState.cpp
+    ../src/XBlendState.cpp \
+    ../src/XLine.cpp
 
 HEADERS += \
     ../include/X3DGlobal.h \
