@@ -60,6 +60,35 @@ public:
     {
     return position() + direction().normalized() * distAlongLine;
     }
+
+  float closestPointOn(const LineBase<Num> &l) const
+    {
+    Eks::Vector3D lDirNorm = Eks::Vector3D::Zero();
+    lDirNorm.head<Num>() = l.direction().normalized();
+
+    Eks::Vector3D dirNorm = Eks::Vector3D::Zero();
+    dirNorm.head<Num>() = direction().normalized();
+
+    auto cP = lDirNorm.cross( lDirNorm.cross( dirNorm ) );
+    if(cP.squaredNorm() > 0.001f)
+      {
+      xCompileTimeAssert(Num <= 3);
+      Eks::Vector3D pos = Eks::Vector3D::Zero();
+      pos.head<Num>() = l.position();
+
+      Eks::Vector3D lPos = Eks::Vector3D::Zero();
+      lPos.head<Num>() = position();
+
+      Eks::Vector3D lDir= Eks::Vector3D::Zero();
+      lDir.head<Num>() = direction();
+
+      Eks::LineBase<3> l(lPos, lDir);
+
+      return Plane( pos, cP ).intersection(l);
+      }
+
+    return HUGE_VAL;
+    }
   };
 
 typedef LineBase<2> Line2D;
@@ -71,7 +100,10 @@ public:
     {
     }
 
-  float closestPointOn(const Line &l) const;
+  Line(const LineBase<3> &b) : LineBase<3>(b)
+    {
+    }
+
   };
 
 template <xsize Num>
