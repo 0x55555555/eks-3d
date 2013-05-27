@@ -1,4 +1,5 @@
 #include "XD3DRenderer.h"
+#include "XAllocatorBase"
 
 #if X_ENABLE_DX_RENDERER
 

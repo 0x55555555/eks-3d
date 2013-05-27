@@ -1,6 +1,7 @@
 #ifndef XABSTRACTCANVASCONTROLLER_H
 #define XABSTRACTCANVASCONTROLLER_H
 
+#include "XMacroHelpers"
 #include "X3DGlobal.h"
 #include "XProperty"
 #include "QtCore/QEvent"

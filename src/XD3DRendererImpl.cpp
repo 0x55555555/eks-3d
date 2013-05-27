@@ -4,6 +4,7 @@
 
 #include <comdef.h>
 #include "XAssert"
+#include "XResourceDescription"
 #include "XOptional"
 
 namespace Eks

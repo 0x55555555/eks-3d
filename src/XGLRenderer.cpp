@@ -8,6 +8,8 @@
 # include "GL/glew.h"
 #endif
 
+#include "XStringSimple"
+#include "XAllocatorBase"
 #include "XFramebuffer.h"
 #include "XGeometry.h"
 #include "XShader.h"

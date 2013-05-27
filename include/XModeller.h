@@ -8,6 +8,7 @@
 #include "XColour"
 #include "XTransform.h"
 #include "XShader.h"
+#include "XVector"
 
 namespace Eks
 {

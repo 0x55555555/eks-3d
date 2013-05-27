@@ -13,6 +13,7 @@ class QGLContext;
 namespace Eks
 {
 
+class AllocatorBase;
 class XGLShader;
 class XGLFramebuffer;
 

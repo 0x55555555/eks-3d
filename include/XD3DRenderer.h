@@ -1,6 +1,7 @@
 #ifndef XD3DRENDERER_H
 #define XD3DRENDERER_H
 
+#include "XMacroHelpers"
 #include "X3DGlobal.h"
 
 #if X_ENABLE_DX_RENDERER
@@ -12,6 +13,7 @@ struct ID3D11DeviceContext1;
 namespace Eks
 {
 
+class AllocatorBase;
 class ScreenFrameBuffer;
 class Renderer;
 
