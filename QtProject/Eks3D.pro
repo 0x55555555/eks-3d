@@ -68,7 +68,7 @@ HEADERS += \
     ../examples/Simple3DExample.h
 
 INCLUDEPATH += ../include/ \
-    $$ROOT/Eks/EksCore/
+    $$ROOT/Eks/EksCore/include/
 
 win32-arm-msvc2012|win32-msvc2012 {
   SOURCES += ../src/XD3DRenderer.cpp \
