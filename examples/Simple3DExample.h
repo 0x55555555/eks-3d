@@ -66,7 +66,7 @@ public:
     {
     float aspect = (float)width / (float)height;
 
-    _proj = TransformUtilities::perspective(45.0f, aspect, 0.1f, 100.0f);
+    _proj = TransformUtilities::perspective(Eks::degreesToRadians(45.0f), aspect, 0.1f, 100.0f);
 
     }
 

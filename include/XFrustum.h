@@ -8,7 +8,7 @@
 namespace Eks
 {
 
-class Cuboid;
+class BoundingBox;
 
 class EKS3D_EXPORT Frustum
   {
@@ -34,7 +34,7 @@ public:
   Frustum( const Vector3D &point, const Vector3D &look, const Vector3D &across, const Vector3D &up,
              float angle, float aspect, float near, float far );
 
-  IntersectionResult intersects(const Cuboid &) const;
+  IntersectionResult intersects(const BoundingBox &) const;
 
   void transform( const Transform &tx );
 

@@ -1,41 +1,41 @@
-#include "XCuboid.h"
+#include "XBoundingBox.h"
 #include "XLine.h"
 #include "XPlane.h"
 
 namespace Eks
 {
 
-Cuboid::Cuboid() : _isValid( false )
+BoundingBox::BoundingBox() : _isValid( false )
   {
   }
 
-Cuboid::Cuboid( Vector3D minimum, Vector3D maximum ) : _minimum( minimum ), _maximum( maximum ), _isValid( true )
+BoundingBox::BoundingBox( Vector3D minimum, Vector3D maximum ) : _minimum( minimum ), _maximum( maximum ), _isValid( true )
   {
   }
 
-void Cuboid::clear()
+void BoundingBox::clear()
   {
   _isValid = false;
   }
 
-bool Cuboid::operator==(const Cuboid& oth) const
+bool BoundingBox::operator==(const BoundingBox& oth) const
   {
   return _isValid == oth._isValid ||
       (_minimum == oth._minimum &&
        _maximum == oth._maximum);
   }
 
-bool Cuboid::operator!=(const Cuboid& oth) const
+bool BoundingBox::operator!=(const BoundingBox& oth) const
   {
   return !(*this == oth);
   }
 
-Vector3D Cuboid::centre() const
+Vector3D BoundingBox::centre() const
   {
   return (minimum() + maximum()) * 0.5;
   }
 
-void Cuboid::unite( const Vector3D &in )
+void BoundingBox::unite( const Vector3D &in )
   {
   if( !isValid() )
     {
@@ -72,7 +72,7 @@ void Cuboid::unite( const Vector3D &in )
     }
   }
 
-void Cuboid::unite( const Cuboid &in )
+void BoundingBox::unite( const BoundingBox &in )
   {
   if(in.isValid())
     {
@@ -81,7 +81,7 @@ void Cuboid::unite( const Cuboid &in )
     }
   }
 
-Cuboid Cuboid::united( const Cuboid &in ) const
+BoundingBox BoundingBox::united( const BoundingBox &in ) const
   {
   if(in.isValid())
     {
@@ -90,49 +90,61 @@ Cuboid Cuboid::united( const Cuboid &in ) const
   return *this;
   }
 
-Cuboid Cuboid::united( const Vector3D &in ) const
+BoundingBox BoundingBox::united( const Vector3D &in ) const
   {
-  Cuboid ret( *this );
+  BoundingBox ret( *this );
   ret.unite(in);
   return ret;
   }
 
-Cuboid &Cuboid::operator|=( const Cuboid &in )
+BoundingBox &BoundingBox::operator|=( const BoundingBox &in )
   {
   *this = *this | in;
   return *this;
   }
 
-Cuboid Cuboid::operator|( const Cuboid &in ) const
+BoundingBox BoundingBox::operator|( const BoundingBox &in ) const
   {
   return in.united( *this );
   }
 
-void Cuboid::setMinimum( const Vector3D &in )
+void BoundingBox::setMinimum( const Vector3D &in )
   {
   _isValid = true;
   _minimum = in;
   }
 
-void Cuboid::setMaximum( const Vector3D &in )
+void BoundingBox::setMaximum( const Vector3D &in )
   {
   _isValid = true;
   _maximum = in;
   }
 
-Vector3D Cuboid::size() const
+Vector3D BoundingBox::size() const
   {
   return _maximum - _minimum;
   }
 
-Real Cuboid::maximumDistanceSquared() const
+Real BoundingBox::maximumDistanceSquared() const
   {
   return Vector3D( xMax(_maximum.x(), -_minimum.x()),
                    xMax(_maximum.y(), -_minimum.y()),
                    xMax(_maximum.z(), -_minimum.z())).squaredNorm();
   }
 
-bool Cuboid::intersects( const Cuboid &in ) const
+void BoundingBox::buildExtremities(Eks::Vector3D (&pts)[8]) const
+  {
+  enum { X = 1, Y = 2, Z = 4 };
+
+  for (xsize i = 0; i < X_ARRAY_COUNT(pts); ++i)
+    {
+    Eks::VectorUI3D sel(i & X, i & Y, i & Z);
+
+    pts[i] = sel.select(_maximum, _minimum);
+    }
+  }
+
+bool BoundingBox::intersects( const BoundingBox &in ) const
   {
   if( this == &in )
     {
@@ -143,7 +155,7 @@ bool Cuboid::intersects( const Cuboid &in ) const
       in.maximum().z() < _minimum.z() && in.minimum().z() > _maximum.z();
   }
 
-bool Cuboid::intersects(const Line &in, float &outT) const
+bool BoundingBox::intersects(const Line &in, float &outT) const
   {
   Vector3D t = in.sample(Plane(maximum(), Vector3D(0, 1, 0)).intersection(in));
   if( t.x() <= maximum().x() && t.x() >= minimum().x() &&
@@ -196,21 +208,21 @@ bool Cuboid::intersects(const Line &in, float &outT) const
   return false;
   }
 
-bool Cuboid::contains( const Vector3D &in ) const
+bool BoundingBox::contains( const Vector3D &in ) const
   {
   return in.x() <= _minimum.x() && in.x() >= _maximum.x() &&
          in.y() <= _minimum.y() && in.y() >= _maximum.y() &&
          in.z() <= _minimum.z() && in.z() >= _maximum.z();
   }
 
-bool Cuboid::contains( const Cuboid &smaller ) const
+bool BoundingBox::contains( const BoundingBox &smaller ) const
   {
   return smaller.minimum().x() >= _minimum.x() && smaller.maximum().x() <= _maximum.x() &&
          smaller.minimum().y() >= _minimum.y() && smaller.maximum().y() <= _maximum.y() &&
          smaller.minimum().z() >= _minimum.z() && smaller.maximum().z() <= _maximum.z();
   }
 
-void Cuboid::expand(float amount)
+void BoundingBox::expand(float amount)
   {
   Vector3D vec(amount, amount, amount);
 
@@ -218,14 +230,14 @@ void Cuboid::expand(float amount)
   _maximum += vec;
   }
 
-QTextStream &operator<<(QTextStream& str, const Cuboid& cub)
+QTextStream &operator<<(QTextStream& str, const BoundingBox& cub)
   {
   return str << (xuint32)cub.isValid() << cub.minimum() << cub.maximum();
   }
 
-QTextStream &operator>>(QTextStream& str, Cuboid& cub)
+QTextStream &operator>>(QTextStream& str, BoundingBox& cub)
   {
-  cub = Cuboid();
+  cub = BoundingBox();
   xuint32 valid = false;
   Vector3D min, max;
   str >> valid >> min >> max;
@@ -238,14 +250,14 @@ QTextStream &operator>>(QTextStream& str, Cuboid& cub)
   }
 
 
-QDataStream &operator<<(QDataStream& str, const Cuboid& cub)
+QDataStream &operator<<(QDataStream& str, const BoundingBox& cub)
   {
   return str << (xuint32)cub.isValid() << cub.minimum() << cub.maximum();
   }
 
-QDataStream &operator>>(QDataStream& str, Cuboid& cub)
+QDataStream &operator>>(QDataStream& str, BoundingBox& cub)
   {
-  cub = Cuboid();
+  cub = BoundingBox();
   xuint32 valid = false;
   Vector3D min, max;
   str >> valid >> min >> max;
@@ -257,4 +269,69 @@ QDataStream &operator>>(QDataStream& str, Cuboid& cub)
   return str;
   }
 
+AxisAlignedBoundingBox::AxisAlignedBoundingBox()
+  : _frame(Eks::Vector3D(0.0f, 0.0f, 1.0f))
+  {
+  }
+
+AxisAlignedBoundingBox::AxisAlignedBoundingBox(const Frame &f, const BoundingBox &bnds)
+  : _bounds(bnds), _frame(f)
+  {
+  }
+
+void AxisAlignedBoundingBox::expandAligned(const BoundingBox &bnds)
+  {
+  Eks::Vector3D pts[8];
+  bnds.buildExtremities(pts);
+
+  const Eks::Vector3D *ax = frame().axes();
+
+  xForeach(const auto& pt, pts)
+    {
+    Eks::Vector3D dotted[3];
+    for(xsize i = 0; i < X_ARRAY_COUNT(dotted); ++i)
+      {
+      dotted[i] = ax[i] * pt.dot(ax[i]);
+
+      _bounds.unite(dotted[i]);
+      }
+    }
+  }
+
+void AxisAlignedBoundingBox::buildExtremities(Vector3D (&pts)[8]) const
+  {
+  // find the extremitied in local space.
+  _bounds.buildExtremities(pts);
+
+  Eks::Transform myTr = frame().transform();
+
+  // rotate each point into world space.
+  for(xsize i = 0; i < X_ARRAY_COUNT(pts); ++i)
+    {
+    Eks::Vector3D &pt = pts[i];
+
+    pt = myTr * pt;
+    }
+  }
+
+void AxisAlignedBoundingBox::maximumExtents(const Eks::Vector3D &vec, float &min, float &max) const
+  {
+  min = HUGE_VAL;
+  max = -HUGE_VAL;
+
+  // Find the extremitied in world space.
+  Vector3D pts[8];
+  buildExtremities(pts);
+
+  // project each point onto vec and find min and max.
+  for(xsize i = 0; i < X_ARRAY_COUNT(pts); ++i)
+    {
+    const Eks::Vector3D &pt = pts[i];
+
+    float proj = vec.dot(pt);
+
+    min = xMin(min, proj);
+    max = xMax(max, proj);
+    }
+  }
 }

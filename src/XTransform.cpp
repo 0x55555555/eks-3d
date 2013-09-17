@@ -34,14 +34,13 @@ ComplexTransform perspective(Real angle, Real aspect, Real nearPlane, Real farPl
   ComplexTransform m;
   m.matrix() = Eks::Matrix4x4::Zero();
 
-  Real radians = (angle / 2.0f) * M_PI / 180.0f;
-  Real sine = Eks::sin(radians);
+  Real sine = Eks::sin(angle);
   if (sine == 0.0f)
     {
     return ComplexTransform::Identity();
     }
 
-  Real cotan = Eks::cos(radians) / sine;
+  Real cotan = Eks::cos(angle) / sine;
   Real clip = farPlane - nearPlane;
 
   m(0,0) = cotan / aspect;

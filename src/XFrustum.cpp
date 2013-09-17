@@ -1,5 +1,5 @@
 #include "XFrustum.h"
-#include "XCuboid.h"
+#include "XBoundingBox.h"
 #include "XPlane.h"
 
 namespace Eks
@@ -35,7 +35,7 @@ Frustum::Frustum( const Vector3D &point, const Vector3D &look, const Vector3D &a
 
   }
 
-Frustum::IntersectionResult Frustum::intersects( const Cuboid &cuboid ) const
+Frustum::IntersectionResult Frustum::intersects( const BoundingBox &cuboid ) const
   {
   Frustum::IntersectionResult ret = Inside;
   Vector3D vec;

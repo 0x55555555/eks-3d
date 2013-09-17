@@ -14,7 +14,7 @@ namespace Eks
 {
 
 template <typename T> class AbstractCurve;
-class Cuboid;
+class BoundingBox;
 class ShaderVertexLayoutDescription;
 
 class EKS3D_EXPORT Modeller
@@ -65,7 +65,7 @@ public:
   bool normalsAutomatic( ) const;
 
   // Draw Functions
-  void drawWireCube(const Cuboid &cube);
+  void drawWireCube(const BoundingBox &cube);
   void drawWireCircle(const Vector3D &pos, const Vector3D &normal, float radius, xsize pts=24);
 
   void drawCone(

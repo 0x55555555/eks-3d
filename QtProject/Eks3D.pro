@@ -11,7 +11,6 @@ QT += widgets
 include("../../EksCore/GeneralOptions.pri")
 
 SOURCES += \
-    ../src/XCuboid.cpp \
     ../src/XTransform.cpp \
     ../src/XGeometry.cpp \
     ../src/XShader.cpp \
@@ -33,11 +32,11 @@ SOURCES += \
     ../src/XShaderManager.cpp \
     ../src/XDepthStencilState.cpp \
     ../src/XBlendState.cpp \
-    ../src/XLine.cpp
+    ../src/XLine.cpp \
+    ../src/XBoundingBox.cpp
 
 HEADERS += \
     ../include/X3DGlobal.h \
-    ../include/XCuboid.h \
     ../include/XTransform.h \
     ../include/XRenderer.h \
     ../include/XGeometry.h \
@@ -65,7 +64,8 @@ HEADERS += \
     ../3rdParty/GL/wglew.h \
     ../3rdParty/GL/glxew.h \
     ../3rdParty/GL/glew.h \
-    ../examples/Simple3DExample.h
+    ../examples/Simple3DExample.h \
+    ../include/XBoundingBox.h
 
 INCLUDEPATH += ../include/ \
     $$ROOT/Eks/EksCore/include/

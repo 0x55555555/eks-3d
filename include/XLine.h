@@ -82,7 +82,7 @@ public:
       Eks::Vector3D lDir= Eks::Vector3D::Zero();
       lDir.head<Num>() = direction();
 
-      Eks::LineBase<3> l(lPos, lDir);
+      Eks::LineBase<3> l(lPos, lDir, PointAndDirection);
 
       return Plane( pos, cP ).intersection(l);
       }

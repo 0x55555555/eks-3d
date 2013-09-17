@@ -1,7 +1,7 @@
 #include "XGeometry.h"
 #include "XRenderer.h"
 #include "XTriangle.h"
-#include "XCuboid.h"
+#include "XBoundingBox.h"
 
 namespace Eks
 {

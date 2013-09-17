@@ -1,7 +1,7 @@
 #include "XModeller.h"
 #include "XGeometry.h"
 #include "XMathCurve"
-#include "XCuboid.h"
+#include "XBoundingBox.h"
 #include "XShader.h"
 #include "XGeometry.h"
 #include "XFrame"
@@ -289,7 +289,7 @@ bool Modeller::normalsAutomatic( ) const
   return _states.back().normalsAutomatic;
   }
 
-void Modeller::drawWireCube( const Cuboid &cube )
+void Modeller::drawWireCube( const BoundingBox &cube )
   {
   _areLineIndicesSequential = false;
 
@@ -411,7 +411,7 @@ void Modeller::drawSphere(float r, int lats, int longs)
   int i, j;
   for(i = 0; i <= lats; i++)
     {
-    float lat0 = M_PI * (-0.5 + (float)(i - 1) / lats);
+    float lat0 = M_PI * (-0.5 + (float)(i - 1) / lats); 
     float z0  = sinf(lat0) * r;
     float zr0 = cosf(lat0) * r;
 
@@ -437,19 +437,19 @@ void Modeller::drawSphere(float r, int lats, int longs)
       float uB = (float)(j)/(float)(longs);
 
       texture(uA, vA);
-      normal(xOld * zr0, yOld * zr0, z0);
+      normal(Eks::Vector3D(xOld * zr0, yOld * zr0, z0).normalized());
       vertex(xOld * zr0, yOld * zr0, z0);
 
       texture(uA, vB);
-      normal(xOld * zr1, yOld * zr1, z1);
+      normal(Eks::Vector3D(xOld * zr1, yOld * zr1, z1).normalized());
       vertex(xOld * zr1, yOld * zr1, z1);
 
       texture(uB, vB);
-      normal(x * zr1, y * zr1, z1);
+      normal(Eks::Vector3D(x * zr1, y * zr1, z1).normalized());
       vertex(x * zr1, y * zr1, z1);
 
       texture(uB, vA);
-      normal(x * zr0, y * zr0, z0);
+      normal(Eks::Vector3D(x * zr0, y * zr0, z0).normalized());
       vertex(x * zr0, y * zr0, z0);
       }
     end();
