@@ -86,12 +86,15 @@ inline Eks::BoundingBox operator *( const Eks::Transform &mat, const Eks::Boundi
     {
     return cub;
     }
-  Eks::Vector3D min = mat * cub.minimum();
-  Eks::Vector3D max = mat * cub.maximum();
+
+  Eks::Vector3D pts[8];
+  cub.buildExtremities(pts);
 
   Eks::BoundingBox ret;
-  ret.unite(min);
-  ret.unite(max);
+  xForeach(const auto &pt, pts)
+    {
+    ret.unite(mat * pt);
+    }
   return ret;
   }
 
