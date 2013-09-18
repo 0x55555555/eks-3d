@@ -436,21 +436,21 @@ void Modeller::drawSphere(float r, int lats, int longs)
       float uA = (float)(j-1)/(float)(longs);
       float uB = (float)(j)/(float)(longs);
 
-      texture(uA, vA);
-      normal(Eks::Vector3D(xOld * zr0, yOld * zr0, z0).normalized());
-      vertex(xOld * zr0, yOld * zr0, z0);
-
       texture(uA, vB);
       normal(Eks::Vector3D(xOld * zr1, yOld * zr1, z1).normalized());
       vertex(xOld * zr1, yOld * zr1, z1);
 
-      texture(uB, vB);
-      normal(Eks::Vector3D(x * zr1, y * zr1, z1).normalized());
-      vertex(x * zr1, y * zr1, z1);
+      texture(uA, vA);
+      normal(Eks::Vector3D(xOld * zr0, yOld * zr0, z0).normalized());
+      vertex(xOld * zr0, yOld * zr0, z0);
 
       texture(uB, vA);
       normal(Eks::Vector3D(x * zr0, y * zr0, z0).normalized());
       vertex(x * zr0, y * zr0, z0);
+
+      texture(uB, vB);
+      normal(Eks::Vector3D(x * zr1, y * zr1, z1).normalized());
+      vertex(x * zr1, y * zr1, z1);
       }
     end();
     }

@@ -422,6 +422,7 @@ public:
     }
 
   GLuint _elementCount;
+  GLuint _elementSize;
   };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -618,8 +619,9 @@ public:
   xuint8 _attrCount;
   Eks::GLRendererImpl* _renderer;
 
-  void bind() const
+  void bind(const XGLGeometryCache *cache) const
     {
+    xAssert(cache->_elementSize == vertexSize);
     for(GLuint i = 0, s = (GLuint)_attrCount; i < s; ++i)
       {
       const Attribute &attr = _attrs[i];
@@ -938,7 +940,7 @@ void GLRendererImpl::drawIndexedPrimitive(
   glBindBuffer(GL_ARRAY_BUFFER, gC->_buffer) GLE;
 
   XGLVertexLayout *l = r->_vertexLayout->data<XGLVertexLayout>();
-  l->bind();
+  l->bind(gC);
 
   glDrawElements(primitive, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
   l->unbind();
@@ -977,7 +979,7 @@ void GLRendererImpl::drawPrimitive(xuint32 primitive, Renderer *ren, const Geome
   glBindBuffer( GL_ARRAY_BUFFER, gC->_buffer ) GLE;
 
   XGLVertexLayout *l = r->_vertexLayout->data<XGLVertexLayout>();
-  l->bind();
+  l->bind(gC);
 
   glDrawArrays( primitive, 0, gC->_elementCount) GLE;
   l->unbind();
@@ -1814,6 +1816,7 @@ bool XGLGeometryCache::init(GLRendererImpl *r, const void *data, xsize elementSi
   {
   xsize dataSize = elementSize * elementCount;
   _elementCount = (GLuint)elementCount;
+  _elementSize = (GLuint)elementSize;
   return XGLBuffer::init(r, data, GL_ARRAY_BUFFER, GL_STATIC_DRAW, dataSize);
   }
 
