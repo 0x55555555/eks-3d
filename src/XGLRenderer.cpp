@@ -1,6 +1,6 @@
 #include "XGLRenderer.h"
 
-#if X_ENABLE_GL_RENDERER
+#ifdef X_ENABLE_GL_RENDERER
 
 #define USE_GLEW
 

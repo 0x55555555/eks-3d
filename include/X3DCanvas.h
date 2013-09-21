@@ -17,7 +17,7 @@ class Renderer;
 class FrameBuffer;
 }
 
-#if X_ENABLE_GL_RENDERER
+#ifdef X_ENABLE_GL_RENDERER
 
 #include "QtOpenGL/QGLWidget"
 
@@ -103,7 +103,7 @@ private:
 
 #endif
 
-#if X_ENABLE_DX_RENDERER
+#ifdef X_ENABLE_DX_RENDERER
 
 class QPaintEngine;
 

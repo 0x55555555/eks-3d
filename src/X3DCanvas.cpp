@@ -95,7 +95,7 @@ private:
 
 #define ALLOC Eks::Core::defaultAllocator()
 
-#if X_ENABLE_GL_RENDERER
+#ifdef X_ENABLE_GL_RENDERER
 
 #ifdef X_GL_EXTERNAL_CONTEXT
 
@@ -198,7 +198,7 @@ void GL3DCanvas::update3D()
 
 #endif
 
-#if X_ENABLE_DX_RENDERER
+#ifdef X_ENABLE_DX_RENDERER
 
 
 D3D3DCanvas::D3D3DCanvas(QWidget* parent, Renderer **r)
@@ -254,7 +254,7 @@ void D3D3DCanvas::doInitialise3D()
 QWidget* Canvas3D::createBest(QWidget* parent, AbstractCanvas **canvasOut)
   {
 
-#if X_ENABLE_DX_RENDERER
+#ifdef X_ENABLE_DX_RENDERER
   if(false && QSysInfo::WindowsVersion >= QSysInfo::WV_WINDOWS8)
     {
     Renderer *ren = 0;
@@ -264,7 +264,7 @@ QWidget* Canvas3D::createBest(QWidget* parent, AbstractCanvas **canvasOut)
     }
 #endif
 
-#if X_ENABLE_GL_RENDERER
+#ifdef X_ENABLE_GL_RENDERER
   GL3DCanvas *can = new GL3DCanvas(parent);
   *canvasOut = can;
   return can;

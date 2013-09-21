@@ -4,7 +4,7 @@
 #include "XMacroHelpers"
 #include "X3DGlobal.h"
 
-#if X_ENABLE_DX_RENDERER
+#ifdef X_ENABLE_DX_RENDERER
 
 struct IUnknown;
 struct ID3D11Device1;

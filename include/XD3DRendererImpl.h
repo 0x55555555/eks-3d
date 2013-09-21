@@ -3,7 +3,7 @@
 
 #include "XRenderer.h"
 
-#if X_ENABLE_DX_RENDERER
+#ifdef X_ENABLE_DX_RENDERER
 
 #include "XMathMatrix"
 #include "XColour"

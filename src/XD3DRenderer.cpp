@@ -1,7 +1,7 @@
 #include "XD3DRenderer.h"
 #include "XAllocatorBase"
 
-#if X_ENABLE_DX_RENDERER
+#ifdef X_ENABLE_DX_RENDERER
 
 #include <d3d11.h>
 #include <DXGI1_2.h>

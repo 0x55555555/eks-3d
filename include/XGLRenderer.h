@@ -3,7 +3,7 @@
 
 #include "X3DGlobal.h"
 
-#if X_ENABLE_GL_RENDERER
+#ifdef X_ENABLE_GL_RENDERER
 
 #include "XRenderer.h"
 #include "QSize"
