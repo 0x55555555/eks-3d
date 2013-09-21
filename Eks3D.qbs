@@ -6,20 +6,21 @@ Eks.Library {
   toRoot: "../../"
 
   Depends { name: "EksCore" }
+  Depends {
+    name: "Qt"
+    submodules: [ "gui", "opengl", "widgets" ]
+  }
+
+  cpp.defines: base.concat( [ "GLEW_STATIC" ] )
+  cpp.includePaths: base.concat( [ "3rdParty" ] )
 
   Group {
     name: "OpenGL"
     condition: engine == "Opengl"
 
-    cpp.includePaths: base.concat( [ "3rdParty" ] )
-
-    cpp.defines: base.concat( [ "GLEW_STATIC" ] )
-
     files: [ "include/XGL*", "src/XGL*", "3rdParty/GL/*" ]
 
     cpp.dynamicLibraries: [ "OpenGL32" ]
-    Depends { name: "Qt.opengl" }
-
   }
 
   Group {
