@@ -17,6 +17,10 @@ class Renderer;
 class FrameBuffer;
 }
 
+#ifdef Q_MOC_RUN
+# define X_ENABLE_GL_RENDERER
+#endif
+
 #ifdef X_ENABLE_GL_RENDERER
 
 #include "QtOpenGL/QGLWidget"

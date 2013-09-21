@@ -200,7 +200,6 @@ void GL3DCanvas::update3D()
 
 #ifdef X_ENABLE_DX_RENDERER
 
-
 D3D3DCanvas::D3D3DCanvas(QWidget* parent, Renderer **r)
     : QWidget(parent)
   {

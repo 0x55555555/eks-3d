@@ -74,7 +74,7 @@ win32-arm-msvc2012|win32-msvc2012 {
   SOURCES += ../src/XD3DRenderer.cpp \
     ../src/XD3DRendererImpl.cpp
 
-  DEFINES += EKSCORE_STATIC
+  DEFINES += EKSCORE_STATIC X_ENABLE_DX_RENDERER
 
   HEADERS += ../include/XD3DRenderer.h \
     ../include/XD3DRendererImpl.h
@@ -91,7 +91,7 @@ win32-arm-msvc2012|win32-msvc2012 {
   }
 
   INCLUDEPATH += ../3rdParty
-  DEFINES += GLEW_STATIC
+  DEFINES += GLEW_STATIC X_ENABLE_GL_RENDERER
   SOURCES += ../3rdParty/GL/glew.c \
              ../src/XGLRenderer.cpp
 
