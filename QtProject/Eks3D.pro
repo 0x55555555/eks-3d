@@ -91,7 +91,8 @@ win32-arm-msvc2012|win32-msvc2012 {
   }
 
   INCLUDEPATH += ../3rdParty
-  DEFINES += GLEW_STATIC X_ENABLE_GL_RENDERER
+  DEFINES += GLEW_STATIC
+  DEFINES += X_ENABLE_GL_RENDERER
   SOURCES += ../3rdParty/GL/glew.c \
              ../src/XGLRenderer.cpp
 

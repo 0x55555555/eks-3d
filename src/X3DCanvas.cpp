@@ -252,7 +252,6 @@ void D3D3DCanvas::doInitialise3D()
 
 QWidget* Canvas3D::createBest(QWidget* parent, AbstractCanvas **canvasOut)
   {
-
 #ifdef X_ENABLE_DX_RENDERER
   if(false && QSysInfo::WindowsVersion >= QSysInfo::WV_WINDOWS8)
     {
