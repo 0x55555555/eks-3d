@@ -23,8 +23,6 @@
 #define EKS_XREAL_GL_TYPE GL_DOUBLE
 #endif
 
-#include "XProfiler"
-
 #define X3DDataModelProfileScope 496
 #define X3DDataModelFunction XProfileFunctionBase(X3DDataModelProfileScope)
 #define X3DDataModelFunctionScopedBlock(mess) XProfileScopedBlockBase(X3DDataModelProfileScope, mess)
