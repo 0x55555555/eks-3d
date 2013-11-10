@@ -1153,7 +1153,22 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::Allocator
 
   const char* ven = (const char *)glGetString(GL_VENDOR);
   const char* ver = (const char *)glGetString(GL_VERSION);
-  qDebug() << ven << ver;
+  qDebug() << "GL Vendor:" << ven << ver;
+
+  xint32 major = 0;
+  const char* verPt = ver;
+  while(*verPt >= '0' && *verPt < '9')
+    {
+    xint32 num = *verPt - '0';
+    major = (major*10) + num;
+
+    ++verPt;
+    }
+
+  if(major < 2)
+    {
+    return nullptr;
+    }
 
   const detail::RendererFunctions &fns = gl21fns;
   //... if gl33...
@@ -1404,6 +1419,7 @@ void XGL33Framebuffer::unbind(GLRendererImpl *)
 //----------------------------------------------------------------------------------------------------------------------
 bool XGLShaderComponent::init(GLRendererImpl *impl, xuint32 type, const char *data, xsize size)
   {
+  xAssert(glCreateShader);
   _component = glCreateShader(type) GLE;
 
   const char *extra = "#define X_GLSL_VERSION 120\n";
