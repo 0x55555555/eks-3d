@@ -1,7 +1,8 @@
 import "../EksBuild" as Eks;
 
 Eks.Library {
-  property string engine: "Opengl" // [ "Opengl", "D3D" ]
+  property bool angle: Qt.core.qtConfig.contains("angle")
+  property string engine: angle ? "Opengl" : "GLES" // [ "Opengl", "GLES", "D3D" ]
   name: "Eks3D"
   toRoot: "../../"
 
@@ -16,8 +17,7 @@ Eks.Library {
 	"3rdParty", 
 	"C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\include",
 	"C:\\Program Files (x86)\\Windows Kits\\8.1\\Include\\um",
-    "C:\\Program Files (x86)\\Windows Kits\\8.1\\Include\\shared",
-    Qt.core.incPath + "\\QtANGLE"
+    "C:\\Program Files (x86)\\Windows Kits\\8.1\\Include\\shared"
   ] )
 
   Group {
@@ -31,6 +31,20 @@ Eks.Library {
     cpp.dynamicLibraries: [ "OpenGL32", "Gdi32", "User32" ]
 
     cpp.defines: base.concat( [ "GLEW_STATIC", "X_ENABLE_GL_RENDERER" ] )
+  }
+
+  Group {
+    name: "GLES"
+    condition: engine == "GLES"
+
+    files: [ "include/XGL*", "src/XGL*" ]
+  }
+  Properties {
+    condition: engine == "GLES"
+    cpp.libraryPaths: base.concat( [ Qt.core.libPath ] )
+    cpp.dynamicLibraries: [ "libGLESv2d", "libEGLd", "Gdi32", "User32" ]
+
+    cpp.defines: base.concat( [ "GLEW_STATIC", "X_GLES", "X_ENABLE_GL_RENDERER" ] )
   }
 
   Group {

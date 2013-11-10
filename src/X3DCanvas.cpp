@@ -178,6 +178,10 @@ void GL3DCanvas::paintGL()
 
 void GL3DCanvas::initializeGL()
   {
+  context()->makeCurrent();
+
+  xAssert(glCreateShader(GL_VERTEX_SHADER));
+
   _buffer = ALLOC->create<ScreenFrameBuffer>();
 
   bool es =

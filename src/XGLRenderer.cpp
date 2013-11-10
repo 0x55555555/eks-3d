@@ -13,6 +13,9 @@
 #endif
 
 #ifdef USE_GLES
+# ifndef X_GLES
+# error Need X_GLES defined
+# endif
 # include "QGLFunctions"
 #endif
 
@@ -1090,6 +1093,7 @@ detail::RendererFunctions gl21fns =
   }
 };
 
+#ifdef USE_GLEW
 detail::RendererFunctions gl33fns =
 {
   {
@@ -1152,6 +1156,7 @@ detail::RendererFunctions gl33fns =
     XGL33Framebuffer::getTexture
   }
 };
+#endif
 
 Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, bool gles, Eks::AllocatorBase* alloc)
   {
@@ -1163,19 +1168,22 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, bool gles, Eks
   const char* ver = (const char *)glGetString(GL_VERSION);
   qDebug() << "GL Vendor:" << ven << ver;
 
-  xint32 major = 0;
-  const char* verPt = ver;
-  while(*verPt >= '0' && *verPt < '9')
+  if(!gles)
     {
-    xint32 num = *verPt - '0';
-    major = (major*10) + num;
+    xint32 major = 0;
+    const char* verPt = ver;
+    while(*verPt && *verPt >= '0' && *verPt < '9')
+      {
+      xint32 num = *verPt - '0';
+      major = (major*10) + num;
 
-    ++verPt;
-    }
+      ++verPt;
+      }
 
-  if(major < 2)
-    {
-    return nullptr;
+    if(major < 2)
+      {
+      return nullptr;
+      }
     }
 
   const detail::RendererFunctions &fns = gl21fns;
@@ -1437,6 +1445,10 @@ bool XGLShaderComponent::init(GLRendererImpl *impl, xuint32 type, const char *da
   xAssert(glCreateShader);
 #endif
   _component = glCreateShader(type) GLE;
+  if (_component == 0)
+    {
+    return false;
+    }
 
   const char *extra = "#define X_GLSL_VERSION 120\n";
 
@@ -1456,21 +1468,21 @@ bool XGLShaderComponent::init(GLRendererImpl *impl, xuint32 type, const char *da
   glCompileShader(_component) GLE;
 
   int infoLogLength = 0;
-  glGetShaderiv(_component, GL_INFO_LOG_LENGTH, &infoLogLength);
+  glGetShaderiv(_component, GL_INFO_LOG_LENGTH, &infoLogLength) GLE;
 
   if (infoLogLength > 0)
     {
     Eks::String infoLog(impl->_allocator);
     infoLog.resize(infoLogLength, '\0');
     int charsWritten  = 0;
-    glGetShaderInfoLog(_component, infoLogLength, &charsWritten, infoLog.data());
+    glGetShaderInfoLog(_component, infoLogLength, &charsWritten, infoLog.data()) GLE;
     qDebug() << infoLog.toQString();
     }
 
   int success = 0;
-  glGetShaderiv(_component, GL_COMPILE_STATUS, &success);
+  glGetShaderiv(_component, GL_COMPILE_STATUS, &success) GLE;
 
-  return success;
+  return success == GL_TRUE;
   }
 
 bool XGLShaderComponent::createVertex(
