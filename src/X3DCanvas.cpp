@@ -110,7 +110,7 @@ GL3DCanvas::GL3DCanvas(QWidget *parent) :
 
   _context->bind();
   _buffer = ALLOC->create<ScreenFrameBuffer>();
-  _renderer = GLRenderer::createGLRenderer(_buffer, ALLOC);
+  _renderer = GLRenderer::createGLRenderer(_buffer, false, ALLOC);
 
   QTimer::singleShot(0, Qt::CoarseTimer, this, SLOT(doInitialise3D()));
   }
@@ -180,7 +180,14 @@ void GL3DCanvas::initializeGL()
   {
   _buffer = ALLOC->create<ScreenFrameBuffer>();
 
-  _renderer = GLRenderer::createGLRenderer(_buffer, ALLOC);
+  bool es =
+#ifdef QT_OPENGL_ES_2
+    true
+#else
+    false
+#endif
+    ;
+  _renderer = GLRenderer::createGLRenderer(_buffer, es, ALLOC);
   Q_EMIT initialise3D(_renderer);
   }
 

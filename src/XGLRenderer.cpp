@@ -2,10 +2,18 @@
 
 #ifdef X_ENABLE_GL_RENDERER
 
-#define USE_GLEW
+#ifdef QT_OPENGL_ES_2
+# define USE_GLES
+#else
+# define USE_GLEW
+#endif
 
 #ifdef USE_GLEW
 # include "GL/glew.h"
+#endif
+
+#ifdef USE_GLES
+# include "QGLFunctions"
 #endif
 
 #include "XStringSimple"
@@ -1145,7 +1153,7 @@ detail::RendererFunctions gl33fns =
   }
 };
 
-Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, Eks::AllocatorBase* alloc)
+Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, bool gles, Eks::AllocatorBase* alloc)
   {
 #ifdef USE_GLEW
   glewInit();
@@ -1232,7 +1240,13 @@ bool XGLTexture2D::init(GLRendererImpl *, xuint32 format, xsize width, xsize hei
   int formatMap[] =
   {
     GL_RGBA,
+  #ifdef USE_GLEW
     GL_DEPTH_COMPONENT24
+  #else
+  # ifdef USE_GLES
+    GL_DEPTH_COMPONENT16
+  # endif
+  #endif
   };
   xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == TextureFormatCount);
 
@@ -1267,24 +1281,24 @@ bool XGL21Framebuffer::init(Renderer *r, TextureFormat cF, TextureFormat dF, xui
   {
   GLRendererImpl *impl = GL_REND(r);
 
-  glGenFramebuffersEXT(1, &_buffer) GLE;
-  glBindFramebufferEXT(GL_FRAMEBUFFER, _buffer) GLE;
+  glGenFramebuffers(1, &_buffer) GLE;
+  glBindFramebuffer(GL_FRAMEBUFFER, _buffer) GLE;
 
   if(!Texture2D::delayedCreate(_textures[FrameBuffer::TextureColour], r, width, height, cF, 0))
     {
     return false;
     }
   XGLTexture2D* c = _textures[FrameBuffer::TextureColour].data<XGLTexture2D>();
-  glFramebufferTexture2DEXT(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, c->_id, 0) GLE;
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, c->_id, 0) GLE;
 
   if(!Texture2D::delayedCreate(_textures[FrameBuffer::TextureDepthStencil], r, width, height, dF, 0))
     {
     return false;
     }
   XGLTexture2D* d = _textures[FrameBuffer::TextureDepthStencil].data<XGLTexture2D>();
-  glFramebufferTexture2DEXT(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, d->_id, 0) GLE;
+  glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, d->_id, 0) GLE;
 
-  glBindFramebufferEXT(GL_FRAMEBUFFER, 0) GLE;
+  glBindFramebuffer(GL_FRAMEBUFFER, 0) GLE;
   return isValid(impl);
   }
 
@@ -1324,7 +1338,7 @@ XGL21Framebuffer::~XGL21Framebuffer( )
   {
   if( _buffer )
     {
-    glDeleteFramebuffersEXT( 1, &_buffer ) GLE;
+    glDeleteFramebuffers( 1, &_buffer ) GLE;
     }
   }
 
@@ -1332,7 +1346,7 @@ XGL33Framebuffer::~XGL33Framebuffer( )
   {
   if( _buffer )
     {
-    glDeleteFramebuffersEXT( 1, &_buffer ) GLE;
+    glDeleteFramebuffers( 1, &_buffer ) GLE;
     }
   }
 
@@ -1343,8 +1357,8 @@ bool XGL21Framebuffer::isValid(GLRendererImpl *) const
     return true;
     }
 
-  glBindFramebufferEXT( GL_FRAMEBUFFER, _buffer ) GLE;
-  int status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER) GLE;
+  glBindFramebuffer( GL_FRAMEBUFFER, _buffer ) GLE;
+  int status = glCheckFramebufferStatus(GL_FRAMEBUFFER) GLE;
 
   if( status == GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT )
     {
@@ -1359,7 +1373,7 @@ bool XGL21Framebuffer::isValid(GLRendererImpl *) const
     qWarning() << "Framebuffer unsupported attachment";
     }
 
-  glBindFramebufferEXT( GL_FRAMEBUFFER, 0 ) GLE;
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 ) GLE;
 
   return status == GL_FRAMEBUFFER_COMPLETE;
   }
@@ -1395,7 +1409,7 @@ bool XGL33Framebuffer::isValid(GLRendererImpl *) const
 void XGL21Framebuffer::bind(GLRendererImpl *r)
   {
   xAssert( isValid(r) );
-  glBindFramebufferEXT( GL_FRAMEBUFFER, _buffer ) GLE;
+  glBindFramebuffer( GL_FRAMEBUFFER, _buffer ) GLE;
   }
 
 void XGL33Framebuffer::bind(GLRendererImpl *r)
@@ -1406,7 +1420,7 @@ void XGL33Framebuffer::bind(GLRendererImpl *r)
 
 void XGL21Framebuffer::unbind(GLRendererImpl *)
   {
-  glBindFramebufferEXT( GL_FRAMEBUFFER, 0 ) GLE;
+  glBindFramebuffer( GL_FRAMEBUFFER, 0 ) GLE;
   }
 
 void XGL33Framebuffer::unbind(GLRendererImpl *)
@@ -1419,7 +1433,9 @@ void XGL33Framebuffer::unbind(GLRendererImpl *)
 //----------------------------------------------------------------------------------------------------------------------
 bool XGLShaderComponent::init(GLRendererImpl *impl, xuint32 type, const char *data, xsize size)
   {
+#ifdef USE_GLEW
   xAssert(glCreateShader);
+#endif
   _component = glCreateShader(type) GLE;
 
   const char *extra = "#define X_GLSL_VERSION 120\n";
@@ -1593,6 +1609,7 @@ void XGL21ShaderData::bind(xuint32 program, xuint32 index) const
     }
   }
 
+#ifdef USE_GLEW
 bool XGL33ShaderData::init(
     GLRendererImpl *r,
     ShaderConstantDataDescription *desc,
@@ -1621,6 +1638,7 @@ void XGL33ShaderData::bind(xuint32 program, xuint32 index) const
   (void)program;
   glBindBufferRange(GL_UNIFORM_BUFFER, index, _buffer, 0, _size);
   }
+#endif
 
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER

@@ -28,7 +28,7 @@ class FrameBuffer;
 namespace Eks
 {
 
-#ifdef Q_OS_WIN32
+#ifdef Q_OS_WIN32x
 class WinGLContext;
 # define X_GL_EXTERNAL_CONTEXT WinGLContext
 #endif

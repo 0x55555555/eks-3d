@@ -6,6 +6,7 @@ Eks.Library {
   toRoot: "../../"
 
   Depends { name: "EksCore" }
+  Depends { name: "Qt.core" }
   Depends {
     name: "Qt"
     submodules: [ "gui", "opengl", "widgets" ]
@@ -15,7 +16,8 @@ Eks.Library {
 	"3rdParty", 
 	"C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\include",
 	"C:\\Program Files (x86)\\Windows Kits\\8.1\\Include\\um",
-	"C:\\Program Files (x86)\\Windows Kits\\8.1\\Include\\shared"
+    "C:\\Program Files (x86)\\Windows Kits\\8.1\\Include\\shared",
+    Qt.core.incPath + "\\QtANGLE"
   ] )
 
   Group {
