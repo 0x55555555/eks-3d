@@ -1450,7 +1450,11 @@ bool XGLShaderComponent::init(GLRendererImpl *impl, xuint32 type, const char *da
     return false;
     }
 
-  const char *extra = "#define X_GLSL_VERSION 120\n";
+  const char *extra = "#define X_GLSL_VERSION 120\n"
+#ifdef USE_GLES
+                      "#define X_GLES\n"
+#endif
+    ;
 
   int lengths[] =
     {
