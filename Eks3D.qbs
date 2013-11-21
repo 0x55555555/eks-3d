@@ -13,12 +13,8 @@ Eks.Library {
     submodules: [ "gui", "opengl", "widgets" ]
   }
 
-  cpp.includePaths: base.concat( [ 
-	"3rdParty", 
-	"C:\\Program Files (x86)\\Microsoft Visual Studio 12.0\\VC\\include",
-	"C:\\Program Files (x86)\\Windows Kits\\8.1\\Include\\um",
-    "C:\\Program Files (x86)\\Windows Kits\\8.1\\Include\\shared"
-  ] )
+
+  cpp.includePaths: base.concat( [ "3rdParty" ] ).concat(EksCore.windowsIncludePaths)
 
   Group {
     name: "OpenGL"

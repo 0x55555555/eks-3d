@@ -7,6 +7,7 @@ TEMPLATE = lib
 
 QT += widgets
 
+DEFINES += X_GLES
 
 include("../../EksCore/GeneralOptions.pri")
 
