@@ -234,7 +234,10 @@ public:
   const Texture2D *colour() const;
   const Texture2D *depth() const;
 
-  static void clear(Renderer *r, FrameBuffer *buffer, xuint32 mode)
+  static void clear(
+      Renderer *X_USED_FOR_ASSERTS(r),
+      FrameBuffer *X_USED_FOR_ASSERTS(buffer),
+      xuint32 mode)
     {
 #if X_ASSERTS_ENABLED
     GLRendererImpl *rend = GL_REND(r);
@@ -630,7 +633,7 @@ public:
   xuint8 _attrCount;
   Eks::GLRendererImpl* _renderer;
 
-  void bind(const XGLGeometryCache *cache) const
+  void bind(const XGLGeometryCache *X_USED_FOR_ASSERTS(cache)) const
     {
     xAssert(cache->_elementSize == vertexSize);
     for(GLuint i = 0, s = (GLuint)_attrCount; i < s; ++i)
@@ -1414,13 +1417,13 @@ bool XGL33Framebuffer::isValid(GLRendererImpl *) const
   return status == GL_FRAMEBUFFER_COMPLETE;
   }
 
-void XGL21Framebuffer::bind(GLRendererImpl *r)
+void XGL21Framebuffer::bind(GLRendererImpl *X_USED_FOR_ASSERTS(r))
   {
   xAssert( isValid(r) );
   glBindFramebuffer( GL_FRAMEBUFFER, _buffer ) GLE;
   }
 
-void XGL33Framebuffer::bind(GLRendererImpl *r)
+void XGL33Framebuffer::bind(GLRendererImpl *X_USED_FOR_ASSERTS(r))
   {
   xAssert( isValid(r) );
   glBindFramebuffer( GL_FRAMEBUFFER, _buffer ) GLE;
