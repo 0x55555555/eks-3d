@@ -5,7 +5,7 @@
 #define QT_NO_OPENGL_ES
 #endif
 
-#include "XGlobal"
+#include "XGlobal.h"
 
 #ifndef EKS3D_STATIC
 # if defined(EKS3D_BUILD)
@@ -22,11 +22,6 @@
 #else
 #define EKS_XREAL_GL_TYPE GL_DOUBLE
 #endif
-
-#define X3DDataModelProfileScope 496
-#define X3DDataModelFunction XProfileFunctionBase(X3DDataModelProfileScope)
-#define X3DDataModelFunctionScopedBlock(mess) XProfileScopedBlockBase(X3DDataModelProfileScope, mess)
-
 
 namespace Eks
 {

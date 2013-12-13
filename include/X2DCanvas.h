@@ -7,7 +7,7 @@
 
 #if X_QT_INTEROP
 
-#include "QtHelper/XQWidget"
+#include "QtHelper/XQWidget.h"
 #include "QtGui/QMouseEvent"
 
 

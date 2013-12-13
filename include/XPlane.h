@@ -2,8 +2,8 @@
 #define Plane_H
 
 #include "X3DGlobal.h"
-#include "XProperty"
-#include "XMathVector"
+#include "Utilities/XProperty.h"
+#include "Math/XMathVector.h"
 #include "XTransform.h"
 
 namespace Eks

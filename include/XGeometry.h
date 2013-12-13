@@ -2,8 +2,8 @@
 #define XGEOMETRY_H
 
 #include "X3DGlobal.h"
-#include "XMathVector"
-#include "XPrivateImpl"
+#include "Math/XMathVector.h"
+#include "Utilities/XPrivateImpl.h"
 
 namespace Eks
 {

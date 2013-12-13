@@ -2,8 +2,8 @@
 #define ObjLoader_H
 
 #include "X3DGlobal.h"
-#include "XMathVector"
-#include "XStringSimple"
+#include "Math/XMathVector.h"
+#include "Containers/XStringSimple.h"
 #include "XShader.h"
 
 namespace Eks

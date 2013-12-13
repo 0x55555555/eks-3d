@@ -4,9 +4,9 @@
 #include "X3DGlobal.h"
 #undef min
 #undef max
-#include "Eigen/Geometry"
-#include "XMathVector"
-#include "XMathMatrix"
+#include "Math/Eigen/Geometry"
+#include "Math/XMathVector.h"
+#include "Math/XMathMatrix.h"
 
 namespace Eks
 {

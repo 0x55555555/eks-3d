@@ -1,7 +1,7 @@
 #ifndef XCAMERACANVASCONTROLLER_H
 #define XCAMERACANVASCONTROLLER_H
 
-#include "XProperty"
+#include "Utilities/XProperty.h"
 #include "XAbstractCanvasController.h"
 
 namespace Eks

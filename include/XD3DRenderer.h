@@ -1,7 +1,7 @@
 #ifndef XD3DRENDERER_H
 #define XD3DRENDERER_H
 
-#include "XMacroHelpers"
+#include "Utilities/XMacroHelpers.h"
 #include "X3DGlobal.h"
 
 #ifdef X_ENABLE_DX_RENDERER

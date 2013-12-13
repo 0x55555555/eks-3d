@@ -30,7 +30,6 @@ SOURCES += \
     ../src/XRasteriserState.cpp \
     ../src/XFrameBuffer.cpp \
     ../src/X3DCanvas.cpp \
-    ../src/XShaderManager.cpp \
     ../src/XDepthStencilState.cpp \
     ../src/XBlendState.cpp \
     ../src/XLine.cpp \
@@ -58,7 +57,6 @@ HEADERS += \
     ../include/XObjLoader.h \
     ../include/XRasteriserState.h \
     ../include/XFrameBuffer.h \
-    ../include/XShaderManager.h \
     ../include/X3DCanvas.h \
     ../include/XDepthStencilState.h \
     ../include/XBlendState.h \

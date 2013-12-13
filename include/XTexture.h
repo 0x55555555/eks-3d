@@ -2,8 +2,8 @@
 #define XABSTRACTTEXTURE_H
 
 #include "X3DGlobal.h"
-#include "XPrivateImpl"
-#include "XProperty"
+#include "Utilities/XPrivateImpl.h"
+#include "Utilities/XProperty.h"
 #include "XRenderer.h"
 
 namespace Eks

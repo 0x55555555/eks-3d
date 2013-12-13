@@ -1,7 +1,7 @@
 #ifndef XFRUSTUM
 #define XFRUSTUM
 
-#include "XGlobal"
+#include "XGlobal.h"
 #include "XTransform.h"
 #include "XPlane.h"
 

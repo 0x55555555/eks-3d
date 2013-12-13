@@ -2,8 +2,8 @@
 #define XABSTRACTRENDERMODEL_H
 
 #include "X3DGlobal.h"
-#include "XVector"
-#include "XProperty"
+#include "Containers/XVector.h"
+#include "Utilities/XProperty.h"
 
 namespace Eks
 {

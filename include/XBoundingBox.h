@@ -2,9 +2,9 @@
 #define Cuboid_H
 
 #include "X3DGlobal.h"
-#include "XMathVector"
-#include "XProperty"
-#include "XFrame"
+#include "Math/XMathVector.h"
+#include "Utilities/XProperty.h"
+#include "Math/XFrame.h"
 #include "XTransform.h"
 
 namespace Eks

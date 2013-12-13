@@ -2,7 +2,7 @@
 #define XRENDERER_H
 
 #include "X3DGlobal.h"
-#include "XProperty"
+#include "Utilities/XProperty.h"
 #include "XTransform.h"
 
 namespace Eks

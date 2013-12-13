@@ -2,7 +2,7 @@
 #define XABSTRACTCANVAS_H
 
 #include "X3DGlobal.h"
-#include "XProperty"
+#include "Utilities/XProperty.h"
 #include "XAbstractRenderModel.h"
 
 namespace Eks

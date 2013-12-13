@@ -2,7 +2,7 @@
 #define XABSTRACTSHADER_H
 
 #include "X3DGlobal.h"
-#include "XPrivateImpl"
+#include "Utilities/XPrivateImpl.h"
 
 namespace Eks
 {

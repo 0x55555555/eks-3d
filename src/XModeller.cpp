@@ -1,10 +1,10 @@
 #include "XModeller.h"
 #include "XGeometry.h"
-#include "XMathCurve"
+#include "Math/XMathCurve.h"
 #include "XBoundingBox.h"
 #include "XShader.h"
 #include "XGeometry.h"
-#include "XFrame"
+#include "Math/XFrame.h"
 
 namespace Eks
 {

@@ -1,12 +1,12 @@
 #ifndef XABSTRACTCANVASCONTROLLER_H
 #define XABSTRACTCANVASCONTROLLER_H
 
-#include "XMacroHelpers"
+#include "Utilities/XMacroHelpers.h"
 #include "X3DGlobal.h"
-#include "XProperty"
+#include "Utilities/XProperty.h"
 #include "QtCore/QEvent"
 #include "QtCore/QPoint"
-#include "XFlags"
+#include "Utilities/XFlags.h"
 
 #define X_IMPLEMENT_MOUSEHANDLER(function, type, update) \
 virtual void function(QMouseEvent *event) { \

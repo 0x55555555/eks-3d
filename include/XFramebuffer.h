@@ -2,8 +2,8 @@
 #define XFRAMEBUFFER_H
 
 #include "X3DGlobal.h"
-#include "XProperty"
-#include "XPrivateImpl"
+#include "Utilities/XProperty.h"
+#include "Utilities/XPrivateImpl.h"
 
 namespace Eks
 {

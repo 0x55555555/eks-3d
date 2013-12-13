@@ -2,8 +2,8 @@
 
 #if X_QT_INTEROP
 
-#include "XCore"
-#include "XOptional"
+#include "XCore.h"
+#include "Utilities/XOptional.h"
 #include "XGLRenderer.h"
 #include "XD3DRenderer.h"
 #include "XFramebuffer.h"

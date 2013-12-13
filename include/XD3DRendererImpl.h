@@ -5,8 +5,8 @@
 
 #ifdef X_ENABLE_DX_RENDERER
 
-#include "XMathMatrix"
-#include "XColour"
+#include "Math/XMathMatrix.h"
+#include "Math/XColour.h"
 #include <d3d11_1.h>
 #include <DXGI1_2.h>
 #include <DirectXMath.h>

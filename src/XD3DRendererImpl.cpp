@@ -3,9 +3,9 @@
 #ifdef X_ENABLE_DX_RENDERER
 
 #include <comdef.h>
-#include "XAssert"
-#include "XResourceDescription"
-#include "XOptional"
+#include "Utilities/XAssert.h"
+#include "Memory/XResourceDescription.h"
+#include "Utilities/XOptional.h"
 
 namespace Eks
 {

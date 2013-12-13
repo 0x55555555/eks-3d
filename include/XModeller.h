@@ -2,13 +2,13 @@
 #define XMODELLER_H
 
 #include "X3DGlobal.h"
-#include "XAllocatorBase"
-#include "XMathVector"
+#include "Memory/XAllocatorBase.h"
+#include "Math/XMathVector.h"
 #include "XGeometry.h"
-#include "XColour"
+#include "Math/XColour.h"
 #include "XTransform.h"
 #include "XShader.h"
-#include "XVector"
+#include "Containers/XVector.h"
 
 namespace Eks
 {

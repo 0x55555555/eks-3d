@@ -2,8 +2,8 @@
 #define XLINE_H
 
 #include "X3DGlobal.h"
-#include "XMathVector"
-#include "XProperty"
+#include "Math/XMathVector.h"
+#include "Utilities/XProperty.h"
 #include "XTransform.h"
 
 namespace Eks

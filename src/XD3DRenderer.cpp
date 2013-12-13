@@ -1,5 +1,5 @@
 #include "XD3DRenderer.h"
-#include "XAllocatorBase"
+#include "Memory/XAllocatorBase.h"
 
 #ifdef X_ENABLE_DX_RENDERER
 
@@ -14,8 +14,8 @@
 #include "XRenderer.h"
 #include "XBlendState.h"
 #include "XDepthStencilState.h"
-#include "XColour"
-#include "XOptional"
+#include "Math/XColour.h"
+#include "Utilities/XOptional.h"
 #include "XShader.h"
 
 using namespace DirectX;

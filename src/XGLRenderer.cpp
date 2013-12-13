@@ -19,8 +19,8 @@
 # include "QGLFunctions"
 #endif
 
-#include "XStringSimple"
-#include "XAllocatorBase"
+#include "Containers/XStringSimple.h"
+#include "Memory/XAllocatorBase.h"
 #include "XFramebuffer.h"
 #include "XGeometry.h"
 #include "XShader.h"
@@ -28,7 +28,7 @@
 #include "XRasteriserState.h"
 #include "XBlendState.h"
 #include "XDepthStencilState.h"
-#include "XColour"
+#include "Math/XColour.h"
 #include "QVarLengthArray"
 #include "QDebug"
 #include "XShader.h"

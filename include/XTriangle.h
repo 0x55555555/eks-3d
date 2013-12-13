@@ -1,8 +1,8 @@
 #ifndef XTRIANGLE_H
 #define XTRIANGLE_H
 
-#include "XProperty"
-#include "XMathVector"
+#include "Utilities/XProperty.h"
+#include "Math/XMathVector.h"
 
 namespace Eks
 {
