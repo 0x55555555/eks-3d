@@ -5,6 +5,7 @@
 #include "Math/XMathVector.h"
 #include "Utilities/XProperty.h"
 #include "XTransform.h"
+#include "XPlane.h"
 
 namespace Eks
 {

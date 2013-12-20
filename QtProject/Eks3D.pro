@@ -5,7 +5,7 @@
 TARGET = Eks3D
 TEMPLATE = lib
 
-QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 DEFINES += X_GLES
 

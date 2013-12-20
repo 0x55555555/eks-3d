@@ -1,4 +1,5 @@
 #include "XCameraCanvasController.h"
+#include <cmath>
 #include "QDebug"
 
 namespace Eks

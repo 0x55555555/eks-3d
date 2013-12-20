@@ -275,7 +275,8 @@ AxisAlignedBoundingBox::AxisAlignedBoundingBox()
   }
 
 AxisAlignedBoundingBox::AxisAlignedBoundingBox(const Frame &f, const BoundingBox &bnds)
-  : _bounds(bnds), _frame(f)
+  : _frame(f),
+    _bounds(bnds)
   {
   }
 

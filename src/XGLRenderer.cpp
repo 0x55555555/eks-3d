@@ -78,7 +78,7 @@ class XGLVertexLayout;
 
 template <typename X, typename T> void destroy(Renderer *, X *x)
   {
-  x->destroy<T>();
+  x->template destroy<T>();
   }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -1137,7 +1137,8 @@ detail::RendererFunctions gl33fns =
     XGLRasteriserState::bind,
     XGLDepthStencilState::bind,
     XGLBlendState::bind,
-    GLRendererImpl::setTransform
+    GLRendererImpl::setTransform,
+    GLRendererImpl::setStockShader
   },
   {
     XGLTexture2D::getInfo,
