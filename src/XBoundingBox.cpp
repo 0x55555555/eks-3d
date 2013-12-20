@@ -2,6 +2,7 @@
 #include "XLine.h"
 #include "XPlane.h"
 
+
 namespace Eks
 {
 
@@ -230,13 +231,15 @@ void BoundingBox::expand(float amount)
   _maximum += vec;
   }
 
-QTextStream &operator<<(QTextStream& str, const BoundingBox& cub)
+std::ostream &operator<<(std::ostream& str, const BoundingBox& cub)
   {
   return str << (xuint32)cub.isValid() << cub.minimum() << cub.maximum();
   }
 
-QTextStream &operator>>(QTextStream& str, BoundingBox& cub)
+std::istream &operator>>(std::istream& str, BoundingBox& cub)
   {
+  using ::operator >>;
+
   cub = BoundingBox();
   xuint32 valid = false;
   Vector3D min, max;
