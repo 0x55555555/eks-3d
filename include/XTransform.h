@@ -21,30 +21,22 @@ ComplexTransform EKS3D_EXPORT perspective(Real angle, Real aspect, Real nearPlan
 }
 }
 
+namespace Eigen
+{
+template <typename A, int B, int C, int D> std::ostream &operator<<(std::ostream &str, const Eigen::Transform <A, B, C, D> &data)
+  {
+  return str << data.matrix();
+  }
+
+template <typename A, int B, int C, int D> std::istream &operator>>(std::istream &str, Eigen::Transform <A, B, C, D> &data)
+  {
+  return str >> data.matrix();
+  }
+}
+
 template <typename A, int B, int C, int D> QDebug operator <<(QDebug str, const Eigen::Transform <A, B, C, D> &data)
   {
   return str << data.matrix();
-  }
-
-template <typename A, int B, int C, int D> QTextStream &operator <<(QTextStream &str, const Eigen::Transform <A, B, C, D> &data)
-  {
-  return str << data.matrix();
-  }
-
-template <typename A, int B, int C, int D> QTextStream &operator >>(QTextStream &str, Eigen::Transform <A, B, C, D> &data)
-  {
-  return str >> data.matrix();
-  }
-
-
-template <typename A, int B, int C, int D> QDataStream &operator <<(QDataStream &str, const Eigen::Transform <A, B, C, D> &data)
-  {
-  return str << data.matrix();
-  }
-
-template <typename A, int B, int C, int D> QDataStream &operator >>(QDataStream &str, Eigen::Transform <A, B, C, D> &data)
-  {
-  return str >> data.matrix();
   }
 
 template <typename A, int B, int C, int D, typename E, int F, int G, int H>

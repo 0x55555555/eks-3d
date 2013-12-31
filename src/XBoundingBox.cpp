@@ -252,26 +252,6 @@ std::istream &operator>>(std::istream& str, BoundingBox& cub)
   return str;
   }
 
-
-QDataStream &operator<<(QDataStream& str, const BoundingBox& cub)
-  {
-  return str << (xuint32)cub.isValid() << cub.minimum() << cub.maximum();
-  }
-
-QDataStream &operator>>(QDataStream& str, BoundingBox& cub)
-  {
-  cub = BoundingBox();
-  xuint32 valid = false;
-  Vector3D min, max;
-  str >> valid >> min >> max;
-  if(valid)
-    {
-    cub.setMinimum(min);
-    cub.setMaximum(max);
-    }
-  return str;
-  }
-
 AxisAlignedBoundingBox::AxisAlignedBoundingBox()
   : _frame(Eks::Vector3D(0.0f, 0.0f, 1.0f))
   {

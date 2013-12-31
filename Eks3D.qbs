@@ -1,8 +1,12 @@
 import "../EksBuild" as Eks;
 
 Eks.Library {
+  property bool windows: qbs.targetOS == "windows"
+  property bool linux: qbs.targetOS == "linux"
+  property bool osx: !windows && !linux
+
   property bool angle: Qt.core.qtConfig.contains("angle")
-  property string engine: angle ? "Opengl" : "GLES" // [ "Opengl", "GLES", "D3D" ]
+  property string engine: windows ? angle ? "Opengl" : "GLES" : "Opengl" // [ "Opengl", "GLES", "D3D" ]
   name: "Eks3D"
   toRoot: "../../"
 
@@ -14,7 +18,7 @@ Eks.Library {
   }
 
 
-  cpp.includePaths: base.concat( [ "3rdParty" ] ).concat(EksCore.windowsIncludePaths)
+  cpp.includePaths: base.concat( [ "3rdParty" ] )
 
   Group {
     name: "OpenGL"
@@ -24,10 +28,20 @@ Eks.Library {
   }
   Properties {
     condition: engine == "Opengl"
-    cpp.dynamicLibraries: [ "OpenGL32", "Gdi32", "User32" ]
 
     cpp.defines: base.concat( [ "GLEW_STATIC", "X_ENABLE_GL_RENDERER" ] )
   }
+
+  Properties {
+    condition: windows && engine == "Opengl"
+    cpp.dynamicLibraries: [ "OpenGL32", "Gdi32", "User32" ]
+  }
+
+  Properties {
+    condition: osx && engine == "Opengl"
+    cpp.frameworks: [ "OpenGL" ]
+  }
+
 
   Group {
     name: "GLES"
@@ -71,7 +85,7 @@ Eks.Library {
   }
 
   Export {
-	Depends { name: "cpp" }
+    Depends { name: "cpp" }
     cpp.includePaths: ["include"]
   }
 }
