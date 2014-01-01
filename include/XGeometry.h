@@ -10,7 +10,7 @@ namespace Eks
 
 class Renderer;
 
-class EKS3D_EXPORT Geometry : public PrivateImpl<sizeof(void*) * 3>
+class EKS3D_EXPORT Geometry : public PrivateImpl<sizeof(void*) * 2 + sizeof(xuint32) * 4>
   {
 public:
   Geometry(Renderer *r=0, const void *data=0, xsize elementSize=0, xsize elementCount=0);

@@ -157,8 +157,53 @@ void GL3DCanvas::doInitialise3D()
 
 #else
 
+QGLFormat makeFormat()
+  {
+  QGLFormat::OpenGLVersionFlags available = QGLFormat::openGLVersionFlags();
+
+  int major = 0;
+  int minor = 0;
+
+  if(available & QGLFormat::OpenGL_Version_4_3)
+    {
+    major = 4;
+    minor = 3;
+    }
+  else if(available & QGLFormat::OpenGL_Version_4_2)
+    {
+    major = 4;
+    minor = 2;
+    }
+  else if(available & QGLFormat::OpenGL_Version_4_1)
+    {
+    major = 4;
+    minor = 1;
+    }
+  else if(available & QGLFormat::OpenGL_Version_4_0)
+    {
+    major = 4;
+    minor = 0;
+    }
+  else if(available & QGLFormat::OpenGL_Version_3_3)
+    {
+    major = 3;
+    minor = 3;
+    }
+  else if(available & QGLFormat::OpenGL_Version_2_1)
+    {
+    major = 2;
+    minor = 1;
+    }
+
+  QGLFormat fmt;
+  fmt.setProfile(QGLFormat::CoreProfile);
+  fmt.setVersion(major, minor);
+
+  return fmt;
+  }
+
 GL3DCanvas::GL3DCanvas(QWidget *parent) :
-  QGLWidget(parent)
+  QGLWidget(makeFormat(), parent)
   {
   _buffer = 0;
   _renderer = 0;
@@ -166,8 +211,12 @@ GL3DCanvas::GL3DCanvas(QWidget *parent) :
 
 GL3DCanvas::~GL3DCanvas()
   {
-  Eks::GLRenderer::destroyGLRenderer(_renderer, _buffer, ALLOC);
-  ALLOC->destroy(_buffer);
+  if(_renderer)
+    {
+    xAssert(_buffer);
+    Eks::GLRenderer::destroyGLRenderer(_renderer, _buffer, ALLOC);
+    ALLOC->destroy(_buffer);
+    }
   _buffer = 0;
   }
 

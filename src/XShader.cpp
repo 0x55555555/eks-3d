@@ -84,9 +84,9 @@ ShaderFragmentComponent::~ShaderFragmentComponent()
   }
 
 bool ShaderFragmentComponent::delayedCreate(ShaderFragmentComponent &ths,
-                                           Renderer *r,
-                                           const char *source,
-                                           xsize length)
+                                            Renderer *r,
+                                            const char *source,
+                                            xsize length)
   {
   xAssert(!ths.isValid());
   xAssert(r && source && length);
@@ -131,12 +131,14 @@ bool ShaderConstantData::delayedCreate(
 
 Shader::Shader(Renderer *r,
         ShaderVertexComponent *v,
-        ShaderFragmentComponent *f)
+        ShaderFragmentComponent *f,
+        const char **outputs,
+        xsize outputCount)
   {
   _renderer = 0;
   if(r)
     {
-    delayedCreate(*this, r, v, f);
+    delayedCreate(*this, r, v, f, outputs, outputCount);
     }
   }
 
@@ -148,11 +150,17 @@ Shader::~Shader()
     }
   }
 
-bool Shader::delayedCreate(Shader &ths, Renderer *r, ShaderVertexComponent *v, ShaderFragmentComponent *f)
+bool Shader::delayedCreate(
+    Shader &ths,
+    Renderer *r,
+    ShaderVertexComponent *v,
+    ShaderFragmentComponent *f,
+    const char **outputs,
+    xsize outputCount)
   {
   xAssert(!ths.isValid());
   xAssert(r);
   ths._renderer = r;
-  return r->functions().create.shader(r, &ths, v, f);
+  return r->functions().create.shader(r, &ths, v, f, outputs, outputCount);
   }
 }

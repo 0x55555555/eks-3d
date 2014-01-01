@@ -1,15 +1,23 @@
 #include "XGLRenderer.h"
-
+#include "Utilities/XFlags.h"
 #ifdef X_ENABLE_GL_RENDERER
 
 #ifdef QT_OPENGL_ES_2
 # define USE_GLES
 #else
-# define USE_GLEW
+# ifndef Q_OS_OSX
+#  define USE_GLEW
+# endif
+#endif
+
+#ifdef Q_OS_OSX
+# define STANDARD_OPENGL
+# include <OpenGL/gl3.h>
 #endif
 
 #ifdef USE_GLEW
 # include "GL/glew.h"
+# define STANDARD_OPENGL
 #endif
 
 #ifdef USE_GLES
@@ -88,7 +96,7 @@ template <typename X, typename T> void destroy(Renderer *, X *x)
 class GLRendererImpl : public Renderer
   {
 public:
-  GLRendererImpl(const detail::RendererFunctions& fns, AllocatorBase *alloc);
+  GLRendererImpl(const detail::RendererFunctions& fns, int majorVersion, AllocatorBase *alloc);
 
   static void setTransform(Renderer *r, const Transform &trans)
     {
@@ -98,7 +106,7 @@ public:
 
   static void setClearColour(Renderer *, const Colour &col)
     {
-    glClearColor(col.x(), col.y(), col.z(), col.w());
+    glClearColor(col.x(), col.y(), col.z(), col.w()) GLE;
     }
 
   static void setViewTransform(Renderer *r, const Eks::Transform &trans)
@@ -113,12 +121,11 @@ public:
     GL_REND(r)->_viewDataDirty = true;
     }
 
-  static void drawIndexedTriangles(Renderer *ren, const IndexGeometry *indices, const Geometry *vert);
-  static void drawIndexedPrimitive(xuint32 prim, Renderer *r, const IndexGeometry *indices, const Geometry *vert);
-  static void drawPrimitive(xuint32 prim, Renderer *r, const Geometry *vert);
-  static void drawTriangles(Renderer *r, const Geometry *vert);
-  static void drawLines(Renderer *r, const Geometry *vert);
-  static void drawIndexedLines(Renderer *r, const IndexGeometry *indices, const Geometry *vert);
+  template <xuint32 PRIMITIVE> static void drawIndexedPrimitive21(Renderer *r, const IndexGeometry *indices, const Geometry *vert);
+  template <xuint32 PRIMITIVE> static void drawPrimitive21(Renderer *r, const Geometry *vert);
+  template <xuint32 PRIMITIVE> static void drawIndexedPrimitive33(Renderer *r, const IndexGeometry *indices, const Geometry *vert);
+  template <xuint32 PRIMITIVE> static void drawPrimitive33(Renderer *r, const Geometry *vert);
+
   static void debugRenderLocator(Renderer *r, RendererDebugLocatorMode);
 
   static Shader *stockShader(Renderer *r, RendererShaderType t, const ShaderVertexLayout **);
@@ -151,6 +158,12 @@ public:
   bool _viewDataDirty;
 
   void updateViewData();
+  void (*setConstantBuffersInternal)(
+        Renderer *r,
+        Shader *shader,
+        xsize index,
+        xsize count,
+        const ShaderConstantData * const* data);
 
   Shader *stockShaders[ShaderTypeCount];
   const ShaderVertexLayout *stockLayouts[ShaderTypeCount];
@@ -160,6 +173,7 @@ public:
   ShaderVertexLayout *_vertexLayout;
   QSize _size;
   XGLFramebuffer *_currentFramebuffer;
+  const char *_shaderHeader;
   };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -229,7 +243,7 @@ private:
 class XGLFramebuffer
   {
 public:
-  bool init(GLRendererImpl *);
+  bool initDefaultBuffer(GLRendererImpl *);
 
   const Texture2D *colour() const;
   const Texture2D *depth() const;
@@ -437,6 +451,10 @@ public:
 
   GLuint _elementCount;
   GLuint _elementSize;
+
+  mutable GLuint _vao;
+  mutable const XGLVertexLayout *_linkedLayout;
+  mutable const XGLIndexGeometryCache *_linkedIndices;
   };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -478,7 +496,12 @@ public:
 class XGLShader
   {
 public:
-  bool init( GLRendererImpl *impl, XGLShaderComponent *v, XGLShaderComponent *f);
+  bool init(
+    GLRendererImpl *impl,
+    XGLShaderComponent *v,
+    XGLShaderComponent *f,
+    const char **outputs,
+    xsize outputCount);
 
   ~XGLShader();
 
@@ -497,25 +520,44 @@ public:
       Renderer *r,
       Shader *s,
       ShaderVertexComponent *v,
-      ShaderFragmentComponent *f)
+      ShaderFragmentComponent *f,
+      const char **outputs,
+      xsize outputCount)
     {
     XGLShader *glS = s->create<XGLShader>();
-    return glS->init(GL_REND(r), v->data<XGLShaderComponent>(), f->data<XGLShaderComponent>() );
+    return glS->init(GL_REND(r), v->data<XGLShaderComponent>(), f->data<XGLShaderComponent>(), outputs, outputCount);
     }
 
   static void bind(Renderer *ren, const Shader *shader, const ShaderVertexLayout *layout);
 
-  static void setConstantBuffers(
+  static void setConstantBuffers21(
       Renderer *r,
       Shader *shader,
       xsize index,
       xsize count,
       const ShaderConstantData * const* data)
     {
-    setConstantBuffersInternal(r, shader, index + GLRendererImpl::ConstantBufferIndexOffset, count, data);
+    setConstantBuffersInternal21(r, shader, index + GLRendererImpl::ConstantBufferIndexOffset, count, data);
     }
 
-  static void setConstantBuffersInternal(
+  static void setConstantBuffersInternal21(
+      Renderer *r,
+      Shader *shader,
+      xsize index,
+      xsize count,
+      const ShaderConstantData * const* data);
+
+  static void setConstantBuffers33(
+      Renderer *r,
+      Shader *shader,
+      xsize index,
+      xsize count,
+      const ShaderConstantData * const* data)
+    {
+    setConstantBuffersInternal33(r, shader, index + GLRendererImpl::ConstantBufferIndexOffset, count, data);
+    }
+
+  static void setConstantBuffersInternal33(
       Renderer *r,
       Shader *shader,
       xsize index,
@@ -633,7 +675,7 @@ public:
   xuint8 _attrCount;
   Eks::GLRendererImpl* _renderer;
 
-  void bind(const XGLGeometryCache *X_USED_FOR_ASSERTS(cache)) const
+  void bindVertexData(const XGLGeometryCache *X_USED_FOR_ASSERTS(cache)) const
     {
     xAssert(cache->_elementSize == vertexSize);
     for(GLuint i = 0, s = (GLuint)_attrCount; i < s; ++i)
@@ -653,13 +695,46 @@ public:
       }
     }
 
-  void unbind() const
+  void unbindVertexData() const
     {
     for(GLuint i = 0, s = (GLuint)_attrCount; i < s; ++i)
       {
       glDisableVertexAttribArray(i) GLE;
       }
     }
+
+#ifdef STANDARD_OPENGL
+  void bindVAO(const XGLGeometryCache *cache, const XGLIndexGeometryCache *indexedCache)
+    {
+    // Currently a geometry cache must be used with only one layout.
+    if(!cache->_linkedLayout)
+      {
+      cache->_linkedLayout = this;
+      cache->_linkedIndices = indexedCache;
+
+      xAssert(!cache->_vao);
+      glGenVertexArrays(1, &cache->_vao) GLE;
+      glBindVertexArray(cache->_vao) GLE;
+
+      glBindBuffer(GL_ARRAY_BUFFER, cache->_buffer) GLE;
+      bindVertexData(cache);
+      if(indexedCache)
+        {
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexedCache->_buffer) GLE;
+        }
+      }
+    else
+      {
+      xAssert(cache->_linkedIndices == indexedCache);
+      xAssert(cache->_vao);
+      glBindVertexArray(cache->_vao);
+      }
+    }
+
+  void unbindVAO()
+    {
+    }
+#endif
   };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -721,6 +796,7 @@ public:
   void bind(xuint32 program, xuint32 index) const;
 
   xsize _size;
+  mutable Eks::BitField<xuint32> _bound;
 
   friend class XGLRenderer;
   };
@@ -816,7 +892,7 @@ public:
   RasteriserState::CullMode _cull;
   };
 
-GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns, Eks::AllocatorBase *alloc)
+GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns, int majorVersion, Eks::AllocatorBase *alloc)
   : _allocator(alloc),
     _modelDataDirty(true),
     _viewDataDirty(true),
@@ -827,8 +903,30 @@ GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns, Eks::Alloca
   {
   _modelData.model = Eks::Matrix4x4::Identity();
   setFunctions(fns);
-  }
 
+  if (majorVersion == 2)
+    {
+    _shaderHeader = "#version 120\n"
+                    "#define X_GLSL_VERSION 120\n"
+  #ifdef USE_GLES
+                    "#define X_GLES\n"
+  #endif
+      ;
+    setConstantBuffersInternal = XGLShader::setConstantBuffersInternal21;
+    }
+  else if(majorVersion == 3)
+    {
+    _shaderHeader = "#version 330\n"
+                    "#define X_GLSL_VERSION 330\n";
+    setConstantBuffersInternal = XGLShader::setConstantBuffersInternal33;
+    }
+  else if(majorVersion == 4)
+    {
+    _shaderHeader = "#version 410\n"
+                    "#define X_GLSL_VERSION 410\n";
+    setConstantBuffersInternal = XGLShader::setConstantBuffersInternal33;
+    }
+  }
 
 void GLRendererImpl::debugRenderLocator(Renderer *r, RendererDebugLocatorMode m)
   {
@@ -869,45 +967,6 @@ void GLRendererImpl::debugRenderLocator(Renderer *r, RendererDebugLocatorMode m)
   glDisableVertexAttribArray(0);
   }
 
-/*
-void XGLRenderer::enableRenderFlag( RenderFlags f )
-  {
-  if( f == AlphaBlending )
-    {
-    glEnable( GL_BLEND ) GLE;
-    glBlendFunc(GL_SRC_ALPHA,GL_ONE) GLE;
-    }
-  else if( f == DepthTest )
-    {
-    glEnable( GL_DEPTH_TEST ) GLE;
-    }
-  else if( f == BackfaceCulling )
-    {
-    glEnable( GL_CULL_FACE ) GLE;
-    }
-  }
-
-void XGLRenderer::disableRenderFlag( RenderFlags f )
-  {
-  if( f == AlphaBlending )
-    {
-    glDisable( GL_BLEND ) GLE;
-    }
-  else if( f == DepthTest )
-    {
-    glDisable( GL_DEPTH_TEST ) GLE;
-    }
-  else if( f == BackfaceCulling )
-    {
-    glDisable( GL_CULL_FACE ) GLE;
-    }
-  }
-
-void setViewportSize(Renderer *, QSize size)
-  {
-  glViewport( 0, 0, size.width(), size.height() ) GLE;
-  }*/
-
 void GLRendererImpl::updateViewData()
   {
   if(_viewDataDirty)
@@ -929,11 +988,10 @@ void GLRendererImpl::updateViewData()
     &_view
   };
   xAssert(_currentShader);
-  XGLShader::setConstantBuffersInternal(this, _currentShader, 0, 2, data);
+  setConstantBuffersInternal(this, _currentShader, 0, 2, data);
   }
 
-void GLRendererImpl::drawIndexedPrimitive(
-    xuint32 primitive,
+template <xuint32 PRIMITIVE> void GLRendererImpl::drawIndexedPrimitive21(
     Renderer *ren,
     const IndexGeometry *indices,
     const Geometry *vert)
@@ -954,32 +1012,40 @@ void GLRendererImpl::drawIndexedPrimitive(
   glBindBuffer(GL_ARRAY_BUFFER, gC->_buffer) GLE;
 
   XGLVertexLayout *l = r->_vertexLayout->data<XGLVertexLayout>();
-  l->bind(gC);
+  l->bindVertexData(gC);
 
-  glDrawElements(primitive, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
-  l->unbind();
+  glDrawElements(PRIMITIVE, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
+  l->unbindVertexData();
 
   glBindBuffer(GL_ARRAY_BUFFER, 0) GLE;
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0) GLE;
   }
 
-void GLRendererImpl::drawIndexedTriangles(
+template <xuint32 PRIMITIVE> void GLRendererImpl::drawIndexedPrimitive33(
     Renderer *ren,
     const IndexGeometry *indices,
     const Geometry *vert)
   {
-  drawIndexedPrimitive(GL_TRIANGLES, ren, indices, vert);
+  GLRendererImpl* r = GL_REND(ren);
+  xAssert(r->_currentShader);
+  xAssert(r->_vertexLayout);
+  xAssert(indices);
+  xAssert(vert);
+
+  const XGLIndexGeometryCache *idx = indices->data<XGLIndexGeometryCache>();
+  const XGLGeometryCache *gC = vert->data<XGLGeometryCache>();
+
+  r->updateViewData();
+
+  XGLVertexLayout *l = r->_vertexLayout->data<XGLVertexLayout>();
+  l->bindVAO(gC, idx);
+
+  glDrawElements(PRIMITIVE, idx->_indexCount, idx->_indexType, (GLvoid*)((char*)NULL)) GLE;
+
+  l->unbindVAO();
   }
 
-void GLRendererImpl::drawIndexedLines(
-    Renderer *ren,
-    const IndexGeometry *indices,
-    const Geometry *vert)
-  {
-  drawIndexedPrimitive(GL_LINES, ren, indices, vert);
-  }
-
-void GLRendererImpl::drawPrimitive(xuint32 primitive, Renderer *ren, const Geometry *vert)
+template <xuint32 PRIMITIVE> void GLRendererImpl::drawPrimitive21(Renderer *ren, const Geometry *vert)
   {
   GLRendererImpl* r = GL_REND(ren);
   xAssert(r->_currentShader);
@@ -993,24 +1059,31 @@ void GLRendererImpl::drawPrimitive(xuint32 primitive, Renderer *ren, const Geome
   glBindBuffer( GL_ARRAY_BUFFER, gC->_buffer ) GLE;
 
   XGLVertexLayout *l = r->_vertexLayout->data<XGLVertexLayout>();
-  l->bind(gC);
+  l->bindVertexData(gC);
 
-  glDrawArrays( primitive, 0, gC->_elementCount) GLE;
-  l->unbind();
+  glDrawArrays(PRIMITIVE, 0, gC->_elementCount) GLE;
+  l->unbindVertexData();
 
   glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
   }
 
-void GLRendererImpl::drawTriangles(Renderer *ren, const Geometry *vert)
+template <xuint32 PRIMITIVE> void GLRendererImpl::drawPrimitive33(Renderer *ren, const Geometry *vert)
   {
-  drawPrimitive(GL_TRIANGLES, ren, vert);
-  }
+  GLRendererImpl* r = GL_REND(ren);
+  xAssert(r->_currentShader);
+  xAssert(r->_vertexLayout);
+  xAssert(vert);
 
-void GLRendererImpl::drawLines(Renderer *ren, const Geometry *vert)
-  {
-  drawPrimitive(GL_LINES, ren, vert);
-  }
+  const XGLGeometryCache *gC = vert->data<XGLGeometryCache>();
 
+  r->updateViewData();
+
+  XGLVertexLayout *l = r->_vertexLayout->data<XGLVertexLayout>();
+  l->bindVAO(gC, nullptr);
+
+  glDrawArrays(PRIMITIVE, 0, gC->_elementCount) GLE;
+  l->unbindVAO();
+  }
 
 Shader *GLRendererImpl::stockShader(Renderer *r, RendererShaderType t, const ShaderVertexLayout **l)
   {
@@ -1066,7 +1139,7 @@ detail::RendererFunctions gl21fns =
     XGL21ShaderData::update,
     GLRendererImpl::setViewTransform,
     GLRendererImpl::setProjectionTransform,
-    XGLShader::setConstantBuffers,
+    XGLShader::setConstantBuffers21,
     XGLShader::setResources21,
     XGLShader::bind,
     XGLRasteriserState::bind,
@@ -1080,10 +1153,10 @@ detail::RendererFunctions gl21fns =
     GLRendererImpl::stockShader,
   },
   {
-    GLRendererImpl::drawIndexedTriangles,
-    GLRendererImpl::drawTriangles,
-    GLRendererImpl::drawIndexedLines,
-    GLRendererImpl::drawLines,
+    GLRendererImpl::drawIndexedPrimitive21<GL_TRIANGLES>,
+    GLRendererImpl::drawPrimitive21<GL_TRIANGLES>,
+    GLRendererImpl::drawIndexedPrimitive21<GL_LINES>,
+    GLRendererImpl::drawPrimitive21<GL_LINES>,
     GLRendererImpl::debugRenderLocator
   },
   {
@@ -1096,7 +1169,7 @@ detail::RendererFunctions gl21fns =
   }
 };
 
-#ifdef USE_GLEW
+#ifdef STANDARD_OPENGL
 detail::RendererFunctions gl33fns =
 {
   {
@@ -1131,7 +1204,7 @@ detail::RendererFunctions gl33fns =
     XGL33ShaderData::update,
     GLRendererImpl::setViewTransform,
     GLRendererImpl::setProjectionTransform,
-    XGLShader::setConstantBuffers,
+    XGLShader::setConstantBuffers33,
     XGLShader::setResources21,
     XGLShader::bind,
     XGLRasteriserState::bind,
@@ -1145,10 +1218,10 @@ detail::RendererFunctions gl33fns =
     GLRendererImpl::stockShader,
   },
   {
-    GLRendererImpl::drawIndexedTriangles,
-    GLRendererImpl::drawTriangles,
-    GLRendererImpl::drawIndexedLines,
-    GLRendererImpl::drawLines,
+    GLRendererImpl::drawIndexedPrimitive33<GL_TRIANGLES>,
+    GLRendererImpl::drawPrimitive33<GL_TRIANGLES>,
+    GLRendererImpl::drawIndexedPrimitive33<GL_LINES>,
+    GLRendererImpl::drawPrimitive33<GL_LINES>,
     GLRendererImpl::debugRenderLocator
   },
   {
@@ -1165,16 +1238,22 @@ detail::RendererFunctions gl33fns =
 Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, bool gles, Eks::AllocatorBase* alloc)
   {
 #ifdef USE_GLEW
-  glewInit();
+  glewInit() GLE_QUIET;
 #endif
 
-  const char* ven = (const char *)glGetString(GL_VENDOR);
-  const char* ver = (const char *)glGetString(GL_VERSION);
-  qDebug() << "GL Vendor:" << ven << ver;
+  const char* ven = (const char *)glGetString(GL_VENDOR) GLE;
+  const char* ver = (const char *)glGetString(GL_VERSION) GLE;
+  const char* renderer = (const char *)glGetString(GL_RENDERER) GLE;
+  const char* glslVer = (const char *)glGetString(GL_SHADING_LANGUAGE_VERSION) GLE;
+  qDebug() << "Vendor:" << ven;
+  qDebug() << "Renderer:" << renderer GLE;
+  qDebug() << "Version:" << ver;
+  qDebug() << "GLSL Version:" << glslVer GLE;
 
+  const detail::RendererFunctions *fns = &gl21fns;
+  xint32 major = 0;
   if(!gles)
     {
-    xint32 major = 0;
     const char* verPt = ver;
     while(*verPt && *verPt >= '0' && *verPt < '9')
       {
@@ -1188,20 +1267,32 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, bool gles, Eks
       {
       return nullptr;
       }
+
+#ifdef STANDARD_OPENGL
+    if(major >= 3)
+      {
+      fns = &gl33fns;
+      }
+#endif
     }
 
-  const detail::RendererFunctions &fns = gl21fns;
-  //... if gl33...
+  GLRendererImpl *r = alloc->create<GLRendererImpl>(*fns, major, alloc);
 
-  GLRendererImpl *r = alloc->create<GLRendererImpl>(fns, alloc);
-
-
-
-  glEnable( GL_DEPTH_TEST ) GLE;
   GLRendererImpl::setClearColour(r, Colour(0.0f, 0.0f, 0.0f, 1.0f));
+  glEnable(GL_DEPTH_TEST) GLE;
 
-  XGLFramebuffer* fb = buffer->create<XGLFramebuffer>();
-  fb->init(r);
+#ifdef STANDARD_OPENGL
+  if(major >= 3)
+    {
+    XGL33Framebuffer* fb = buffer->create<XGL33Framebuffer>();
+    fb->initDefaultBuffer(r);
+    }
+  else
+#endif
+    {
+    XGL21Framebuffer* fb = buffer->create<XGL21Framebuffer>();
+    fb->initDefaultBuffer(r);
+    }
   buffer->setRenderer(r);
 
   ShaderConstantDataDescription modelDesc[] =
@@ -1252,7 +1343,7 @@ bool XGLTexture2D::init(GLRendererImpl *, xuint32 format, xsize width, xsize hei
   int formatMap[] =
   {
     GL_RGBA,
-  #ifdef USE_GLEW
+  #ifdef STANDARD_OPENGL
     GL_DEPTH_COMPONENT24
   #else
   # ifdef USE_GLES
@@ -1339,7 +1430,7 @@ bool XGL33Framebuffer::init(Renderer *r, TextureFormat cF, TextureFormat dF, xui
   return isValid(impl);
   }
 
-bool XGLFramebuffer::init(GLRendererImpl *r)
+bool XGLFramebuffer::initDefaultBuffer(GLRendererImpl *r)
   {
   _buffer = 0;
   _impl = r;
@@ -1392,7 +1483,7 @@ bool XGL21Framebuffer::isValid(GLRendererImpl *) const
 
 bool XGL33Framebuffer::isValid(GLRendererImpl *) const
   {
-  if(!_buffer)
+  if(_buffer == 0)
     {
     return true;
     }
@@ -1443,8 +1534,14 @@ void XGL33Framebuffer::unbind(GLRendererImpl *)
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER COMPONENT
 //----------------------------------------------------------------------------------------------------------------------
-bool XGLShaderComponent::init(GLRendererImpl *impl, xuint32 type, const char *data, xsize size)
+bool XGLShaderComponent::init(
+    GLRendererImpl *impl,
+    xuint32 type,
+    const char *data,
+    xsize size)
   {
+  _layout = nullptr;
+
 #ifdef USE_GLEW
   xAssert(glCreateShader);
 #endif
@@ -1454,21 +1551,15 @@ bool XGLShaderComponent::init(GLRendererImpl *impl, xuint32 type, const char *da
     return false;
     }
 
-  const char *extra = "#define X_GLSL_VERSION 120\n"
-#ifdef USE_GLES
-                      "#define X_GLES\n"
-#endif
-    ;
-
   int lengths[] =
     {
-    (int)strlen(extra),
+    (int)strlen(impl->_shaderHeader),
     (int)size,
     };
 
   const char *strs[] =
     {
-    extra,
+    impl->_shaderHeader,
     data,
     };
 
@@ -1525,6 +1616,41 @@ bool XGLShaderComponent::createVertex(
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER DATA
 //----------------------------------------------------------------------------------------------------------------------
+struct ShaderDataType
+  {
+  XGL21ShaderData::BindFunction bind;
+  xsize size;
+
+  static void bindFloat(xuint32 location, const xuint8 *data8)
+    {
+    glUniform1fv(location, 1, (const float*)data8);
+    }
+
+  static void bindFloat3(xuint32 location, const xuint8 *data8)
+    {
+    glUniform3fv(location, 1, (const float*)data8);
+    }
+
+  static void bindFloat4(xuint32 location, const xuint8 *data8)
+    {
+    glUniform4fv(location, 1, (const float*)data8);
+    }
+
+  static void bindMat4x4(xuint32 location, const xuint8 *data8)
+    {
+    glUniformMatrix4fv(location, 1, false, (const float*)data8);
+    }
+  };
+
+ShaderDataType typeMap[] =
+{
+  { ShaderDataType::bindFloat, sizeof(float) },
+  { ShaderDataType::bindFloat3, sizeof(float) * 3 },
+  { ShaderDataType::bindFloat4, sizeof(float) * 4 },
+  { ShaderDataType::bindMat4x4, sizeof(float) * 16 },
+};
+xCompileTimeAssert(X_ARRAY_COUNT(typeMap) == ShaderConstantDataDescription::TypeCount);
+
 bool XGL21ShaderData::init(
     GLRendererImpl *r,
     ShaderConstantDataDescription* desc,
@@ -1535,47 +1661,12 @@ bool XGL21ShaderData::init(
   _data.allocator() = TypedAllocator<xuint8>(r->_allocator);
   _binders.allocator() = TypedAllocator<Binder>(r->_allocator);
 
-  struct Type
-    {
-    BindFunction bind;
-    xsize size;
-
-    static void bindFloat(xuint32 location, const xuint8 *data8)
-      {
-      glUniform1fv(location, 1, (const float*)data8);
-      }
-
-    static void bindFloat3(xuint32 location, const xuint8 *data8)
-      {
-      glUniform3fv(location, 1, (const float*)data8);
-      }
-
-    static void bindFloat4(xuint32 location, const xuint8 *data8)
-      {
-      glUniform4fv(location, 1, (const float*)data8);
-      }
-
-    static void bindMat4x4(xuint32 location, const xuint8 *data8)
-      {
-      glUniformMatrix4fv(location, 1, false, (const float*)data8);
-      }
-    };
-
-  Type typeMap[] =
-  {
-    { Type::bindFloat, sizeof(float) },
-    { Type::bindFloat3, sizeof(float) * 3 },
-    { Type::bindFloat4, sizeof(float) * 4 },
-    { Type::bindMat4x4, sizeof(float) * 16 },
-  };
-  xCompileTimeAssert(X_ARRAY_COUNT(typeMap) == ShaderConstantDataDescription::TypeCount);
-
   xsize size = 0;
   _binders.resize(descCount);
   for(xsize i = 0; i < descCount; ++i)
     {
     const ShaderConstantDataDescription &description = desc[i];
-    const Type &type = typeMap[description.type];
+    const ShaderDataType &type = typeMap[description.type];
 
     Binder &b = _binders[i];
     b.name = Eks::String(description.name, r->_allocator);
@@ -1629,18 +1720,25 @@ void XGL21ShaderData::bind(xuint32 program, xuint32 index) const
     }
   }
 
-#ifdef USE_GLEW
+#ifdef STANDARD_OPENGL
 bool XGL33ShaderData::init(
     GLRendererImpl *r,
     ShaderConstantDataDescription *desc,
     xsize descCount,
     const void *data)
   {
-  (void)descCount;
-  (void)desc;
-  xAssertFail();
   xsize size = 0;
+  for(xsize i = 0; i < descCount; ++i)
+    {
+    const ShaderConstantDataDescription &description = desc[i];
+    const ShaderDataType &type = typeMap[description.type];
+
+    size += type.size;
+    }
+
   _size = size;
+  xAssert(_size > 0);
+
   return XGLBuffer::init(r, data, GL_UNIFORM_BUFFER, GL_STREAM_DRAW, size);
   }
 
@@ -1648,15 +1746,32 @@ void XGL33ShaderData::update(Renderer *, ShaderConstantData *constant, void *dat
   {
   XGL33ShaderData *c = constant->data<XGL33ShaderData>();
 
-  glBindBuffer(GL_UNIFORM_BUFFER, c->_buffer);
-  glBufferData(GL_UNIFORM_BUFFER, c->_size, data, GL_STREAM_DRAW);
-  glBindBuffer(GL_UNIFORM_BUFFER, 0);
+  glBindBuffer(GL_UNIFORM_BUFFER, c->_buffer) GLE;
+  glBufferData(GL_UNIFORM_BUFFER, c->_size, data, GL_STREAM_DRAW) GLE;
+  glBindBuffer(GL_UNIFORM_BUFFER, 0) GLE;
   }
 
 void XGL33ShaderData::bind(xuint32 program, xuint32 index) const
   {
-  (void)program;
-  glBindBufferRange(GL_UNIFORM_BUFFER, index, _buffer, 0, _size);
+  xAssert(index < 32);
+  if(!_bound.hasIndex(index))
+    {
+    char str[64];
+#ifdef Q_OS_WIN
+    sprintf_s(str, X_ARRAY_COUNT(str), "cb%d", index);
+#else
+    sprintf(str, "cb%d", index);
+#endif
+
+    GLuint blockIndex = glGetUniformBlockIndex(program, str) GLE;
+    if(blockIndex != GL_INVALID_INDEX)
+      {
+      glUniformBlockBinding(program, blockIndex, index) GLE;
+      }
+    _bound.setBitAtIndex(index);
+    }
+
+  glBindBufferBase(GL_UNIFORM_BUFFER, index, _buffer) GLE;
   }
 #endif
 
@@ -1668,13 +1783,27 @@ XGLShader::~XGLShader()
   glDeleteProgram(shader);
   }
 
-bool XGLShader::init( GLRendererImpl *impl, XGLShaderComponent *v, XGLShaderComponent *f)
+bool XGLShader::init(
+    GLRendererImpl *impl,
+    XGLShaderComponent *v,
+    XGLShaderComponent *f,
+    const char **outputs,
+    xsize outputCount)
   {
   _buffers.allocator() = TypedAllocator<Buffer>(impl->_allocator);
   maxSetupResources = 0;
   shader = glCreateProgram();
   glAttachShader(shader, v->_component);
   glAttachShader(shader, f->_component);
+
+  for(xsize i = 0; i < outputCount; ++i)
+    {
+    if(outputs[i])
+      {
+      glBindFragDataLocation(shader, i, outputs[i]);
+      }
+    }
+
 
   xAssert(!f->_layout);
   if(v->_layout)
@@ -1720,7 +1849,7 @@ void XGLShader::bind(Renderer *ren, const Shader *shader, const ShaderVertexLayo
     r->_vertexLayout = const_cast<ShaderVertexLayout *>(layout);
     XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
 
-    glUseProgram(shaderInt->shader);
+    glUseProgram(shaderInt->shader) GLE;
     }
   else if( shader == 0 && r->_currentShader != 0 )
     {
@@ -1750,7 +1879,7 @@ void XGLShader::setConstantBuffers(
   }
 #endif
 
-void XGLShader::setConstantBuffersInternal(
+void XGLShader::setConstantBuffersInternal21(
     Renderer *r,
     Shader *s,
     xsize index,
@@ -1782,6 +1911,30 @@ void XGLShader::setConstantBuffersInternal(
       cbImpl->bind(shader->shader, i + (xuint32)index);
       buf.revision = cbImpl->_revision;
       }
+    }
+  }
+
+void XGLShader::setConstantBuffersInternal33(
+    Renderer *r,
+    Shader *s,
+    xsize index,
+    xsize count,
+    const ShaderConstantData * const* data)
+  {
+  XGLShader* shader = s->data<XGLShader>();
+
+  if(GL_REND(r)->_currentShader != s)
+    {
+    glUseProgram(shader->shader);
+    GL_REND(r)->_currentShader = 0;
+    }
+
+  for(xuint32 i = 0; i < (xuint32)count; ++i)
+    {
+    const ShaderConstantData *cb = data[i];
+    const XGL33ShaderData* cbImpl = cb->data<XGL33ShaderData>();
+
+    cbImpl->bind(shader->shader, i + (xuint32)index);
     }
   }
 
@@ -1868,6 +2021,10 @@ bool XGLIndexGeometryCache::init(GLRendererImpl *r, const void *data, IndexGeome
 
 bool XGLGeometryCache::init(GLRendererImpl *r, const void *data, xsize elementSize, xsize elementCount)
   {
+  _vao = 0;
+  _linkedLayout = nullptr;
+  _linkedIndices = nullptr;
+
   xsize dataSize = elementSize * elementCount;
   _elementCount = (GLuint)elementCount;
   _elementSize = (GLuint)elementSize;

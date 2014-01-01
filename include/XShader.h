@@ -154,8 +154,8 @@ class EKS3D_EXPORT ShaderFragmentComponent : public PrivateImpl<sizeof(void*) * 
   {
 public:
   ShaderFragmentComponent(Renderer *r=0,
-                           const char *source=0,
-                           xsize length=0);
+                          const char *source=0,
+                          xsize length=0);
   ~ShaderFragmentComponent();
 
   static bool delayedCreate(ShaderFragmentComponent &ths,
@@ -175,14 +175,18 @@ public:
   typedef ShaderConstantData ConstantData;
 
   Shader(Renderer *r=0,
-          ShaderVertexComponent *v=0,
-          ShaderFragmentComponent *f=0);
+         ShaderVertexComponent *v=0,
+         ShaderFragmentComponent *f=0,
+         const char **outputs=0,
+         xsize outputCount=0);
   ~Shader();
 
   static bool delayedCreate(Shader &ths,
               Renderer *r,
               ShaderVertexComponent *v,
-              ShaderFragmentComponent *f);
+              ShaderFragmentComponent *f,
+              const char **outputs,
+              xsize outputCount);
 
 
   void setShaderConstantData(xsize first, const ConstantData *data);

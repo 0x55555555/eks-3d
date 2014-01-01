@@ -24,7 +24,14 @@ Eks.Library {
     name: "OpenGL"
     condition: engine == "Opengl"
 
-    files: [ "include/XGL*", "src/XGL*", "3rdParty/GL/*" ]
+    files: [ "include/XGL*", "src/XGL*" ]
+  }
+
+  Group {
+    name: "GLEW"
+    condition: engine == "Opengl" && !osx
+
+    files: [ "3rdParty/GL/*" ]
   }
   Properties {
     condition: engine == "Opengl"

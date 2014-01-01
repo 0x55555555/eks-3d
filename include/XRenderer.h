@@ -83,7 +83,9 @@ struct RendererCreateFunctions
       Renderer *r,
       Shader *s,
       ShaderVertexComponent *v,
-      ShaderFragmentComponent *f);
+      ShaderFragmentComponent *f,
+      const char **outputs,
+      xsize outputCount);
 
   bool (*vertexShaderComponent)(
       Renderer *r,

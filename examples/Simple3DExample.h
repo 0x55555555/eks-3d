@@ -24,25 +24,24 @@ public:
         "#if X_GLSL_VERSION >= 130 || defined(X_GLES)\n"
         "precision mediump float;\n"
         "#endif\n"
-        "varying vec3 colOut;"
+        "in vec3 colOut;"
+        "out vec4 outColour;"
         "void main(void)"
         "  {"
-        "  gl_FragColor = vec4(abs(colOut), 1.0);"
+        "  outColour = vec4(abs(colOut), 1.0);"
         "  }";
 
     const char *vsrc =
-        "struct Model { mat4 model; mat4 modelView; mat4 modelViewProj; };"
-        "struct View { mat4 view; mat4 proj; };"
-        "uniform Model cb0;"
-        "uniform View cb1;"
-        "attribute vec3 position;"
-        "attribute vec3 normal;"
-        "attribute vec2 textureCoordinate;"
-        "varying vec3 colOut;"
+        "layout (std140) uniform cb0 { mat4 model; mat4 modelView; mat4 modelViewProj; };"
+        "layout (std140) uniform cb1 { mat4 view; mat4 proj; };"
+        "in vec3 position;"
+        "in vec3 normal;"
+        "in vec2 textureCoordinate;"
+        "out vec3 colOut;"
         "void main(void)"
         "  {"
         "  colOut = normal;"
-        "  gl_Position = cb0.modelViewProj * vec4(position, 1.0);"
+        "  gl_Position = modelViewProj * vec4(position, 1.0);"
         "  }";
 
     ShaderVertexLayoutDescription desc[] =
@@ -56,7 +55,8 @@ public:
     ShaderVertexComponent::delayedCreate(_v, r, vsrc, strlen(vsrc), desc, X_ARRAY_COUNT(desc), &_layout);
     ShaderFragmentComponent::delayedCreate(_f, r, fsrc, strlen(fsrc));
 
-    Shader::delayedCreate(_shader, r, &_v, &_f);
+    const char *outputs[] = { "outColour" };
+    Shader::delayedCreate(_shader, r, &_v, &_f, outputs, X_ARRAY_COUNT(outputs));
 
 
     Geometry::delayedCreate(_geo, r, vert, sizeof(float) * 6, vertCount);
@@ -67,7 +67,6 @@ public:
     float aspect = (float)width / (float)height;
 
     _proj = TransformUtilities::perspective(Eks::degreesToRadians(45.0f), aspect, 0.1f, 100.0f);
-
     }
 
   void render(Renderer* r)
@@ -77,7 +76,7 @@ public:
     _t += 0.002f;
 
     Transform l = TransformUtilities::lookAt(
-          Vector3D(sinf(_t) * 12.0f, 0, cosf(_t) * 12.0f),
+      Vector3D(sinf(_t) * 12.0f, 0, cosf(_t) * 12.0f),
       Vector3D(0, 0, 0),
       Vector3D(0, 1, 0));
     r->setViewTransform(l);
