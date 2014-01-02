@@ -1,12 +1,7 @@
 import "../EksBuild" as Eks;
 
 Eks.Library {
-  property bool windows: qbs.targetOS == "windows"
-  property bool linux: qbs.targetOS == "linux"
-  property bool osx: !windows && !linux
-
-  property bool angle: Qt.core.qtConfig.contains("angle")
-  property string engine: windows ? angle ? "Opengl" : "GLES" : "Opengl" // [ "Opengl", "GLES", "D3D" ]
+  property string engine: "Opengl" // [ "Opengl", "GLES", "D3D" ]
   name: "Eks3D"
   toRoot: "../../"
 
@@ -29,7 +24,7 @@ Eks.Library {
 
   Group {
     name: "GLEW"
-    condition: engine == "Opengl" && !osx
+    condition: engine == "Opengl" && !buildtools.osx
 
     files: [ "3rdParty/GL/*" ]
   }
@@ -40,12 +35,12 @@ Eks.Library {
   }
 
   Properties {
-    condition: windows && engine == "Opengl"
+    condition: buildtools.windows && engine == "Opengl"
     cpp.dynamicLibraries: [ "OpenGL32", "Gdi32", "User32" ]
   }
 
   Properties {
-    condition: osx && engine == "Opengl"
+    condition: buildtools.osx && engine == "Opengl"
     cpp.frameworks: [ "OpenGL" ]
   }
 
