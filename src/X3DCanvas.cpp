@@ -230,7 +230,7 @@ void GL3DCanvas::initializeGL()
   _buffer = ALLOC->create<ScreenFrameBuffer>();
 
   bool es =
-#ifdef QT_OPENGL_ES_2
+#ifdef X_GLES
     true
 #else
     false

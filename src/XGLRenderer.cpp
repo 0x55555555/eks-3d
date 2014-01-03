@@ -2,12 +2,8 @@
 #include "Utilities/XFlags.h"
 #ifdef X_ENABLE_GL_RENDERER
 
-#ifdef QT_OPENGL_ES_2
-# define USE_GLES
-#else
-# ifndef Q_OS_OSX
-#  define USE_GLEW
-# endif
+#ifndef Q_OS_OSX
+# define USE_GLEW
 #endif
 
 #ifdef Q_OS_OSX
@@ -20,7 +16,7 @@
 # define STANDARD_OPENGL
 #endif
 
-#ifdef USE_GLES
+#ifdef X_GLES
 # ifndef X_GLES
 # error Need X_GLES defined
 # endif
@@ -908,7 +904,7 @@ GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns, int majorVe
     {
     _shaderHeader = "#version 120\n"
                     "#define X_GLSL_VERSION 120\n"
-  #ifdef USE_GLES
+  #ifdef X_GLES
                     "#define X_GLES\n"
   #endif
       ;
@@ -1275,6 +1271,10 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, bool gles, Eks
       }
 #endif
     }
+  else
+    {
+    major = 2;
+    }
 
   GLRendererImpl *r = alloc->create<GLRendererImpl>(*fns, major, alloc);
 
@@ -1346,7 +1346,7 @@ bool XGLTexture2D::init(GLRendererImpl *, xuint32 format, xsize width, xsize hei
   #ifdef STANDARD_OPENGL
     GL_DEPTH_COMPONENT24
   #else
-  # ifdef USE_GLES
+  # ifdef X_GLES
     GL_DEPTH_COMPONENT16
   # endif
   #endif
