@@ -598,7 +598,7 @@ public:
   bool init1(GLRendererImpl *r, const ShaderVertexLayoutDescription *descs, xsize count)
     {
     _renderer = r;
-    xAssert(count < X_UINT8_SENTINEL);
+    xAssert(count < std::numeric_limits<xuint8>::max());
     _attrCount = (xuint8)count;
     xCompileTimeAssert(4 == ShaderVertexLayoutDescription::SemanticCount);
     xAssert(count < ShaderVertexLayoutDescription::SemanticCount)
@@ -609,7 +609,7 @@ public:
       const ShaderVertexLayoutDescription &desc = descs[i];
       Attribute &attr = _attrs[i];
 
-      xAssert(desc.offset < X_UINT8_SENTINEL || desc.offset == ShaderVertexLayoutDescription::OffsetPackTight);
+      xAssert(desc.offset < std::numeric_limits<xuint8>::max() || desc.offset == ShaderVertexLayoutDescription::OffsetPackTight);
       attr.offset = (xuint8)desc.offset;
       attr.semantic = desc.semantic;
       if(desc.offset == ShaderVertexLayoutDescription::OffsetPackTight)
@@ -624,7 +624,7 @@ public:
       attr.components = desc.format + 1;
       xAssert(attr.components <= 4);
 
-      xAssert(vertexSize < X_UINT8_SENTINEL);
+      xAssert(vertexSize < std::numeric_limits<xuint8>::max());
       vertexSize = std::max(vertexSize, (xuint8)(attr.offset + attr.size()));
       }
 

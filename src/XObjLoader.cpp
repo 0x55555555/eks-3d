@@ -30,7 +30,7 @@ xsize skipSpaces(const ObjLoader::LineCache &line, xsize from, xsize &firstSpace
     from++;
     if(from >= line.size())
       {
-      return X_SIZE_SENTINEL;
+      return std::numeric_limits<xsize>::max();
       }
     }
 
@@ -62,7 +62,7 @@ void readVector(
   xsize pos = start;
   xsize end = start-1;
   xsize firstSpace = 0;
-  while((end = arr.indexOf(space, pos + 1)) != X_SIZE_SENTINEL && count < MaxCount)
+  while((end = arr.indexOf(space, pos + 1)) != std::numeric_limits<xsize>::max() && count < MaxCount)
     {
     scratch.mid(arr, pos, end - pos);
 
@@ -135,7 +135,7 @@ void computeNormal(
     Vector<VectorI3D> *triangles,
     xsize elIdx)
   {
-  xsize posIdx = X_SIZE_SENTINEL;
+  xsize posIdx = Eks::maxFor(posIdx);
   ObjLoader::ElementData *position = 0;
   for(xsize i = 0; i < itemCount; ++i)
     {
@@ -246,7 +246,7 @@ bool ObjLoader::readIndices(
 
   xsize firstSpace = start;
   xsize nextSpace = skipSpaces(arr, start, firstSpace);
-  if(nextSpace == X_SIZE_SENTINEL)
+  if(nextSpace == Eks::maxFor(nextSpace))
     {
     nextSpace = arr.length();
     }
@@ -255,7 +255,7 @@ bool ObjLoader::readIndices(
   xsize pos = start;
   xsize sepEnd = start;
   bool doneLast = false;
-  while(((sepEnd = arr.indexOf(separator, sepEnd+1)) != X_SIZE_SENTINEL && count < 3 && sepEnd < nextSpace) || !doneLast)
+  while(((sepEnd = arr.indexOf(separator, sepEnd+1)) != std::numeric_limits<xsize>::max() && count < 3 && sepEnd < nextSpace) || !doneLast)
     {
     if(sepEnd >= nextSpace)
       {
@@ -265,7 +265,7 @@ bool ObjLoader::readIndices(
     _scratchString.mid(arr, pos, sepEnd - pos);
 
     ShaderVertexLayoutDescription::Semantic semantic = SemanticMap[count++];
-    xsize index = X_SIZE_SENTINEL;
+    xsize index = Eks::maxFor(index);
     for(xsize i = 0; i < elementCount; ++i)
       {
       if(elementData[i].desc->semantic == semantic)
@@ -302,7 +302,7 @@ bool ObjLoader::findElementType(
     xsize itemCount,
     xsize *foundItem)
   {
-  *foundItem = X_SIZE_SENTINEL;
+  *foundItem = Eks::maxFor(*foundItem);
   for(xsize i = 0; i < itemCount; ++i)
     {
     const ShaderVertexLayoutDescription::Semantic item = items[i];

@@ -123,7 +123,7 @@ void Modeller::bakeTriangles(Renderer *r,
 
   if(index)
     {
-    xAssert(_triIndices.size() < X_UINT16_SENTINEL);
+    xAssert(_triIndices.size() < std::numeric_limits<xuint16>::max());
 
     IndexGeometry::delayedCreate(
       *index,
@@ -147,7 +147,7 @@ void Modeller::bakeLines(Renderer *r,
 
   if(index)
     {
-    xAssert(_linIndices.size() < X_UINT16_SENTINEL);
+    xAssert(_linIndices.size() < std::numeric_limits<xuint16>::max());
 
     IndexGeometry::delayedCreate(
       *index,

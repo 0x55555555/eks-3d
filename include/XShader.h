@@ -43,7 +43,7 @@ public:
 
   enum OffsetPack
     {
-    OffsetPackTight = X_UINT32_SENTINEL
+    OffsetPackTight = std::numeric_limits<xuint32>::max()
     };
 
   enum Semantic
