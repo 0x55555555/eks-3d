@@ -55,9 +55,6 @@ public:
   bool contains( const BoundingBox & ) const;
   bool intersects( const BoundingBox & ) const;
   bool intersects( const Line &, float &t ) const;
-
-  friend EKS3D_EXPORT std::ostream &operator<<(std::ostream &stream, const BoundingBox &itemRequest);
-  friend EKS3D_EXPORT std::istream &operator>>(std::istream &stream, BoundingBox &itemRequest);
   };
 
 class EKS3D_EXPORT AxisAlignedBoundingBox

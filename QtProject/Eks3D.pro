@@ -7,8 +7,6 @@ TEMPLATE = lib
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-DEFINES += X_GLES
-
 include("../../EksCore/GeneralOptions.pri")
 
 SOURCES += \

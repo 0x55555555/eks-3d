@@ -1,5 +1,6 @@
 #include "XGLRenderer.h"
 #include "Utilities/XFlags.h"
+#include <iostream>
 #ifdef X_ENABLE_GL_RENDERER
 
 #ifndef Q_OS_OSX
@@ -18,7 +19,7 @@
 
 #ifdef X_GLES
 # ifndef X_GLES
-# error Need X_GLES defined
+#  error Need X_GLES defined
 # endif
 # include "QGLFunctions"
 #endif
@@ -1575,7 +1576,7 @@ bool XGLShaderComponent::init(
     infoLog.resize(infoLogLength, '\0');
     int charsWritten  = 0;
     glGetShaderInfoLog(_component, infoLogLength, &charsWritten, infoLog.data()) GLE;
-    qDebug() << infoLog.toQString();
+    std::cout << infoLog.data() << std::endl;
     }
 
   int success = 0;
@@ -1826,7 +1827,7 @@ bool XGLShader::init(
     infoLog.resize(infologLength, '\0');
     int charsWritten  = 0;
     glGetProgramInfoLog(shader, infologLength, &charsWritten, infoLog.data());
-    qDebug() << infoLog.toQString();
+    std::cout << infoLog.data() << std::endl;
     }
 
   int success = 0;

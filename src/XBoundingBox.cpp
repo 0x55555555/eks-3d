@@ -128,9 +128,9 @@ Vector3D BoundingBox::size() const
 
 Real BoundingBox::maximumDistanceSquared() const
   {
-  return Vector3D( xMax(_maximum.x(), -_minimum.x()),
-                   xMax(_maximum.y(), -_minimum.y()),
-                   xMax(_maximum.z(), -_minimum.z())).squaredNorm();
+  return Vector3D( std::max(_maximum.x(), -_minimum.x()),
+                   std::max(_maximum.y(), -_minimum.y()),
+                   std::max(_maximum.z(), -_minimum.z())).squaredNorm();
   }
 
 void BoundingBox::buildExtremities(Eks::Vector3D (&pts)[8]) const
@@ -231,27 +231,6 @@ void BoundingBox::expand(float amount)
   _maximum += vec;
   }
 
-std::ostream &operator<<(std::ostream& str, const BoundingBox& cub)
-  {
-  return str << (xuint32)cub.isValid() << cub.minimum() << cub.maximum();
-  }
-
-std::istream &operator>>(std::istream& str, BoundingBox& cub)
-  {
-  using ::operator >>;
-
-  cub = BoundingBox();
-  xuint32 valid = false;
-  Vector3D min, max;
-  str >> valid >> min >> max;
-  if(valid)
-    {
-    cub.setMinimum(min);
-    cub.setMaximum(max);
-    }
-  return str;
-  }
-
 AxisAlignedBoundingBox::AxisAlignedBoundingBox()
   : _frame(Eks::Vector3D(0.0f, 0.0f, 1.0f))
   {
@@ -314,8 +293,8 @@ void AxisAlignedBoundingBox::maximumExtents(const Eks::Vector3D &vec, float &min
 
     float proj = vec.dot(pt);
 
-    min = xMin(min, proj);
-    max = xMax(max, proj);
+    min = std::min(min, proj);
+    max = std::max(max, proj);
     }
   }
 }

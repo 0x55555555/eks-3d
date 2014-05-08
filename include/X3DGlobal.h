@@ -1,17 +1,13 @@
 #ifndef X3DGLOBAL_H
 #define X3DGLOBAL_H
 
-#if defined(Q_OS_WIN32) || defined(Q_OS_WIN64)
-#define QT_NO_OPENGL_ES
-#endif
-
 #include "XGlobal.h"
 
 #ifndef EKS3D_STATIC
 # if defined(EKS3D_BUILD)
-#  define EKS3D_EXPORT Q_DECL_EXPORT
+#  define EKS3D_EXPORT X_DECL_EXPORT
 # else
-#  define EKS3D_EXPORT Q_DECL_IMPORT
+#  define EKS3D_EXPORT X_DECL_IMPORT
 # endif
 #else
 # define EKS3D_EXPORT
