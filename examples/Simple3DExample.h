@@ -18,8 +18,18 @@ public:
     _t = 0.0f;
     }
 
-  void intialise(Renderer* r, const float *vert, xsize vertCount)
+  void intialise(Renderer* r)
     {
+    const float vert[] = {
+      0, 0, 0,
+      1, 0, 0,
+      0, 10, 10,
+      0, 1, 0,
+      0, 10, 0,
+      0, 0, 1
+    };
+    const xsize vertCount = X_ARRAY_COUNT(vert);
+
     const char *fsrc =
         "#if X_GLSL_VERSION >= 130 || defined(X_GLES)\n"
         "precision mediump float;\n"

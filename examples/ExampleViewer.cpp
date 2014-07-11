@@ -1,19 +1,42 @@
 #include "QtWidgets/QApplication"
+#include "QtWidgets/QVBoxLayout"
+#include "ExampleViewer.h"
 #include "X3DCanvas.h"
+#include "XFramebuffer.h"
 #include "XCore.h"
 
-class ExampleViewer : public QWidget
+ExampleViewer::ExampleViewer()
   {
-public:
-  ExampleViewer()
-    {
-    _viewport = Eks::Canvas3D::createBest(this, &_canvas);
-    }
+  resize(800, 600);
+  auto layout = new QVBoxLayout(this);
+  layout->setContentsMargins(0, 0, 0, 0);
+  _viewport = Eks::Canvas3D::createBest(this, &_canvas);
+  layout->addWidget(_viewport);
 
-private:
-  Eks::AbstractCanvas *_canvas;
-  QWidget *_viewport;
-  };
+  _timer.start(1000/fps);
+
+  connect(_viewport, SIGNAL(initialise3D(Eks::Renderer*)), this, SLOT(initialise3D(Eks::Renderer*)));
+  connect(_viewport, SIGNAL(paint3D(Eks::Renderer*,Eks::FrameBuffer*)), this, SLOT(paint3D(Eks::Renderer*,Eks::FrameBuffer*)));
+  connect(_viewport, SIGNAL(resize3D(Eks::Renderer*,xuint32,xuint32)), this, SLOT(resize3D(Eks::Renderer*,xuint32,xuint32)));
+
+  connect(&_timer, SIGNAL(timeout()), _viewport, SLOT(update()));
+  }
+
+void ExampleViewer::initialise3D(Eks::Renderer *r)
+  {
+  _example1.intialise(r);
+  }
+
+void ExampleViewer::paint3D(Eks::Renderer *r, Eks::FrameBuffer *buffer)
+  {
+  Eks::FrameBufferRenderFrame fr(r, buffer);
+  _example1.render(r);
+  }
+
+void ExampleViewer::resize3D(Eks::Renderer *r, xuint32 w, xuint32 h)
+  {
+  _example1.resize(r, w, h);
+  }
 
 int main(int argc, char** argv)
   {
