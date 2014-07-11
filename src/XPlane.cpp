@@ -62,7 +62,8 @@ void Plane::setNormal( const Vector3D &normal )
 
 float Plane::distanceToPlane( const Vector3D &in ) const
   {
-  return in.dot(normal()) + d();
+  auto proj = in.dot(normal());
+  return proj - d();
   }
 
 float Plane::intersection( const LineBase<3> &a ) const
@@ -72,7 +73,7 @@ float Plane::intersection( const LineBase<3> &a ) const
     {
     return normal().dot(position() - a.position()) / denominator;
     }
-  return HUGE_VAL;
+  return std::numeric_limits<float>::infinity();
   }
 
 void Plane::transform(const Eks::Transform &tx)

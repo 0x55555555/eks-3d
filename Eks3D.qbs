@@ -80,14 +80,9 @@ Eks.Library {
     excludeFiles: [ "include/XGL*", "include/XD3D*", "src/XGL*", "src/XD3D*" ]
   }
 
-  Group {
-    name: "Examples"
-
-    files: [ "examples/**/*" ]
-  }
-
   Export {
     Depends { name: "cpp" }
+    Depends { name: "EksCore" }
     cpp.includePaths: ["include"]
   }
 }
