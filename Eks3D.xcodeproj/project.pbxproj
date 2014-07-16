@@ -1,0 +1,190 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXFileReference section */
+		08002D60197723F6003F84CF /* Eks3D.qbs */ = {isa = PBXFileReference; lastKnownFileType = text; path = Eks3D.qbs; sourceTree = "<group>"; };
+		08002D62197723F6003F84CF /* X3DGlobal.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = X3DGlobal.h; sourceTree = "<group>"; };
+		08002D63197723F6003F84CF /* XAbstractCanvas.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XAbstractCanvas.h; sourceTree = "<group>"; };
+		08002D64197723F6003F84CF /* XAbstractCanvasController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XAbstractCanvasController.h; sourceTree = "<group>"; };
+		08002D65197723F6003F84CF /* XAbstractDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XAbstractDelegate.h; sourceTree = "<group>"; };
+		08002D66197723F6003F84CF /* XAbstractRenderModel.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XAbstractRenderModel.h; sourceTree = "<group>"; };
+		08002D67197723F6003F84CF /* XBlendState.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XBlendState.h; sourceTree = "<group>"; };
+		08002D68197723F6003F84CF /* XBoundingBox.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XBoundingBox.h; sourceTree = "<group>"; };
+		08002D69197723F6003F84CF /* XCameraCanvasController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XCameraCanvasController.h; sourceTree = "<group>"; };
+		08002D6A197723F6003F84CF /* XColladaFile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XColladaFile.h; sourceTree = "<group>"; };
+		08002D6B197723F6003F84CF /* XD3DRenderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XD3DRenderer.h; sourceTree = "<group>"; };
+		08002D6C197723F6003F84CF /* XD3DRendererImpl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XD3DRendererImpl.h; sourceTree = "<group>"; };
+		08002D6D197723F6003F84CF /* XDepthStencilState.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XDepthStencilState.h; sourceTree = "<group>"; };
+		08002D6E197723F6003F84CF /* XFramebuffer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFramebuffer.h; sourceTree = "<group>"; };
+		08002D6F197723F6003F84CF /* XFrustum.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XFrustum.h; sourceTree = "<group>"; };
+		08002D70197723F6003F84CF /* XGeometry.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XGeometry.h; sourceTree = "<group>"; };
+		08002D71197723F6003F84CF /* XGLRenderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XGLRenderer.h; sourceTree = "<group>"; };
+		08002D72197723F6003F84CF /* XLine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XLine.h; sourceTree = "<group>"; };
+		08002D73197723F6003F84CF /* XModeller.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XModeller.h; sourceTree = "<group>"; };
+		08002D74197723F6003F84CF /* XObjLoader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XObjLoader.h; sourceTree = "<group>"; };
+		08002D75197723F6003F84CF /* XPlane.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XPlane.h; sourceTree = "<group>"; };
+		08002D76197723F6003F84CF /* XRasteriserState.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XRasteriserState.h; sourceTree = "<group>"; };
+		08002D77197723F6003F84CF /* XRenderer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XRenderer.h; sourceTree = "<group>"; };
+		08002D78197723F6003F84CF /* XShader.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XShader.h; sourceTree = "<group>"; };
+		08002D79197723F6003F84CF /* XShape.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XShape.h; sourceTree = "<group>"; };
+		08002D7A197723F6003F84CF /* XTexture.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XTexture.h; sourceTree = "<group>"; };
+		08002D7B197723F6003F84CF /* XTransform.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XTransform.h; sourceTree = "<group>"; };
+		08002D7C197723F6003F84CF /* XTriangle.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = XTriangle.h; sourceTree = "<group>"; };
+		08002D7E197723F6003F84CF /* XAbstractCanvas.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XAbstractCanvas.cpp; sourceTree = "<group>"; };
+		08002D7F197723F6003F84CF /* XAbstractCanvasController.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XAbstractCanvasController.cpp; sourceTree = "<group>"; };
+		08002D80197723F6003F84CF /* XAbstractRenderModel.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XAbstractRenderModel.cpp; sourceTree = "<group>"; };
+		08002D81197723F6003F84CF /* XBlendState.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XBlendState.cpp; sourceTree = "<group>"; };
+		08002D82197723F6003F84CF /* XBoundingBox.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XBoundingBox.cpp; sourceTree = "<group>"; };
+		08002D83197723F6003F84CF /* XCameraCanvasController.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XCameraCanvasController.cpp; sourceTree = "<group>"; };
+		08002D84197723F6003F84CF /* XColladaFile.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XColladaFile.cpp; sourceTree = "<group>"; };
+		08002D85197723F6003F84CF /* XD3DRenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XD3DRenderer.cpp; sourceTree = "<group>"; };
+		08002D86197723F6003F84CF /* XD3DRendererImpl.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XD3DRendererImpl.cpp; sourceTree = "<group>"; };
+		08002D87197723F6003F84CF /* XDepthStencilState.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XDepthStencilState.cpp; sourceTree = "<group>"; };
+		08002D88197723F6003F84CF /* XFramebuffer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XFramebuffer.cpp; sourceTree = "<group>"; };
+		08002D89197723F6003F84CF /* XFrustum.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XFrustum.cpp; sourceTree = "<group>"; };
+		08002D8A197723F6003F84CF /* XGeometry.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XGeometry.cpp; sourceTree = "<group>"; };
+		08002D8B197723F6003F84CF /* XGLRenderer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XGLRenderer.cpp; sourceTree = "<group>"; };
+		08002D8C197723F6003F84CF /* XLine.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XLine.cpp; sourceTree = "<group>"; };
+		08002D8D197723F6003F84CF /* XModeller.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XModeller.cpp; sourceTree = "<group>"; };
+		08002D8E197723F6003F84CF /* XObjLoader.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XObjLoader.cpp; sourceTree = "<group>"; };
+		08002D8F197723F6003F84CF /* XPlane.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XPlane.cpp; sourceTree = "<group>"; };
+		08002D90197723F6003F84CF /* XRasteriserState.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XRasteriserState.cpp; sourceTree = "<group>"; };
+		08002D91197723F6003F84CF /* XShader.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XShader.cpp; sourceTree = "<group>"; };
+		08002D92197723F6003F84CF /* XShape.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XShape.cpp; sourceTree = "<group>"; };
+		08002D93197723F6003F84CF /* XTexture.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XTexture.cpp; sourceTree = "<group>"; };
+		08002D94197723F6003F84CF /* XTransform.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XTransform.cpp; sourceTree = "<group>"; };
+		08002D95197723F6003F84CF /* XTriangle.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = XTriangle.cpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		08002D4C1977236A003F84CF = {
+			isa = PBXGroup;
+			children = (
+				08002D60197723F6003F84CF /* Eks3D.qbs */,
+				08002D61197723F6003F84CF /* include */,
+				08002D7D197723F6003F84CF /* src */,
+			);
+			sourceTree = "<group>";
+		};
+		08002D61197723F6003F84CF /* include */ = {
+			isa = PBXGroup;
+			children = (
+				08002D62197723F6003F84CF /* X3DGlobal.h */,
+				08002D63197723F6003F84CF /* XAbstractCanvas.h */,
+				08002D64197723F6003F84CF /* XAbstractCanvasController.h */,
+				08002D65197723F6003F84CF /* XAbstractDelegate.h */,
+				08002D66197723F6003F84CF /* XAbstractRenderModel.h */,
+				08002D67197723F6003F84CF /* XBlendState.h */,
+				08002D68197723F6003F84CF /* XBoundingBox.h */,
+				08002D69197723F6003F84CF /* XCameraCanvasController.h */,
+				08002D6A197723F6003F84CF /* XColladaFile.h */,
+				08002D6B197723F6003F84CF /* XD3DRenderer.h */,
+				08002D6C197723F6003F84CF /* XD3DRendererImpl.h */,
+				08002D6D197723F6003F84CF /* XDepthStencilState.h */,
+				08002D6E197723F6003F84CF /* XFramebuffer.h */,
+				08002D6F197723F6003F84CF /* XFrustum.h */,
+				08002D70197723F6003F84CF /* XGeometry.h */,
+				08002D71197723F6003F84CF /* XGLRenderer.h */,
+				08002D72197723F6003F84CF /* XLine.h */,
+				08002D73197723F6003F84CF /* XModeller.h */,
+				08002D74197723F6003F84CF /* XObjLoader.h */,
+				08002D75197723F6003F84CF /* XPlane.h */,
+				08002D76197723F6003F84CF /* XRasteriserState.h */,
+				08002D77197723F6003F84CF /* XRenderer.h */,
+				08002D78197723F6003F84CF /* XShader.h */,
+				08002D79197723F6003F84CF /* XShape.h */,
+				08002D7A197723F6003F84CF /* XTexture.h */,
+				08002D7B197723F6003F84CF /* XTransform.h */,
+				08002D7C197723F6003F84CF /* XTriangle.h */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		08002D7D197723F6003F84CF /* src */ = {
+			isa = PBXGroup;
+			children = (
+				08002D7E197723F6003F84CF /* XAbstractCanvas.cpp */,
+				08002D7F197723F6003F84CF /* XAbstractCanvasController.cpp */,
+				08002D80197723F6003F84CF /* XAbstractRenderModel.cpp */,
+				08002D81197723F6003F84CF /* XBlendState.cpp */,
+				08002D82197723F6003F84CF /* XBoundingBox.cpp */,
+				08002D83197723F6003F84CF /* XCameraCanvasController.cpp */,
+				08002D84197723F6003F84CF /* XColladaFile.cpp */,
+				08002D85197723F6003F84CF /* XD3DRenderer.cpp */,
+				08002D86197723F6003F84CF /* XD3DRendererImpl.cpp */,
+				08002D87197723F6003F84CF /* XDepthStencilState.cpp */,
+				08002D88197723F6003F84CF /* XFramebuffer.cpp */,
+				08002D89197723F6003F84CF /* XFrustum.cpp */,
+				08002D8A197723F6003F84CF /* XGeometry.cpp */,
+				08002D8B197723F6003F84CF /* XGLRenderer.cpp */,
+				08002D8C197723F6003F84CF /* XLine.cpp */,
+				08002D8D197723F6003F84CF /* XModeller.cpp */,
+				08002D8E197723F6003F84CF /* XObjLoader.cpp */,
+				08002D8F197723F6003F84CF /* XPlane.cpp */,
+				08002D90197723F6003F84CF /* XRasteriserState.cpp */,
+				08002D91197723F6003F84CF /* XShader.cpp */,
+				08002D92197723F6003F84CF /* XShape.cpp */,
+				08002D93197723F6003F84CF /* XTexture.cpp */,
+				08002D94197723F6003F84CF /* XTransform.cpp */,
+				08002D95197723F6003F84CF /* XTriangle.cpp */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXProject section */
+		08002D4D1977236A003F84CF /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0510;
+			};
+			buildConfigurationList = 08002D501977236A003F84CF /* Build configuration list for PBXProject "Eks3D" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 08002D4C1977236A003F84CF;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+			);
+		};
+/* End PBXProject section */
+
+/* Begin XCBuildConfiguration section */
+		08002D511977236A003F84CF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		08002D521977236A003F84CF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		08002D501977236A003F84CF /* Build configuration list for PBXProject "Eks3D" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				08002D511977236A003F84CF /* Debug */,
+				08002D521977236A003F84CF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 08002D4D1977236A003F84CF /* Project object */;
+}

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDESourceControlProjectFavoriteDictionaryKey</key>
+	<false/>
+	<key>IDESourceControlProjectIdentifier</key>
+	<string>12C33F45-6D20-4923-8D42-898E772C1E2A</string>
+	<key>IDESourceControlProjectName</key>
+	<string>test</string>
+	<key>IDESourceControlProjectOriginsDictionary</key>
+	<dict>
+		<key>103D703D-95F1-47F5-9B1B-DB6A4F35DB5B</key>
+		<string>https://github.com/jorj1988/eks-3d.git</string>
+	</dict>
+	<key>IDESourceControlProjectPath</key>
+	<string>test/test/test.xcodeproj/project.xcworkspace</string>
+	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
+	<dict>
+		<key>103D703D-95F1-47F5-9B1B-DB6A4F35DB5B</key>
+		<string>../../../..</string>
+	</dict>
+	<key>IDESourceControlProjectURL</key>
+	<string>https://github.com/jorj1988/eks-3d.git</string>
+	<key>IDESourceControlProjectVersion</key>
+	<integer>110</integer>
+	<key>IDESourceControlProjectWCCIdentifier</key>
+	<string>103D703D-95F1-47F5-9B1B-DB6A4F35DB5B</string>
+	<key>IDESourceControlProjectWCConfigurations</key>
+	<array>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.git</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>103D703D-95F1-47F5-9B1B-DB6A4F35DB5B</string>
+			<key>IDESourceControlWCCName</key>
+			<string>Eks3D</string>
+		</dict>
+	</array>
+</dict>
+</plist>
