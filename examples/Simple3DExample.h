@@ -1,3 +1,4 @@
+#include "ExampleBase.h"
 #include "XShader.h"
 #include "XGeometry.h"
 #include "XRasteriserState.h"
@@ -10,7 +11,7 @@ namespace Eks
 namespace Demo
 {
 
-class Simple3DExample
+class Simple3DExample : public ExampleBase
   {
 public:
   Simple3DExample()
@@ -28,7 +29,7 @@ public:
       0, 10, 0,
       0, 0, 1
     };
-    const xsize vertCount = X_ARRAY_COUNT(vert);
+    const xsize vertCount = X_ARRAY_COUNT(vert) / 6;
 
     const char *fsrc =
         "#if X_GLSL_VERSION >= 130 || defined(X_GLES)\n"
@@ -83,7 +84,7 @@ public:
     {
     r->setProjectionTransform(_proj);
 
-    _t += 0.002f;
+    _t += 0.02f;
 
     Transform l = TransformUtilities::lookAt(
       Vector3D(sinf(_t) * 12.0f, 0, cosf(_t) * 12.0f),

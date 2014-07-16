@@ -20,22 +20,25 @@ ExampleViewer::ExampleViewer()
   connect(_viewport, SIGNAL(resize3D(Eks::Renderer*,xuint32,xuint32)), this, SLOT(resize3D(Eks::Renderer*,xuint32,xuint32)));
 
   connect(&_timer, SIGNAL(timeout()), _viewport, SLOT(update()));
+
+  _examples.emplace_back(new Eks::Demo::Simple3DExample());
+  _activeExample = _examples.front().get();
   }
 
 void ExampleViewer::initialise3D(Eks::Renderer *r)
   {
-  _example1.intialise(r);
+  _activeExample->intialise(r);
   }
 
 void ExampleViewer::paint3D(Eks::Renderer *r, Eks::FrameBuffer *buffer)
   {
   Eks::FrameBufferRenderFrame fr(r, buffer);
-  _example1.render(r);
+  _activeExample->render(r);
   }
 
 void ExampleViewer::resize3D(Eks::Renderer *r, xuint32 w, xuint32 h)
   {
-  _example1.resize(r, w, h);
+  _activeExample->resize(r, w, h);
   }
 
 int main(int argc, char** argv)
