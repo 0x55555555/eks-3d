@@ -24,7 +24,7 @@ XProperties:
   XROProperty(bool, areLineIndicesSequential);
 
 public:
-  Modeller(AllocatorBase *, xsize initialSize);
+  Modeller(AllocatorBase *, xsize initialSize=1024);
   ~Modeller();
 
   void bakeVertices(
@@ -76,7 +76,7 @@ public:
       xuint32 divs = 6,
       bool capped = true);
 
-  void drawSphere(float radius, int lats = 8, int longs = 12);
+  void drawSphere(float radius = 1, int lats = 8, int longs = 12);
   void drawCube(
       const Vector3D &horizontal=Vector3D(1,0,0),
       const Vector3D &vertical=Vector3D(0,1,0),

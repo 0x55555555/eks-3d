@@ -5,6 +5,9 @@
 #include "XFramebuffer.h"
 #include "XCore.h"
 
+#include "simple/simple.h"
+#include "geometry/geometry.h"
+
 ExampleViewer::ExampleViewer()
   {
   resize(800, 600);
@@ -21,8 +24,9 @@ ExampleViewer::ExampleViewer()
 
   connect(&_timer, SIGNAL(timeout()), _viewport, SLOT(update()));
 
-  _examples.emplace_back(new Eks::Demo::Simple3DExample());
-  _activeExample = _examples.front().get();
+  _examples.emplace_back(new Eks::Demo::SimpleExample());
+  _examples.emplace_back(new Eks::Demo::GeometryExample());
+  _activeExample = _examples.back().get();
   }
 
 void ExampleViewer::initialise3D(Eks::Renderer *r)

@@ -9,7 +9,7 @@
 namespace Eks
 {
 
-Modeller::Modeller(AllocatorBase *a, xsize initialSize )
+Modeller::Modeller(AllocatorBase *a, xsize initialSize)
   : _allocator(a),
     _triIndices(a),
     _linIndices(a),
