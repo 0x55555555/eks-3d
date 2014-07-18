@@ -6,8 +6,6 @@
 #include "XGeometry.h"
 #include "Math/XFrame.h"
 
-#include "QDebug"
-
 namespace Eks
 {
 
@@ -421,8 +419,8 @@ void Modeller::drawSphere(float r, int lats, int longs)
     float z1 = sinf(lat1) * r;
     float zr1 = cosf(lat1) * r;
 
-    float vA = (float)i / (float)(lats+1);
-    float vB = (float)(i+1) / (float)(lats+1);
+    float vA = (float)i / (float)(lats);
+    float vB = (float)(i+1) / (float)(lats);
 
     bool beginCap = i == 0;
     bool endCap = i == (lats - 1);
@@ -438,8 +436,8 @@ void Modeller::drawSphere(float r, int lats, int longs)
       float xOld = cosf(lngOld);
       float yOld = sinf(lngOld);
 
-      float uA = (float)(j-1) / (float)(longs);
-      float uB = (float)(j) / (float)(longs);
+      float uA = (float)(j) / (float)(longs);
+      float uB = (float)(j+1) / (float)(longs);
 
       texture(uA, vB);
       normal(Eks::Vector3D(xOld * zr1, yOld * zr1, z1).normalized());

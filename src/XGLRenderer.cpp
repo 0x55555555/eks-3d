@@ -527,6 +527,8 @@ public:
 
   static void bind(Renderer *ren, const Shader *shader, const ShaderVertexLayout *layout);
 
+  void bindDumb(Renderer *ren);
+
   static void setConstantBuffers21(
       Renderer *r,
       Shader *shader,
@@ -1840,6 +1842,14 @@ bool XGLShader::init(
   return true;
   }
 
+void XGLShader::bindDumb(Renderer *ren)
+  {
+  GLRendererImpl* r = GL_REND(ren);
+  r->_currentShader = nullptr;
+  r->_vertexLayout = nullptr;
+  glUseProgram(shader);
+  }
+
 void XGLShader::bind(Renderer *ren, const Shader *shader, const ShaderVertexLayout *layout)
   {
   GLRendererImpl* r = GL_REND(ren);
@@ -1852,7 +1862,7 @@ void XGLShader::bind(Renderer *ren, const Shader *shader, const ShaderVertexLayo
 
     glUseProgram(shaderInt->shader) GLE;
     }
-  else if( shader == 0 && r->_currentShader != 0 )
+  else if(shader == 0 && r->_currentShader != 0)
     {
     glUseProgram(0);
     r->_currentShader = 0;
@@ -1940,13 +1950,14 @@ void XGLShader::setConstantBuffersInternal33(
   }
 
 void XGLShader::setResources21(
-    Renderer *,
+    Renderer *r,
     Shader *s,
     xsize index,
     xsize count,
     const Resource * const* data)
   {
   XGLShader* shader = s->data<XGLShader>();
+  shader->bindDumb(r);
   for(GLuint i = shader->maxSetupResources; i < (GLuint)count; ++i)
     {
     char str[256];
@@ -1956,11 +1967,11 @@ void XGLShader::setResources21(
     sprintf(str, "rsc%d", (int)index);
   #endif
 
-    xint32 location = glGetUniformLocation(shader->shader, str);
+    xint32 location = glGetUniformLocation(shader->shader, str) GLE;
 
     if(location != -1)
       {
-      glUniform1i(location, i);
+      glUniform1i(location, i) GLE;
       }
     }
 

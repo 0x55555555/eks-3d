@@ -4,9 +4,14 @@
 #include "XGeometry.h"
 #include "XRasteriserState.h"
 #include "XTransform.h"
+#include "XTexture.h"
 #include "XModeller.h"
 #include "XCore.h"
-
+#include "../geometry/geometry.h"
+#include "QImage"
+#include "QGLWidget"
+#include "QPainter"
+#include "QConicalGradient"
 
 namespace Eks
 {
@@ -14,58 +19,59 @@ namespace Eks
 namespace Demo
 {
 
-class GeometryExample : public ExampleBase
+class TextureExample : public ExampleBase
   {
 public:
-  GeometryExample()
+  TextureExample()
     {
     _t = 0.0f;
     }
 
-  static void buildGeometry(Eks::Renderer *r, Eks::IndexGeometry *igeo, Eks::Geometry *geo)
-    {
-    Eks::Modeller m(Eks::Core::defaultAllocator());
-
-    Eks::Transform tx = Eks::Transform::Identity();
-    tx.translate(Eks::Vector3D(1, 1, 1));
-
-    m.drawCube();
-    m.setTransform(tx);
-    m.drawSphere(1.1);
-
-    ShaderVertexLayoutDescription::Semantic semantics[] = {
-      ShaderVertexLayoutDescription::Position,
-      ShaderVertexLayoutDescription::Normal,
-      ShaderVertexLayoutDescription::TextureCoordinate,
-    };
-
-    m.bakeTriangles(r, semantics, X_ARRAY_COUNT(semantics), igeo, geo);
-    }
-
   void intialise(Renderer* r)
     {
-    buildGeometry(r, &_igeo, &_geo);
+    GeometryExample::buildGeometry(r, &_igeo, &_geo);
+
+    QImage im(512, 512, QImage::Format_ARGB32_Premultiplied);
+    {
+      QPainter p(&im);
+
+      QConicalGradient grad(QPointF(256, 256), 128);
+      grad.setColorAt(0, Qt::red);
+      grad.setColorAt(1, Qt::green);
+      p.fillRect(0, 0, 512, 512, grad);
+
+      QBrush pattern(Qt::DiagCrossPattern);
+      p.fillRect(0, 0, 512, 512, pattern);
+    }
+    im = QGLWidget::convertToGLFormat(im);
+
+    Eks::Texture2D::delayedCreate(_tex, r, im.width(), im.height(), Eks::Rgba8, im.constBits());
 
     const char *fsrc =
         "#if X_GLSL_VERSION >= 130 || defined(X_GLES)\n"
         "precision mediump float;\n"
         "#endif\n"
-        "in vec3 colOut;"
+        "uniform sampler2D rsc0;"
+        "in vec2 texOut;"
+        "in vec3 normOut;"
         "out vec4 outColour;"
         "void main(void)"
         "  {"
-        "  outColour = vec4(abs(colOut), 1.0);"
+        "  outColour = (0.2 + max(0, dot(normalize(vec3(1,1,1)), normOut))) * texture(rsc0, texOut);"
         "  }";
 
     const char *vsrc =
         "layout (std140) uniform cb0 { mat4 model; mat4 modelView; mat4 modelViewProj; };"
         "layout (std140) uniform cb1 { mat4 view; mat4 proj; };"
         "in vec3 position;"
+        "in vec3 normal;"
         "in vec2 textureCoordinate;"
-        "out vec3 colOut;"
+        "out vec2 texOut;"
+        "out vec3 normOut;"
         "void main(void)"
         "  {"
-        "  colOut = vec3(textureCoordinate, 0);"
+        "  texOut = textureCoordinate;"
+        "  normOut = normal;"
         "  gl_Position = modelViewProj * vec4(position, 1.0);"
         "  }";
 
@@ -84,6 +90,7 @@ public:
 
     const char *outputs[] = { "outColour" };
     Shader::delayedCreate(_shader, r, &_v, &_f, outputs, X_ARRAY_COUNT(outputs));
+    _shader.setShaderResource(0, &_tex);
     }
 
   void resize(Renderer*, xuint32 width, xuint32 height)
@@ -97,7 +104,7 @@ public:
     {
     r->setProjectionTransform(_proj);
 
-    _t += 0.002f;
+    _t += 0.005f;
 
     Transform l = TransformUtilities::lookAt(
       Vector3D(sinf(_t) * 3.0f, 1.5f, cosf(_t) * 3.0f),
@@ -119,6 +126,7 @@ public:
   Shader _shader;
   ShaderFragmentComponent _f;
   ShaderVertexComponent _v;
+  Texture2D _tex;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   };

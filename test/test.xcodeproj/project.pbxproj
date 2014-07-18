@@ -14,6 +14,7 @@
 		08002D5A197723C1003F84CF /* geometry.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = geometry.h; sourceTree = "<group>"; };
 		08002D5C197723C1003F84CF /* simple.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = simple.h; sourceTree = "<group>"; };
 		08002D5D197723E8003F84CF /* Eks3D.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Eks3D.xcodeproj; path = ../Eks3D.xcodeproj; sourceTree = "<group>"; };
+		08AFEA4F1979B3A700CC0ABA /* textures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = textures.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -28,6 +29,7 @@
 		08002D54197723C1003F84CF /* examples */ = {
 			isa = PBXGroup;
 			children = (
+				08AFEA4E1979B3A700CC0ABA /* textures */,
 				08002D55197723C1003F84CF /* example.qbs */,
 				08002D56197723C1003F84CF /* ExampleBase.h */,
 				08002D57197723C1003F84CF /* ExampleViewer.cpp */,
@@ -60,6 +62,14 @@
 			children = (
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		08AFEA4E1979B3A700CC0ABA /* textures */ = {
+			isa = PBXGroup;
+			children = (
+				08AFEA4F1979B3A700CC0ABA /* textures.h */,
+			);
+			path = textures;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -224,6 +234,7 @@
 				08002D99197724E8003F84CF /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
