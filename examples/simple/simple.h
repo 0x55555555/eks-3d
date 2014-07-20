@@ -31,6 +31,7 @@ public:
       0, 0, 1
     };
     const xsize vertCount = X_ARRAY_COUNT(vert) / 6;
+    Geometry::delayedCreate(_geo, r, vert, sizeof(float) * 6, vertCount);
 
     const char *fsrc =
         "#if X_GLSL_VERSION >= 130 || defined(X_GLES)\n"
@@ -68,9 +69,6 @@ public:
 
     const char *outputs[] = { "outColour" };
     Shader::delayedCreate(_shader, r, &_v, &_f, outputs, X_ARRAY_COUNT(outputs));
-
-
-    Geometry::delayedCreate(_geo, r, vert, sizeof(float) * 6, vertCount);
     }
 
   void resize(Renderer*, xuint32 width, xuint32 height)

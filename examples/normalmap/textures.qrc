@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/tex">
+        <file>diffuse.png</file>
+        <file>displacement.png</file>
+        <file>normals.png</file>
+    </qresource>
+    <qresource prefix="/shad">
+        <file>frag.frag</file>
+        <file>vert.vert</file>
+    </qresource>
+</RCC>

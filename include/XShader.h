@@ -52,6 +52,7 @@ public:
     Colour,
     TextureCoordinate,
     Normal,
+    BiNormal,
 
     SemanticCount
     };

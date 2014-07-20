@@ -603,7 +603,6 @@ public:
     _renderer = r;
     xAssert(count < std::numeric_limits<xuint8>::max());
     _attrCount = (xuint8)count;
-    xCompileTimeAssert(4 == ShaderVertexLayoutDescription::SemanticCount);
     xAssert(count < ShaderVertexLayoutDescription::SemanticCount)
 
     vertexSize = 0;
@@ -641,9 +640,10 @@ public:
       "position",
       "colour",
       "textureCoordinate",
-      "normal"
+      "normal",
+      "binormal"
     };
-    xCompileTimeAssert(4 == ShaderVertexLayoutDescription::SemanticCount);
+    xCompileTimeAssert(X_ARRAY_COUNT(semanticNames) == ShaderVertexLayoutDescription::SemanticCount);
 
     for(GLuint i = 0; i < (GLuint)_attrCount; ++i)
       {
@@ -1796,14 +1796,14 @@ bool XGLShader::init(
   _buffers.allocator() = TypedAllocator<Buffer>(impl->_allocator);
   maxSetupResources = 0;
   shader = glCreateProgram();
-  glAttachShader(shader, v->_component);
-  glAttachShader(shader, f->_component);
+  glAttachShader(shader, v->_component) GLE;
+  glAttachShader(shader, f->_component) GLE;
 
   for(xsize i = 0; i < outputCount; ++i)
     {
     if(outputs[i])
       {
-      glBindFragDataLocation(shader, i, outputs[i]);
+      glBindFragDataLocation(shader, i, outputs[i]) GLE;
       }
     }
 
@@ -1817,11 +1817,11 @@ bool XGLShader::init(
       }
     }
 
-  glLinkProgram(shader);
+  glLinkProgram(shader) GLE;
 
   int infologLength = 0;
 
-  glGetProgramiv(shader, GL_INFO_LOG_LENGTH, &infologLength);
+  glGetProgramiv(shader, GL_INFO_LOG_LENGTH, &infologLength) GLE;
 
   if (infologLength > 0)
     {
@@ -1833,7 +1833,7 @@ bool XGLShader::init(
     }
 
   int success = 0;
-  glGetProgramiv(shader, GL_LINK_STATUS, &success);
+  glGetProgramiv(shader, GL_LINK_STATUS, &success) GLE;
   if(!success)
     {
     return false;
@@ -1971,7 +1971,7 @@ void XGLShader::setResources21(
 
     if(location != -1)
       {
-      glUniform1i(location, i) GLE;
+      glUniform1i(location, i+index) GLE;
       }
     }
 

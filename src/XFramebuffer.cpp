@@ -47,7 +47,7 @@ ScreenFrameBuffer::~ScreenFrameBuffer()
   {
   xAssert(!isValid());
   }
-
+	
 void ScreenFrameBuffer::setRenderer(Renderer *r)
   {
   _renderer = r;

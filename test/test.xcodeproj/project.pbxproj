@@ -15,6 +15,10 @@
 		08002D5C197723C1003F84CF /* simple.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = simple.h; sourceTree = "<group>"; };
 		08002D5D197723E8003F84CF /* Eks3D.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Eks3D.xcodeproj; path = ../Eks3D.xcodeproj; sourceTree = "<group>"; };
 		08AFEA4F1979B3A700CC0ABA /* textures.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = textures.h; sourceTree = "<group>"; };
+		08AFEA521979C2A600CC0ABA /* diffuse.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = diffuse.png; sourceTree = "<group>"; };
+		08AFEA531979C2A600CC0ABA /* displacement.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = displacement.png; sourceTree = "<group>"; };
+		08AFEA541979C2A600CC0ABA /* normalmap.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = normalmap.h; sourceTree = "<group>"; };
+		08AFEA551979C2A600CC0ABA /* normals.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = normals.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -29,6 +33,7 @@
 		08002D54197723C1003F84CF /* examples */ = {
 			isa = PBXGroup;
 			children = (
+				08AFEA511979C2A600CC0ABA /* normalmap */,
 				08AFEA4E1979B3A700CC0ABA /* textures */,
 				08002D55197723C1003F84CF /* example.qbs */,
 				08002D56197723C1003F84CF /* ExampleBase.h */,
@@ -70,6 +75,17 @@
 				08AFEA4F1979B3A700CC0ABA /* textures.h */,
 			);
 			path = textures;
+			sourceTree = "<group>";
+		};
+		08AFEA511979C2A600CC0ABA /* normalmap */ = {
+			isa = PBXGroup;
+			children = (
+				08AFEA521979C2A600CC0ABA /* diffuse.png */,
+				08AFEA531979C2A600CC0ABA /* displacement.png */,
+				08AFEA541979C2A600CC0ABA /* normalmap.h */,
+				08AFEA551979C2A600CC0ABA /* normals.png */,
+			);
+			path = normalmap;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */

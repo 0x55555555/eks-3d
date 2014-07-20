@@ -66,6 +66,7 @@ void Modeller::bakeVertices(
     4,
     2,
     3,
+    3,
     };
   xCompileTimeAssert(X_ARRAY_COUNT(semanticSizes) == ShaderVertexLayoutDescription::SemanticCount);
 

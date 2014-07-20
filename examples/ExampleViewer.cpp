@@ -8,6 +8,7 @@
 #include "simple/simple.h"
 #include "geometry/geometry.h"
 #include "textures/textures.h"
+#include "normalmap/normalmap.h"
 
 ExampleViewer::ExampleViewer()
   {
@@ -28,6 +29,7 @@ ExampleViewer::ExampleViewer()
   _examples.emplace_back(new Eks::Demo::SimpleExample());
   _examples.emplace_back(new Eks::Demo::GeometryExample());
   _examples.emplace_back(new Eks::Demo::TextureExample());
+  _examples.emplace_back(new Eks::Demo::NormalMapExample());
   _activeExample = _examples.back().get();
   }
 

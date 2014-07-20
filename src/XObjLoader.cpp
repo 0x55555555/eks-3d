@@ -184,14 +184,16 @@ const ObjLoader::ObjElement elementDescriptionsImpl[] =
     { ShaderVertexLayoutDescription::Position, "v", 3, readVector<3>, writeVector<3>, computeNull  },
     { ShaderVertexLayoutDescription::Normal, "n", 3, readVector<3>, writeVector<3>, computeNormal },
     { ShaderVertexLayoutDescription::TextureCoordinate, "vt", 2, readAndFlipYVector2, writeVector<2>, computeNull },
+    { ShaderVertexLayoutDescription::BiNormal, "n", 3, readVector<3>, writeVector<3>, computeNull },
   };
 
 const ObjLoader::ObjElement *elementDescriptions[] =
   {
   &elementDescriptionsImpl[0], // pos
-  0,                          // colour
+  0,                           // colour
   &elementDescriptionsImpl[2], // tex
   &elementDescriptionsImpl[1], // normal
+  0,                           // binormal
   };
 
 xCompileTimeAssert(X_ARRAY_COUNT(elementDescriptions) == ShaderVertexLayoutDescription::SemanticCount);
