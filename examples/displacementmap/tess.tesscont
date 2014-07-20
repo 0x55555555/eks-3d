@@ -1,0 +1,27 @@
+layout(vertices = 3) out;
+
+in vec3 vPosition[];
+in vec2 vTexOut[];
+in vec3 vMvPos[];
+in mat3 vNormalMat[];
+
+out vec3 tcPosition[];
+out vec2 tcTexOut[];
+out vec3 tcMvPos[];
+out mat3 tcNormalMat[];
+
+void main()
+{
+  tcPosition[gl_InvocationID] = vPosition[gl_InvocationID];
+  tcTexOut[gl_InvocationID] = vTexOut[gl_InvocationID];
+  tcMvPos[gl_InvocationID] = vMvPos[gl_InvocationID];
+  tcNormalMat[gl_InvocationID] = vNormalMat[gl_InvocationID];
+
+  if (gl_InvocationID == 0)
+  {
+    gl_TessLevelInner[0] = 256;
+    gl_TessLevelOuter[0] = 256;
+    gl_TessLevelOuter[1] = 256;
+    gl_TessLevelOuter[2] = 256;
+  }
+}

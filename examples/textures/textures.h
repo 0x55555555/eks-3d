@@ -86,10 +86,11 @@ public:
       };
 
     ShaderVertexComponent::delayedCreate(_v, r, vsrc, strlen(vsrc), desc, X_ARRAY_COUNT(desc), &_layout);
-    ShaderFragmentComponent::delayedCreate(_f, r, fsrc, strlen(fsrc));
+    ShaderComponent::delayedCreate(_f, r, ShaderComponent::Fragment, fsrc, strlen(fsrc));
 
+    ShaderComponent* comps[] = { &_v, &_f };
     const char *outputs[] = { "outColour" };
-    Shader::delayedCreate(_shader, r, &_v, &_f, outputs, X_ARRAY_COUNT(outputs));
+    Shader::delayedCreate(_shader, r, comps, X_ARRAY_COUNT(comps), outputs, X_ARRAY_COUNT(outputs));
     _shader.setShaderResource(0, &_tex);
     }
 
@@ -124,7 +125,7 @@ public:
   IndexGeometry _igeo;
   ShaderVertexLayout _layout;
   Shader _shader;
-  ShaderFragmentComponent _f;
+  ShaderComponent _f;
   ShaderVertexComponent _v;
   Texture2D _tex;
 

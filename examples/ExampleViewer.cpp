@@ -9,6 +9,7 @@
 #include "geometry/geometry.h"
 #include "textures/textures.h"
 #include "normalmap/normalmap.h"
+#include "displacementmap/displacementmap.h"
 
 ExampleViewer::ExampleViewer()
   {
@@ -30,6 +31,7 @@ ExampleViewer::ExampleViewer()
   _examples.emplace_back(new Eks::Demo::GeometryExample());
   _examples.emplace_back(new Eks::Demo::TextureExample());
   _examples.emplace_back(new Eks::Demo::NormalMapExample());
+  _examples.emplace_back(new Eks::Demo::DisplacementMapExample());
   _activeExample = _examples.back().get();
   }
 

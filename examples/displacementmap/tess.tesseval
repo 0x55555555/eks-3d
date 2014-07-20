@@ -1,0 +1,38 @@
+layout(triangles, equal_spacing, cw) in;
+
+layout (std140) uniform cb0 { mat4 model; mat4 modelView; mat4 modelViewProj; };
+layout (std140) uniform cb1 { mat4 view; mat4 proj; };
+
+uniform sampler2D rsc2;
+uniform mat4 Projection;
+uniform mat4 Modelview;
+
+in vec3 tcPosition[];
+in vec2 tcTexOut[];
+in vec3 tcMvPos[];
+in mat3 tcNormalMat[];
+
+out vec2 teTexOut;
+out vec3 teMvPos;
+out mat3 teNormalMat;
+
+
+void main()
+{
+  vec3 p0 = gl_TessCoord.x * tcPosition[0];
+  vec3 p1 = gl_TessCoord.y * tcPosition[1];
+  vec3 p2 = gl_TessCoord.z * tcPosition[2];
+
+  teTexOut = gl_TessCoord.x * tcTexOut[0] + gl_TessCoord.y * tcTexOut[1] + gl_TessCoord.z * tcTexOut[2];
+  teMvPos = gl_TessCoord.x * tcMvPos[0] + gl_TessCoord.y * tcMvPos[1] + gl_TessCoord.z * tcMvPos[2];
+  teNormalMat = tcNormalMat[0];
+
+  float disp = texture(rsc2, teTexOut).x;
+  const float dispScale = 0.2;
+
+  vec3 tePosition = p0 + p1 + p2;
+
+  tePosition.y += disp * dispScale;
+
+  gl_Position = modelViewProj * vec4(tePosition, 1);
+}

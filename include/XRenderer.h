@@ -19,8 +19,7 @@ class ShaderVertexLayout;
 class ShaderVertexLayoutDescription;
 class FrameBuffer;
 class ScreenFrameBuffer;
-class ShaderVertexComponent;
-class ShaderFragmentComponent;
+class ShaderComponent;
 class Geometry;
 class DepthStencilState;
 class BlendState;
@@ -82,25 +81,18 @@ struct RendererCreateFunctions
   bool (*shader)(
       Renderer *r,
       Shader *s,
-      ShaderVertexComponent *v,
-      ShaderFragmentComponent *f,
+      ShaderComponent **cmp,
+      xsize componentCount,
       const char **outputs,
       xsize outputCount);
 
-  bool (*vertexShaderComponent)(
+  bool (*shaderComponent)(
       Renderer *r,
-      ShaderVertexComponent *v,
+      ShaderComponent *v,
+      xuint32 type,
       const char *s,
       xsize l,
-      const ShaderVertexLayoutDescription *vertexDescriptions,
-      xsize vertexItemCount,
-      ShaderVertexLayout *layout);
-
-  bool (*fragmentShaderComponent)(
-      Renderer *r,
-      ShaderFragmentComponent *f,
-      const char *s,
-      xsize l);
+      const void *extraData);
 
   bool (*rasteriserState)(
       Renderer *r,
@@ -132,8 +124,7 @@ struct RendererDestroyFunctions
   void (*texture2D)(Renderer *r, Texture2D* s);
   void (*shader)(Renderer *r, Shader* s);
   void (*shaderVertexLayout)(Renderer *r, ShaderVertexLayout *d);
-  void (*vertexShaderComponent)(Renderer *r, ShaderVertexComponent* s);
-  void (*fragmentShaderComponent)(Renderer *r, ShaderFragmentComponent* s);
+  void (*shaderComponent)(Renderer *r, ShaderComponent* s);
   void (*rasteriserState)(Renderer *r, RasteriserState *);
   void (*depthStencilState)(Renderer *r, DepthStencilState *);
   void (*blendState)(Renderer *r, BlendState *);
@@ -187,6 +178,7 @@ struct RendererDrawFunctions
   // draw the given geometry
   void (*indexedTriangles)(Renderer *r, const IndexGeometry *indices, const Geometry *vert);
   void (*triangles)(Renderer *r, const Geometry *vert);
+  void (*patch)(Renderer *r, const Geometry *vert, xuint8 vertCount);
   void (*indexedLines)(Renderer *r, const IndexGeometry *indices, const Geometry *vert);
   void (*lines)(Renderer *r, const Geometry *vert);
   void (*drawDebugLocator)(Renderer *r, RendererDebugLocatorMode);
@@ -247,6 +239,11 @@ public:
   void setRasteriserState(const RasteriserState *s)
     {
     functions().set.rasteriserState(this, s);
+    }
+
+  void drawPatch(const Geometry *g, xuint8 vertCount)
+    {
+    functions().draw.patch(this, g, vertCount);
     }
 
   void drawTriangles(const Geometry *g)

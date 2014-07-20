@@ -123,10 +123,51 @@ private:
   Renderer *_renderer;
   };
 
-class EKS3D_EXPORT ShaderVertexComponent : public PrivateImpl<sizeof(void*) * 2>
+class EKS3D_EXPORT ShaderComponent : public PrivateImpl<sizeof(void*) * 2>
+  {
+public:
+  enum ShaderType
+    {
+    Vertex,
+    TesselationControl,
+    TesselationEvaluator,
+    Fragment,
+    Geometry,
+
+    ShaderComponentCount
+    };
+
+  ShaderComponent(Renderer *r=nullptr,
+                  ShaderType t = Vertex,
+                  const char *source=nullptr,
+                  xsize length=0,
+                  const void *extra=nullptr);
+  ~ShaderComponent();
+
+  static bool delayedCreate(ShaderComponent &ths,
+                            Renderer *r,
+                            ShaderType t,
+                            const char *source,
+                            xsize length,
+                            const void *extraData=nullptr);
+
+private:
+  X_DISABLE_COPY(ShaderComponent);
+
+  Renderer *_renderer;
+  };
+
+class EKS3D_EXPORT ShaderVertexComponent : public ShaderComponent
   {
 public:
   typedef ShaderVertexLayout VertexLayout;
+
+  struct ExtraCreateData
+    {
+    const ShaderVertexLayoutDescription *vertexDescriptions;
+    xsize vertexItemCount;
+    ShaderVertexLayout *layout;
+    };
 
   ShaderVertexComponent(Renderer *r=0,
                          const char *source=0,
@@ -134,7 +175,6 @@ public:
                          const VertexLayout::Description *vertexDescriptions=0,
                          xsize vertexItemCount=0,
                          VertexLayout *layout=0);
-  ~ShaderVertexComponent();
 
   static bool delayedCreate(ShaderVertexComponent &ths,
                             Renderer *r,
@@ -151,41 +191,22 @@ private:
   Renderer *_renderer;
   };
 
-class EKS3D_EXPORT ShaderFragmentComponent : public PrivateImpl<sizeof(void*) * 2>
-  {
-public:
-  ShaderFragmentComponent(Renderer *r=0,
-                          const char *source=0,
-                          xsize length=0);
-  ~ShaderFragmentComponent();
-
-  static bool delayedCreate(ShaderFragmentComponent &ths,
-                            Renderer *r,
-                            const char *source,
-                            xsize length);
-
-private:
-  X_DISABLE_COPY(ShaderFragmentComponent);
-
-  Renderer *_renderer;
-  };
-
 class EKS3D_EXPORT Shader : public PrivateImpl<sizeof(void*)*6>
   {
 public:
   typedef ShaderConstantData ConstantData;
 
   Shader(Renderer *r=0,
-         ShaderVertexComponent *v=0,
-         ShaderFragmentComponent *f=0,
+         ShaderComponent **v=0,
+         xsize componentCount=0,
          const char **outputs=0,
          xsize outputCount=0);
   ~Shader();
 
   static bool delayedCreate(Shader &ths,
               Renderer *r,
-              ShaderVertexComponent *v,
-              ShaderFragmentComponent *f,
+              ShaderComponent **v,
+              xsize componentCount,
               const char **outputs,
               xsize outputCount);
 

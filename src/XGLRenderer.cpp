@@ -123,6 +123,8 @@ public:
   template <xuint32 PRIMITIVE> static void drawIndexedPrimitive33(Renderer *r, const IndexGeometry *indices, const Geometry *vert);
   template <xuint32 PRIMITIVE> static void drawPrimitive33(Renderer *r, const Geometry *vert);
 
+  static void drawPatch33(Renderer *r, const Geometry *vert, xuint8 vertCount);
+
   static void debugRenderLocator(Renderer *r, RendererDebugLocatorMode);
 
   static Shader *stockShader(Renderer *r, RendererShaderType t, const ShaderVertexLayout **);
@@ -463,22 +465,30 @@ class XGLShaderComponent
 public:
   bool init(GLRendererImpl *, xuint32 type, const char *data, xsize size);
 
-  static bool createFragment(
+  static bool create(
       Renderer *r,
-      ShaderFragmentComponent *f,
+      ShaderComponent *f,
+      xuint32 type,
       const char *s,
-      xsize l)
+      xsize l,
+      const void *d)
     {
     XGLShaderComponent *glS = f->create<XGLShaderComponent>();
     glS->_layout = 0;
-    return glS->init(GL_REND(r), GL_FRAGMENT_SHADER, s, l);
+
+
+    bool res = glS->init(GL_REND(r), type, s, l);
+    if (res && type == ShaderComponent::Vertex)
+      {
+      auto data = (const ShaderVertexComponent::ExtraCreateData *)d;
+      return initVertex(r, f, data->vertexDescriptions, data->vertexItemCount, data->layout);
+      }
+
+    return res;
     }
 
-  static bool createVertex(
-      Renderer *r,
-      ShaderVertexComponent *v,
-      const char *s,
-      xsize l,
+  static bool initVertex(Renderer *r,
+      ShaderComponent *v,
       const ShaderVertexLayoutDescription *vertexDescriptions,
       xsize vertexItemCount,
       ShaderVertexLayout *layout);
@@ -493,10 +503,9 @@ public:
 class XGLShader
   {
 public:
-  bool init(
-    GLRendererImpl *impl,
-    XGLShaderComponent *v,
-    XGLShaderComponent *f,
+  bool init(GLRendererImpl *impl,
+    ShaderComponent **v,
+    xsize shaderCount,
     const char **outputs,
     xsize outputCount);
 
@@ -516,13 +525,13 @@ public:
   static bool create(
       Renderer *r,
       Shader *s,
-      ShaderVertexComponent *v,
-      ShaderFragmentComponent *f,
+      ShaderComponent **cmp,
+      xsize shaderCount,
       const char **outputs,
       xsize outputCount)
     {
     XGLShader *glS = s->create<XGLShader>();
-    return glS->init(GL_REND(r), v->data<XGLShaderComponent>(), f->data<XGLShaderComponent>(), outputs, outputCount);
+    return glS->init(GL_REND(r), cmp, shaderCount, outputs, outputCount);
     }
 
   static void bind(Renderer *ren, const Shader *shader, const ShaderVertexLayout *layout);
@@ -1066,6 +1075,12 @@ template <xuint32 PRIMITIVE> void GLRendererImpl::drawPrimitive21(Renderer *ren,
   glBindBuffer( GL_ARRAY_BUFFER, 0 ) GLE;
   }
 
+void GLRendererImpl::drawPatch33(Renderer *r, const Geometry *vert, xuint8 vertCount)
+  {
+  glPatchParameteri(GL_PATCH_VERTICES, vertCount);
+  drawPrimitive33<GL_PATCHES>(r, vert);
+  }
+
 template <xuint32 PRIMITIVE> void GLRendererImpl::drawPrimitive33(Renderer *ren, const Geometry *vert)
   {
   GLRendererImpl* r = GL_REND(ren);
@@ -1112,8 +1127,7 @@ detail::RendererFunctions gl21fns =
     XGLIndexGeometryCache::create,
     XGLTexture2D::create,
     XGLShader::create,
-    XGLShaderComponent::createVertex,
-    XGLShaderComponent::createFragment,
+    XGLShaderComponent::create,
     XGLRasteriserState::create,
     XGLDepthStencilState::create,
     XGLBlendState::create,
@@ -1126,8 +1140,7 @@ detail::RendererFunctions gl21fns =
     destroy<Texture2D, XGLTexture2D>,
     XGLShader::destroy,
     destroy<ShaderVertexLayout, XGLVertexLayout>,
-    destroy<ShaderVertexComponent, XGLShaderComponent>,
-    destroy<ShaderFragmentComponent, XGLShaderComponent>,
+    destroy<ShaderComponent, XGLShaderComponent>,
     destroy<RasteriserState, XGLRasteriserState>,
     destroy<DepthStencilState, XGLDepthStencilState>,
     destroy<BlendState, XGLBlendState>,
@@ -1154,6 +1167,7 @@ detail::RendererFunctions gl21fns =
   {
     GLRendererImpl::drawIndexedPrimitive21<GL_TRIANGLES>,
     GLRendererImpl::drawPrimitive21<GL_TRIANGLES>,
+    GLRendererImpl::drawPatch33,
     GLRendererImpl::drawIndexedPrimitive21<GL_LINES>,
     GLRendererImpl::drawPrimitive21<GL_LINES>,
     GLRendererImpl::debugRenderLocator
@@ -1177,8 +1191,7 @@ detail::RendererFunctions gl33fns =
     XGLIndexGeometryCache::create,
     XGLTexture2D::create,
     XGLShader::create,
-    XGLShaderComponent::createVertex,
-    XGLShaderComponent::createFragment,
+    XGLShaderComponent::create,
     XGLRasteriserState::create,
     XGLDepthStencilState::create,
     XGLBlendState::create,
@@ -1191,8 +1204,7 @@ detail::RendererFunctions gl33fns =
     destroy<Texture2D, XGLTexture2D>,
     XGLShader::destroy,
     destroy<ShaderVertexLayout, XGLVertexLayout>,
-    destroy<ShaderVertexComponent, XGLShaderComponent>,
-    destroy<ShaderFragmentComponent, XGLShaderComponent>,
+    destroy<ShaderComponent, XGLShaderComponent>,
     destroy<RasteriserState, XGLRasteriserState>,
     destroy<DepthStencilState, XGLDepthStencilState>,
     destroy<BlendState, XGLBlendState>,
@@ -1219,6 +1231,7 @@ detail::RendererFunctions gl33fns =
   {
     GLRendererImpl::drawIndexedPrimitive33<GL_TRIANGLES>,
     GLRendererImpl::drawPrimitive33<GL_TRIANGLES>,
+    GLRendererImpl::drawPatch33,
     GLRendererImpl::drawIndexedPrimitive33<GL_LINES>,
     GLRendererImpl::drawPrimitive33<GL_LINES>,
     GLRendererImpl::debugRenderLocator
@@ -1545,10 +1558,20 @@ bool XGLShaderComponent::init(
   {
   _layout = nullptr;
 
+  xuint32 glTypes[] =
+  {
+    GL_VERTEX_SHADER,
+    GL_TESS_CONTROL_SHADER,
+    GL_TESS_EVALUATION_SHADER,
+    GL_FRAGMENT_SHADER,
+    GL_GEOMETRY_SHADER
+  };
+  xCompileTimeAssert(X_ARRAY_COUNT(glTypes) == ShaderComponent::ShaderComponentCount);
+
 #ifdef USE_GLEW
   xAssert(glCreateShader);
 #endif
-  _component = glCreateShader(type) GLE;
+  _component = glCreateShader(glTypes[type]) GLE;
   if (_component == 0)
     {
     return false;
@@ -1578,6 +1601,17 @@ bool XGLShaderComponent::init(
     infoLog.resize(infoLogLength, '\0');
     int charsWritten  = 0;
     glGetShaderInfoLog(_component, infoLogLength, &charsWritten, infoLog.data()) GLE;
+
+    const char *typeStr[] =
+    {
+      "GL_VERTEX_SHADER",
+      "GL_TESS_CONTROL_SHADER",
+      "GL_TESS_EVALUATION_SHADER",
+      "GL_FRAGMENT_SHADER",
+      "GL_GEOMETRY_SHADER"
+    };
+
+    std::cout << "Errors compiling shader " << typeStr[type] << ":\n";
     std::cout << infoLog.data() << std::endl;
     }
 
@@ -1587,20 +1621,14 @@ bool XGLShaderComponent::init(
   return success == GL_TRUE;
   }
 
-bool XGLShaderComponent::createVertex(
+bool XGLShaderComponent::initVertex(
     Renderer *r,
-    ShaderVertexComponent *v,
-    const char *s,
-    xsize l,
+    ShaderComponent *v,
     const ShaderVertexLayoutDescription *vertexDescriptions,
     xsize vertexItemCount,
     ShaderVertexLayout *layout)
   {
-  XGLShaderComponent *glS = v->create<XGLShaderComponent>();
-  if(!glS->init(GL_REND(r), GL_VERTEX_SHADER, s, l))
-    {
-    return false;
-    }
+  XGLShaderComponent *glS = v->data<XGLShaderComponent>();
 
   glS->_layout = 0;
   if(layout)
@@ -1788,16 +1816,19 @@ XGLShader::~XGLShader()
 
 bool XGLShader::init(
     GLRendererImpl *impl,
-    XGLShaderComponent *v,
-    XGLShaderComponent *f,
+    ShaderComponent **v,
+    xsize shaderCount,
     const char **outputs,
     xsize outputCount)
   {
   _buffers.allocator() = TypedAllocator<Buffer>(impl->_allocator);
   maxSetupResources = 0;
   shader = glCreateProgram();
-  glAttachShader(shader, v->_component) GLE;
-  glAttachShader(shader, f->_component) GLE;
+  for (xsize i = 0; i < shaderCount; ++i)
+    {
+    XGLShaderComponent *comp = v[i]->data<XGLShaderComponent>();
+    glAttachShader(shader, comp->_component) GLE;
+    }
 
   for(xsize i = 0; i < outputCount; ++i)
     {
@@ -1808,12 +1839,15 @@ bool XGLShader::init(
     }
 
 
-  xAssert(!f->_layout);
-  if(v->_layout)
+  for(xsize i = 0; i < shaderCount; ++i)
     {
-    if(!v->_layout->init2(impl, this))
+    XGLShaderComponent *comp = v[i]->data<XGLShaderComponent>();
+    if(comp->_layout)
       {
-      return false;
+      if(!comp->_layout->init2(impl, this))
+        {
+        return false;
+        }
       }
     }
 
@@ -1829,6 +1863,7 @@ bool XGLShader::init(
     infoLog.resize(infologLength, '\0');
     int charsWritten  = 0;
     glGetProgramInfoLog(shader, infologLength, &charsWritten, infoLog.data());
+    std::cout << "Errors linking shader:\n";
     std::cout << infoLog.data() << std::endl;
     }
 

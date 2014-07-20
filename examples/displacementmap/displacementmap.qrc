@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/displacementmap">
+        <file>frag.frag</file>
+        <file>vert.vert</file>
+        <file>tess.tesscont</file>
+        <file>tess.tesseval</file>
+    </qresource>
+</RCC>

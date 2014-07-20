@@ -5,6 +5,7 @@
 #include "XRasteriserState.h"
 #include "XTransform.h"
 #include "XTexture.h"
+#include "../normalmap/normalmap.h"
 
 namespace Eks
 {
@@ -12,55 +13,26 @@ namespace Eks
 namespace Demo
 {
 
-class NormalMapExample : public ExampleBase
+class DisplacementMapExample : public ExampleBase
   {
 public:
-  NormalMapExample()
+  DisplacementMapExample()
     {
     _t = 0.0f;
     }
 
-  static void initPlane(Renderer* r, Geometry *geo)
-    {
-    const float vert[] = {
-      -10, 0, -10,
-      0, 0,
-      0, 1, 0,
-      1, 0, 0,
-      10, 0, 10,
-      1, 1,
-      0, 1, 0,
-      1, 0, 0,
-      10, 0, -10,
-      1, 0,
-      0, 1, 0,
-      1, 0, 0,
-      10, 0, 10,
-      1, 1,
-      0, 1, 0,
-      1, 0, 0,
-      -10, 0, 10,
-      0, 1,
-      0, 1, 0,
-      1, 0, 0,
-      -10, 0, -10,
-      0, 0,
-      0, 1, 0,
-      1, 0, 0,
-    };
-    const xsize vertCount = X_ARRAY_COUNT(vert) / 11;
-    Geometry::delayedCreate(*geo, r, vert, sizeof(float) * 11, vertCount);
-    }
-
   void intialise(Renderer* r)
     {
-    initPlane(r, &_geo);
+    NormalMapExample::initPlane(r, &_geo);
 
     QImage im = QGLWidget::convertToGLFormat(QImage(":/normalmap/diffuse.png"));
     Eks::Texture2D::delayedCreate(_diff, r, im.width(), im.height(), Eks::Rgba8, im.constBits());
 
     QImage im2 = QGLWidget::convertToGLFormat(QImage(":/normalmap/normals.png"));
     Eks::Texture2D::delayedCreate(_norm, r, im2.width(), im2.height(), Eks::Rgba8, im2.constBits());
+
+    QImage im3 = QGLWidget::convertToGLFormat(QImage(":/normalmap/displacement.png"));
+    Eks::Texture2D::delayedCreate(_disp, r, im3.width(), im3.height(), Eks::Rgba8, im3.constBits());
 
     ShaderVertexLayoutDescription desc[] =
       {
@@ -81,17 +53,22 @@ public:
       return f.readAll();
       };
 
-    auto f = readAll(":/normalmap/frag.frag");
-    auto v = readAll(":/normalmap/vert.vert");
+    auto f = readAll(":/displacementmap/frag.frag");
+    auto v = readAll(":/displacementmap/vert.vert");
+    auto tc = readAll(":/displacementmap/tess.tesscont");
+    auto te = readAll(":/displacementmap/tess.tesseval");
 
     ShaderVertexComponent::delayedCreate(_v, r, v.constData(), v.size(), desc, X_ARRAY_COUNT(desc), &_layout);
     ShaderComponent::delayedCreate(_f, r, ShaderComponent::Fragment, f.constData(), f.size());
+    ShaderComponent::delayedCreate(_tc, r, ShaderComponent::TesselationControl, tc.constData(), tc.size());
+    ShaderComponent::delayedCreate(_te, r, ShaderComponent::TesselationEvaluator, te.constData(), te.size());
 
-    ShaderComponent* comps[] = { &_v, &_f };
+    ShaderComponent* comps[] = { &_v, &_f, &_tc, &_te };
     const char *outputs[] = { "outColour" };
     Shader::delayedCreate(_shader, r, comps, X_ARRAY_COUNT(comps), outputs, X_ARRAY_COUNT(outputs));
     _shader.setShaderResource(0, &_diff);
     _shader.setShaderResource(1, &_norm);
+    _shader.setShaderResource(2, &_disp);
     }
 
   void resize(Renderer*, xuint32 width, xuint32 height)
@@ -108,7 +85,7 @@ public:
     _t += 0.005f;
 
     Transform l = TransformUtilities::lookAt(
-      Vector3D(sinf(_t) * 22.0f, 10, cosf(_t) * 22.0f),
+      Vector3D(sinf(_t) * 22.0f, cosf(0.4 + _t) * 4.0f + 6.0f, cosf(_t) * 22.0f),
       Vector3D(0, 0, 0),
       Vector3D(0, 1, 0));
     r->setViewTransform(l);
@@ -116,7 +93,7 @@ public:
     r->setTransform(Transform::Identity());
 
     r->setShader(&_shader, &_layout);
-    r->drawTriangles(&_geo);
+    r->drawPatch(&_geo, 3);
     }
 
   float _t;
@@ -124,10 +101,13 @@ public:
   Geometry _geo;
   ShaderVertexLayout _layout;
   Shader _shader;
+  ShaderComponent _te;
+  ShaderComponent _tc;
   ShaderComponent _f;
   ShaderVertexComponent _v;
   Texture2D _diff;
   Texture2D _norm;
+  Texture2D _disp;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   };
