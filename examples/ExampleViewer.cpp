@@ -10,6 +10,7 @@
 #include "textures/textures.h"
 #include "normalmap/normalmap.h"
 #include "displacementmap/displacementmap.h"
+#include "framebuffer/framebuffer.h"
 
 ExampleViewer::ExampleViewer()
   {
@@ -32,6 +33,7 @@ ExampleViewer::ExampleViewer()
   _examples.emplace_back(new Eks::Demo::TextureExample());
   _examples.emplace_back(new Eks::Demo::NormalMapExample());
   _examples.emplace_back(new Eks::Demo::DisplacementMapExample());
+  _examples.emplace_back(new Eks::Demo::FramebufferExample());
   _activeExample = _examples.back().get();
   }
 
