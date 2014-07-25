@@ -1356,7 +1356,7 @@ bool XGLTexture2D::init(GLRendererImpl *, xuint32 format, xsize width, xsize hei
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE) GLE;
   glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE) GLE;
 
-  int formatMap[] =
+  int internalFormatMap[] =
   {
     GL_RGBA,
   #ifdef STANDARD_OPENGL
@@ -1367,10 +1367,32 @@ bool XGLTexture2D::init(GLRendererImpl *, xuint32 format, xsize width, xsize hei
   # endif
   #endif
   };
+  xCompileTimeAssert(X_ARRAY_COUNT(internalFormatMap) == TextureFormatCount);
+
+  int formatMap[] =
+  {
+    GL_RGBA,
+  #ifdef STANDARD_OPENGL
+    GL_DEPTH_COMPONENT
+  #else
+  # ifdef X_GLES
+    GL_DEPTH_COMPONENT
+  # endif
+  #endif
+  };
   xCompileTimeAssert(X_ARRAY_COUNT(formatMap) == TextureFormatCount);
 
   // 0 at end could be data to unsigned byte...
-  glTexImage2D(GL_TEXTURE_2D, 0, formatMap[format], (GLsizei)width, (GLsizei)height, 0, formatMap[format], GL_UNSIGNED_BYTE, data) GLE;
+  glTexImage2D(
+    GL_TEXTURE_2D,
+    0,
+    internalFormatMap[format],
+    (GLsizei)width,
+    (GLsizei)height,
+    0,
+    formatMap[format],
+    GL_UNSIGNED_BYTE,
+    data) GLE;
 
   glBindTexture(GL_TEXTURE_2D, 0) GLE;
 

@@ -52,7 +52,7 @@ public:
     Geometry::delayedCreate(*geo, r, vert, sizeof(float) * 11, vertCount);
     }
 
-  void intialise(Renderer* r)
+  void initialise(Renderer* r)
     {
     initPlane(r, &_geo);
 
@@ -101,8 +101,10 @@ public:
     _proj = TransformUtilities::perspective(Eks::degreesToRadians(35.0f), aspect, 0.1f, 100.0f);
     }
 
-  void render(Renderer* r)
+  void render(Renderer* r, Eks::FrameBuffer *buffer)
     {
+    Eks::FrameBufferRenderFrame fr(r, buffer);
+
     r->setProjectionTransform(_proj);
 
     _t += 0.005f;

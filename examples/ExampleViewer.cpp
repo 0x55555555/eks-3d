@@ -39,13 +39,12 @@ ExampleViewer::ExampleViewer()
 
 void ExampleViewer::initialise3D(Eks::Renderer *r)
   {
-  _activeExample->intialise(r);
+  _activeExample->initialise(r);
   }
 
 void ExampleViewer::paint3D(Eks::Renderer *r, Eks::FrameBuffer *buffer)
   {
-  Eks::FrameBufferRenderFrame fr(r, buffer);
-  _activeExample->render(r);
+  _activeExample->render(r, buffer);
   }
 
 void ExampleViewer::resize3D(Eks::Renderer *r, xuint32 w, xuint32 h)

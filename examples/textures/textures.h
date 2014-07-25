@@ -27,7 +27,7 @@ public:
     _t = 0.0f;
     }
 
-  void intialise(Renderer* r)
+  void initialise(Renderer* r)
     {
     GeometryExample::buildGeometry(r, &_igeo, &_geo);
 
@@ -101,8 +101,10 @@ public:
     _proj = TransformUtilities::perspective(Eks::degreesToRadians(45.0f), aspect, 0.1f, 100.0f);
     }
 
-  void render(Renderer* r)
+  void render(Renderer* r, Eks::FrameBuffer *buffer)
     {
+    Eks::FrameBufferRenderFrame fr(r, buffer);
+
     r->setProjectionTransform(_proj);
 
     _t += 0.005f;
