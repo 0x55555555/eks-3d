@@ -101,11 +101,27 @@ struct RendererCreateFunctions
 
   bool (*depthStencilState)(
       Renderer *r,
-      DepthStencilState *s);
+      DepthStencilState *s,
+      xuint32 writeMask,
+      xuint32 tests,
+      xuint32 depthFn,
+      xuint32 stencilFn,
+      xint32 stencilRef,
+      xuint32 stencilMask,
+      float depthNear,
+      float depthFar);
 
   bool (*blendState)(
-      Renderer *r,
-      BlendState *s);
+      Renderer *,
+      BlendState *state,
+      bool enable,
+      xuint32 modeRGB,
+      xuint32 srcRGB,
+      xuint32 dstRGB,
+      xuint32 modeAlpha,
+      xuint32 srcAlpha,
+      xuint32 dstAlpha,
+      const Eks::Colour &col);
 
   bool (*shaderConstantData)(
       Renderer *r,
@@ -239,6 +255,16 @@ public:
   void setRasteriserState(const RasteriserState *s)
     {
     functions().set.rasteriserState(this, s);
+    }
+
+  void setBlendState(const BlendState *s)
+    {
+    functions().set.blendState(this, s);
+    }
+
+  void setDepthStencilState(const DepthStencilState *s)
+    {
+    functions().set.depthStencilState(this, s);
     }
 
   void drawPatch(const Geometry *g, xuint8 vertCount)

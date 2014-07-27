@@ -1,4 +1,4 @@
-#include "XGLRenderer.h"
+	#include "XGLRenderer.h"
 #include "Utilities/XFlags.h"
 #include <iostream>
 #ifdef X_ENABLE_GL_RENDERER
@@ -804,7 +804,6 @@ public:
   void bind(xuint32 program, xuint32 index) const;
 
   xsize _size;
-  mutable Eks::BitField<xuint32> _bound;
 
   friend class XGLRenderer;
   };
@@ -815,21 +814,95 @@ public:
 class XGLBlendState
   {
 public:
-  bool init(GLRendererImpl *);
-
-  static void bind(Renderer *, const BlendState *)
+  static void bind(Renderer *, const BlendState *state)
     {
-    xAssertFail();
+    const XGLBlendState* s = state->data<XGLBlendState>();
+
+    if (s->_enable)
+      {
+      glEnable(GL_BLEND);
+
+      const int index = 0;
+
+      glBlendEquationSeparatei(index, s->_modeRGB, s->_modeAlpha);
+      glBlendFuncSeparatei(index, s->_srcRGB, s->_dstRGB, s->_srcAlpha, s->_dstAlpha);
+      glBlendColor(s->_colour[0], s->_colour[1], s->_colour[2], s->_colour[3]);
+      }
+    else
+      {
+      glDisable(GL_BLEND);
+      }	
     }
 
   static bool create(
-      Renderer *r,
-      BlendState *s)
+      Renderer *,
+      BlendState *state,
+      bool enable,
+      xuint32 modeRGB,
+      xuint32 srcRGB,
+      xuint32 dstRGB,
+      xuint32 modeAlpha,
+      xuint32 srcAlpha,
+      xuint32 dstAlpha,
+      const Eks::Colour &col)
     {
-    (void)r;
-    (void)s;
-    return false;
+    XGLBlendState* s = state->create<XGLBlendState>();
+
+    xuint32 modeMap[] = {
+      GL_FUNC_ADD,
+      GL_FUNC_SUBTRACT,
+      GL_FUNC_REVERSE_SUBTRACT,
+      GL_MIN,
+      GL_MAX
+    };
+    xCompileTimeAssert(X_ARRAY_COUNT(modeMap) == Eks::BlendState::ModeCount);
+
+    xuint32 parameterMap[] = {
+      GL_ZERO,
+      GL_ONE,
+      GL_SRC_COLOR,
+      GL_ONE_MINUS_SRC_COLOR,
+      GL_DST_COLOR,
+      GL_ONE_MINUS_DST_COLOR,
+      GL_SRC_ALPHA,
+      GL_ONE_MINUS_SRC_ALPHA,
+      GL_DST_ALPHA,
+      GL_ONE_MINUS_DST_ALPHA,
+      GL_CONSTANT_COLOR,
+      GL_ONE_MINUS_CONSTANT_COLOR,
+      GL_CONSTANT_ALPHA,
+      GL_ONE_MINUS_CONSTANT_ALPHA,
+      GL_SRC_ALPHA_SATURATE,
+      GL_SRC1_COLOR,
+      GL_ONE_MINUS_SRC_COLOR,
+      GL_SRC1_ALPHA,
+      GL_ONE_MINUS_SRC_ALPHA,
+    };
+    xCompileTimeAssert(X_ARRAY_COUNT(parameterMap) == Eks::BlendState::ParameterCount);
+
+    s->_enable = enable;
+    s->_modeRGB = modeMap[modeRGB];
+    s->_srcRGB = parameterMap[srcRGB];
+    s->_dstRGB = parameterMap[dstRGB];
+    s->_modeAlpha = modeMap[modeAlpha];
+    s->_srcAlpha = parameterMap[srcAlpha];
+    s->_dstAlpha = parameterMap[dstAlpha];
+    s->_colour[0] = col.x();
+    s->_colour[1] = col.y();
+    s->_colour[2] = col.z();
+    s->_colour[3] = col.w();
+
+    return true;
     }
+
+  bool _enable;
+  xuint32 _modeRGB;
+  xuint32 _srcRGB;
+  xuint32 _dstRGB;
+  xuint32 _modeAlpha;
+  xuint32 _srcAlpha;
+  xuint32 _dstAlpha;
+  float _colour[4];
   };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -840,19 +913,109 @@ class XGLDepthStencilState
 public:
   bool init(GLRendererImpl *);
 
-  static void bind(Renderer *, const DepthStencilState *)
+  static void bind(Renderer *, const DepthStencilState *state)
     {
-    xAssertFail();
+    const XGLDepthStencilState* s = state->data<XGLDepthStencilState>();
+
+    glColorMask(
+      s->_enableColourRWrite,
+      s->_enableColourGWrite,
+      s->_enableColourBWrite,
+      s->_enableColourAWrite) GLE;
+    glDepthMask(s->_enableDepthWrite) GLE;
+    glDepthMask(s->_enableStencilWrite) GLE;
+
+    if (s->_testDepth)
+      {
+      glEnable(GL_DEPTH_TEST) GLE;
+      }
+    else
+      {
+      glDisable(GL_DEPTH_TEST) GLE;
+      }
+
+    if (s->_testStencil)
+      {
+      glEnable(GL_STENCIL_TEST) GLE;
+      }
+    else
+      {
+      glDisable(GL_STENCIL_TEST) GLE;
+      }
+
+    glDepthFunc(s->_depthFn);
+    glStencilFunc(s->_stencilFn, s->_stencilRef, s->_stencilMask);
+
+    glDepthRange(s->_depthNear, s->_depthFar);
     }
 
   static bool create(
-      Renderer *r,
-      DepthStencilState *s)
+      Renderer *,
+      DepthStencilState *state,
+      xuint32 writeMask,
+      xuint32 tests,
+      xuint32 depthFn,
+      xuint32 stencilFn,
+      xint32 stencilRef,
+      xuint32 stencilMask,
+      float depthNear,
+      float depthFar
+      )
     {
-    (void)r;
-    (void)s;
+    XGLDepthStencilState* s = state->create<XGLDepthStencilState>();
+
+    xuint32 functionMap[] = {
+      GL_NEVER,
+      GL_LESS,
+      GL_LEQUAL,
+      GL_GREATER,
+      GL_GEQUAL,
+      GL_EQUAL,
+      GL_NOTEQUAL,
+      GL_ALWAYS
+    };
+    xCompileTimeAssert(X_ARRAY_COUNT(functionMap) == Eks::DepthStencilState::FunctionCount);
+
+    s->_enableColourRWrite = writeMask&Eks::DepthStencilState::ColourR;
+    s->_enableColourGWrite = writeMask&Eks::DepthStencilState::ColourG;
+    s->_enableColourBWrite = writeMask&Eks::DepthStencilState::ColourB;
+    s->_enableColourAWrite = writeMask&Eks::DepthStencilState::ColourA;
+    s->_enableDepthWrite = writeMask&Eks::DepthStencilState::Depth;
+    s->_enableStencilWrite = writeMask&Eks::DepthStencilState::Stencil;
+
+    s->_testDepth = tests&Eks::DepthStencilState::DepthTest;
+    s->_testStencil = tests&Eks::DepthStencilState::StencilTest;
+
+    s->_depthFn = functionMap[depthFn];
+    s->_stencilFn = functionMap[stencilFn];
+
+    s->_depthNear = depthNear;
+    s->_depthFar = depthFar;
+
+    s->_stencilRef = stencilRef;
+    s->_stencilMask = stencilMask;
+
     return false;
     }
+
+  bool _enableColourRWrite : 1;
+  bool _enableColourGWrite : 1;
+  bool _enableColourBWrite : 1;
+  bool _enableColourAWrite : 1;
+  bool _enableDepthWrite : 1;
+  bool _enableStencilWrite : 1;
+
+  bool _testDepth : 1;
+  bool _testStencil : 1;
+
+  xuint32 _depthFn;
+  xuint32 _stencilFn;
+
+  float _depthNear;
+  float _depthFar;
+
+  xint32 _stencilRef;
+  xuint32 _stencilMask;
   };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -1807,28 +1970,24 @@ void XGL33ShaderData::update(Renderer *, ShaderConstantData *constant, void *dat
 void XGL33ShaderData::bind(xuint32 program, xuint32 index) const
   {
   xAssert(index < 32);
-  if(!_bound.hasIndex(index))
-    {
-    char str[64];
+  char str[64];
 #ifdef Q_OS_WIN
-    sprintf_s(str, X_ARRAY_COUNT(str), "cb%d", index);
+  sprintf_s(str, X_ARRAY_COUNT(str), "cb%d", index);
 #else
-    sprintf(str, "cb%d", index);
+  sprintf(str, "cb%d", index);
 #endif
 
-    GLuint blockIndex = glGetUniformBlockIndex(program, str) GLE;
-    if(blockIndex != GL_INVALID_INDEX)
-      {
-      glUniformBlockBinding(program, blockIndex, index) GLE;
-      }
-    _bound.setBitAtIndex(index);
+  GLuint blockIndex = glGetUniformBlockIndex(program, str) GLE;
+  if(blockIndex != GL_INVALID_INDEX)
+    {
+    glUniformBlockBinding(program, blockIndex, index) GLE;
     }
 
   glBindBufferBase(GL_UNIFORM_BUFFER, index, _buffer) GLE;
   }
 #endif
 
-//----------------------------------------------------------------------------------------------------------------------
+//--------------------------	--------------------------------------------------------------------------------------------
 // SHADER
 //----------------------------------------------------------------------------------------------------------------------
 XGLShader::~XGLShader()

@@ -4,11 +4,20 @@
 namespace Eks
 {
 
-BlendState::BlendState(Renderer *r)
+BlendState::BlendState(
+    Renderer *r,
+    bool enable,
+    BlendMode modeRGB,
+    BlendParameter srcRGB,
+    BlendParameter dstRGB,
+    BlendMode modeAlpha,
+    BlendParameter srcAlpha,
+    BlendParameter dstAlpha,
+    const Eks::Colour &col)
   {
   if(r)
     {
-    delayedCreate(*this, r);
+    delayedCreate(*this, r, enable, modeRGB, srcRGB, dstRGB, modeAlpha, srcAlpha, dstAlpha, col);
     }
   }
 
@@ -20,10 +29,30 @@ BlendState::~BlendState()
     }
   }
 
-bool BlendState::delayedCreate(BlendState &ths, Renderer *r)
+bool BlendState::delayedCreate(
+    BlendState &ths,
+    Renderer *r,
+    bool enable,
+    BlendMode modeRGB,
+    BlendParameter srcRGB,
+    BlendParameter dstRGB,
+    BlendMode modeAlpha,
+    BlendParameter srcAlpha,
+    BlendParameter dstAlpha,
+    const Colour &col)
   {
   ths._renderer = r;
-  return r->functions().create.blendState(r, &ths);
+  return r->functions().create.blendState(
+    r,
+    &ths,
+    enable,
+    modeRGB,
+    srcRGB,
+    dstRGB,
+    modeAlpha,
+    srcAlpha,
+    dstAlpha,
+    col);
   }
 
 }
