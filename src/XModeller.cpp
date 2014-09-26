@@ -54,7 +54,7 @@ public:
 
 void Modeller::bakeVertices(
     Renderer *r,
-    ShaderVertexLayoutDescription::Semantic *semanticOrder,
+    const ShaderVertexLayoutDescription::Semantic *semanticOrder,
     xsize semanticCount,
     Geometry *geo)
   {
@@ -112,7 +112,7 @@ void Modeller::bakeVertices(
   }
 
 void Modeller::bakeTriangles(Renderer *r,
-    ShaderVertexLayoutDescription::Semantic *semanticOrder,
+    const ShaderVertexLayoutDescription::Semantic *semanticOrder,
     xsize semanticCount,
     IndexGeometry *index,
     Geometry *geo)
@@ -136,7 +136,7 @@ void Modeller::bakeTriangles(Renderer *r,
   }
 
 void Modeller::bakeLines(Renderer *r,
-    ShaderVertexLayoutDescription::Semantic *semanticOrder,
+    const ShaderVertexLayoutDescription::Semantic *semanticOrder,
     xsize semanticCount,
     IndexGeometry *index,
     Geometry *geo)
@@ -163,7 +163,7 @@ void Modeller::bakeLines(Renderer *r,
 void Modeller::begin( Type type )
   {
   _quadCount = 0;
-  _states.back().type = type;
+  _states.back().type 	= type;
   }
 
 void Modeller::end( )

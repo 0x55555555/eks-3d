@@ -1,12 +1,26 @@
 #include "XAbstractCanvasController.h"
+#include "XAbstractCanvas.h"
+#include "Utilities/XAssert.h"
 
 namespace Eks
 {
 
-AbstractCanvasController::AbstractCanvasController(AbstractCanvas *canvas) : _canvas(canvas)
+AbstractCanvasController::AbstractCanvasController(AbstractCanvas *canvas)
+    : _canvas(canvas)
   {
+  if (canvas)
+    {
+    setCanvas(canvas);
+    }
   }
 
+void AbstractCanvasController::setCanvas(AbstractCanvas *can)
+  {
+  xAssert(can);
+  xAssert(!can->controller());
+  _canvas = can;
+  can->setController(this);
+  }
 
 AbstractCanvasController::UsedFlags AbstractCanvasController::triggerMouseEvent(MouseEventType type,
                        QPoint point,

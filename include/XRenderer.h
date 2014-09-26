@@ -56,6 +56,10 @@ struct RendererCreateFunctions
       xuint32 colourFormat,
       xuint32 depthFormat);
 
+  bool (*viewport)(
+      Renderer *r,
+      ScreenFrameBuffer *b);
+
   bool (*geometry)(
       Renderer *r,
       Geometry *g,

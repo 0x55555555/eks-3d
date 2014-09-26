@@ -33,7 +33,7 @@ public:
     };
 
 public:
-  CameraCanvasController(AbstractCanvas *canvas);
+  CameraCanvasController(AbstractCanvas *canvas = nullptr);
 
   virtual CameraInterface *camera() = 0;
 

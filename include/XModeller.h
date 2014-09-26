@@ -29,20 +29,20 @@ public:
 
   void bakeVertices(
       Renderer *r,
-      ShaderVertexLayoutDescription::Semantic *semanticOrder,
+      const ShaderVertexLayoutDescription::Semantic *semanticOrder,
       xsize semanticCount,
       Geometry *geo);
 
   void bakeTriangles(
       Renderer *r,
-      ShaderVertexLayoutDescription::Semantic *semanticOrder,
+      const ShaderVertexLayoutDescription::Semantic *semanticOrder,
       xsize semanticCount,
       IndexGeometry *index,
       Geometry *geo = 0);
 
   void bakeLines(
       Renderer *r,
-      ShaderVertexLayoutDescription::Semantic *semanticOrder,
+      const ShaderVertexLayoutDescription::Semantic *semanticOrder,
       xsize semanticCount,
       IndexGeometry *index,
       Geometry *geo = 0);

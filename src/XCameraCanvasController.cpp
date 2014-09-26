@@ -10,7 +10,6 @@ CameraCanvasController::CameraCanvasController(AbstractCanvas *canvas)
   {
   }
 
-
 CameraCanvasController::UsedFlags CameraCanvasController::mouseEvent(const MouseEvent &e)
   {
   CameraInterface *cam = camera();

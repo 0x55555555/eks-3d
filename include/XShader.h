@@ -54,7 +54,9 @@ public:
     Normal,
     BiNormal,
 
-    SemanticCount
+    SemanticCount,
+
+    InvalidSemantic
     };
 
   ShaderVertexLayoutDescription(Semantic s=SemanticCount, Format fmt=FormatCount, xsize off=OffsetPackTight, Slot sl=Slot())
@@ -151,7 +153,7 @@ public:
                             xsize length,
                             const void *extraData=nullptr);
 
-private:
+protected:
   X_DISABLE_COPY(ShaderComponent);
 
   Renderer *_renderer;
@@ -187,8 +189,6 @@ public:
 
 private:
   X_DISABLE_COPY(ShaderVertexComponent);
-
-  Renderer *_renderer;
   };
 
 class EKS3D_EXPORT Shader : public PrivateImpl<sizeof(void*)*6>

@@ -36,7 +36,7 @@ public:
 
   ObjLoader(AllocatorBase *allocator);
 
-  void load(const char *data,
+  bool load(const char *data,
     xsize dataSize,
     const ShaderVertexLayoutDescription::Semantic *items,
     xsize itemCount,
@@ -48,7 +48,7 @@ public:
       xsize itemCount,
       Vector<VectorI3D> *triangles);
 
-  void bake(const Vector<VectorI3D> &triangles,
+  bool bake(const Vector<VectorI3D> &triangles,
     const ElementData *elementData,
     xsize elementCount,
     Vector<xuint8> *dataOut);
@@ -64,6 +64,7 @@ private:
 
   bool readIndices(
     const LineCache &,
+    xsize lineIdx,
     xsize start,
     xsize *end,
     VectorI3D &indices,

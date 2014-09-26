@@ -48,7 +48,7 @@ class AbstractCanvas;
 class EKS3D_EXPORT AbstractCanvasController
   {
 XProperties:
-  XProperty(AbstractCanvas *, canvas, setCanvas);
+  XROProperty(AbstractCanvas *, canvas);
   XROProperty(QPoint, lastKnownMousePosition);
 
 public:
@@ -60,7 +60,9 @@ public:
     Release
     };
 
-  AbstractCanvasController(AbstractCanvas *canvas);
+  AbstractCanvasController(AbstractCanvas *canvas = nullptr);
+
+  void setCanvas(AbstractCanvas *can);
 
   enum Result
     {

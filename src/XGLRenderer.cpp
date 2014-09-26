@@ -167,10 +167,8 @@ public:
   Shader *stockShaders[ShaderTypeCount];
   const ShaderVertexLayout *stockLayouts[ShaderTypeCount];
 
-  QGLContext *_context;
   Shader *_currentShader;
   ShaderVertexLayout *_vertexLayout;
-  QSize _size;
   XGLFramebuffer *_currentFramebuffer;
   const char *_shaderHeader;
   };
@@ -307,6 +305,14 @@ public:
     return fb->init(GL_REND(r), (TextureFormat)colourFormat, (TextureFormat)depthFormat, w, h );
     }
 
+  static bool createViewport(
+      Renderer *r,
+      ScreenFrameBuffer *buffer)
+    {
+    XGL21Framebuffer* fb = buffer->create<XGL21Framebuffer>();
+    return fb->initDefaultBuffer(GL_REND(r));
+    }
+
   static void beginRender(Renderer *ren, FrameBuffer *fb)
     {
     GLRendererImpl *r = GL_REND(ren);
@@ -384,6 +390,14 @@ public:
     {
     XGL33Framebuffer* fb = b->create<XGL33Framebuffer>();
     return fb->init(GL_REND(r), (TextureFormat)colourFormat, (TextureFormat)depthFormat, w, h );
+    }
+
+  static bool createViewport(
+      Renderer *r,
+      ScreenFrameBuffer *buffer)
+    {
+    XGL33Framebuffer* fb = buffer->create<XGL33Framebuffer>();
+    return fb->initDefaultBuffer(GL_REND(r));
     }
 
   void bind(GLRendererImpl *r);
@@ -1067,7 +1081,6 @@ GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns, int majorVe
   : _allocator(alloc),
     _modelDataDirty(true),
     _viewDataDirty(true),
-    _context(0),
     _currentShader(0),
     _vertexLayout(0),
     _currentFramebuffer(0)
@@ -1286,6 +1299,7 @@ detail::RendererFunctions gl21fns =
 {
   {
     XGL21Framebuffer::create,
+    XGL21Framebuffer::createViewport,
     XGLGeometryCache::create,
     XGLIndexGeometryCache::create,
     XGLTexture2D::create,
@@ -1350,6 +1364,7 @@ detail::RendererFunctions gl33fns =
 {
   {
     XGL33Framebuffer::create,
+    XGL33Framebuffer::createViewport,
     XGLGeometryCache::create,
     XGLIndexGeometryCache::create,
     XGLTexture2D::create,
@@ -1410,7 +1425,7 @@ detail::RendererFunctions gl33fns =
 };
 #endif
 
-Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, bool gles, Eks::AllocatorBase* alloc)
+Renderer *GLRenderer::createGLRenderer(bool gles, Eks::AllocatorBase* alloc)
   {
 #ifdef USE_GLEW
   glewInit() GLE_QUIET;
@@ -1460,20 +1475,6 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, bool gles, Eks
   GLRendererImpl::setClearColour(r, Colour(0.0f, 0.0f, 0.0f, 1.0f));
   glEnable(GL_DEPTH_TEST) GLE;
 
-#ifdef STANDARD_OPENGL
-  if(major >= 3)
-    {
-    XGL33Framebuffer* fb = buffer->create<XGL33Framebuffer>();
-    fb->initDefaultBuffer(r);
-    }
-  else
-#endif
-    {
-    XGL21Framebuffer* fb = buffer->create<XGL21Framebuffer>();
-    fb->initDefaultBuffer(r);
-    }
-  buffer->setRenderer(r);
-
   ShaderConstantDataDescription modelDesc[] =
   {
     { "model", ShaderConstantDataDescription::Matrix4x4 },
@@ -1492,11 +1493,8 @@ Renderer *GLRenderer::createGLRenderer(ScreenFrameBuffer *buffer, bool gles, Eks
   return r;
   }
 
-void GLRenderer::destroyGLRenderer(Renderer *r, ScreenFrameBuffer *buffer, Eks::AllocatorBase* alloc)
+void GLRenderer::destroyGLRenderer(Renderer *r, Eks::AllocatorBase* alloc)
   {
-  buffer->destroy<XGLFramebuffer>();
-  buffer->setRenderer(0);
-
   alloc->destroy(GL_REND(r));
   }
 

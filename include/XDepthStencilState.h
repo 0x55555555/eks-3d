@@ -65,8 +65,8 @@ public:
   static bool delayedCreate(
     DepthStencilState &ths,
     Renderer *r,
-    xuint32 writeMask,
-    xuint32 tests,
+    xuint32 writeMask = MaskAll,
+    xuint32 tests = TestNone,
     Function depthTest = Less,
     Function stencilTest = Always,
     xint32 stencilRef = 0x0,

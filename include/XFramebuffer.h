@@ -58,8 +58,12 @@ protected:
 class EKS3D_EXPORT ScreenFrameBuffer : public FrameBuffer
   {
 public:
-  ScreenFrameBuffer();
+  ScreenFrameBuffer(Eks::Renderer *r);
   ~ScreenFrameBuffer();
+
+  static bool delayedCreate(
+    ScreenFrameBuffer &ths,
+    Renderer *r);
 
   enum Rotation
     {
@@ -68,8 +72,6 @@ public:
     Rotate180,
     Rotate270
     };
-
-  void setRenderer(Renderer *r);
 
   void present(bool *deviceLost);
   bool resize(xuint32 w, xuint32 h, Rotation rotation);

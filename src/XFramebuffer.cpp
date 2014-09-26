@@ -39,18 +39,24 @@ bool FrameBuffer::delayedCreate(
   return r->functions().create.framebuffer(r, &ths, width, height, colour, dsF);
   }
 
-ScreenFrameBuffer::ScreenFrameBuffer()
+ScreenFrameBuffer::ScreenFrameBuffer(Eks::Renderer *r)
   {
+  if(r)
+    {
+    delayedCreate(*this, r);
+    }
   }
 
 ScreenFrameBuffer::~ScreenFrameBuffer()
   {
-  xAssert(!isValid());
   }
-	
-void ScreenFrameBuffer::setRenderer(Renderer *r)
+
+bool ScreenFrameBuffer::delayedCreate(
+    ScreenFrameBuffer &ths,
+    Renderer *r)
   {
-  _renderer = r;
+  ths._renderer = r;
+  return r->functions().create.viewport(r, &ths);
   }
 
 void ScreenFrameBuffer::present(bool *deviceLost)

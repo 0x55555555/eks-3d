@@ -1,5 +1,6 @@
 #include "XObjLoader.h"
 #include "Containers/XStringBuffer.h"
+#include "Utilities/XParseException.h"
 
 namespace Eks
 {
@@ -50,9 +51,10 @@ template <xsize MaxCount> void writeVector(
   }
 
 template <xsize MaxCount>
-void readVector(
+bool readVector(
     Eks::String &scratch,
     const ObjLoader::LineCache &arr,
+    xsize lineIdx,
     xsize start,
     Vector<ObjLoader::ElementVector>* data)
   {
@@ -62,29 +64,46 @@ void readVector(
   xsize pos = start;
   xsize end = start-1;
   xsize firstSpace = 0;
-  while((end = arr.indexOf(space, pos + 1)) != std::numeric_limits<xsize>::max() && count < MaxCount)
+  while((end = arr.indexOf(space, pos + 1)) != std::numeric_limits<xsize>::max() &&
+        count < MaxCount &&
+        pos != std::numeric_limits<xsize>::max())
     {
     scratch.mid(arr, pos, end - pos);
 
-    ret(count++) = scratch.toType<Real>();
+    bool error = false;
+    ret(count++) = scratch.toType<Real>(&error);
+    if (error)
+      {
+      throw X_PARSE_ERROR(
+        Eks::String(arr.data(), arr.length()),
+        lineIdx,
+        pos,
+        Eks::StringBuilder() << "Error reading number '" << scratch << "'");
+      }
 
     pos = skipSpaces(arr, pos, firstSpace);
     }
 
   (*data) << ret;
+  return count == MaxCount;
   }
 }
 
-void readAndFlipYVector2(
+bool readAndFlipYVector2(
     Eks::String &scratch,
     const ObjLoader::LineCache &arr,
+    xsize lineIdx,
     xsize start,
     Vector<ObjLoader::ElementVector>* data)
   {
-  readVector<2>(scratch, arr, start, data);
+  if(!readVector<2>(scratch, arr, lineIdx, start, data))
+    {
+    return false;
+    }
   ObjLoader::ElementVector& toFlip = data->back();
   toFlip.y() = 1.0f + (-1.0f * toFlip.y());
 
+  return true;
   }
 
 struct ObjLoader::ObjElement
@@ -92,9 +111,10 @@ struct ObjLoader::ObjElement
   ShaderVertexLayoutDescription::Semantic semantic;
   const char* name;
   xsize components;
-  void (*read)(
+  bool (*read)(
       Eks::String &scratch,
       const ObjLoader::LineCache &line,
+      xsize lineIdx,
       xsize index,
       Vector<ElementVector>* data);
   void (*write)(
@@ -182,9 +202,8 @@ void computeNormal(
 const ObjLoader::ObjElement elementDescriptionsImpl[] =
   {
     { ShaderVertexLayoutDescription::Position, "v", 3, readVector<3>, writeVector<3>, computeNull  },
-    { ShaderVertexLayoutDescription::Normal, "n", 3, readVector<3>, writeVector<3>, computeNormal },
-    { ShaderVertexLayoutDescription::TextureCoordinate, "vt", 2, readAndFlipYVector2, writeVector<2>, computeNull },
-    { ShaderVertexLayoutDescription::BiNormal, "n", 3, readVector<3>, writeVector<3>, computeNull },
+    { ShaderVertexLayoutDescription::Normal, "vn", 3, readVector<3>, writeVector<3>, computeNormal },
+    { ShaderVertexLayoutDescription::TextureCoordinate, "vt", 2, readAndFlipYVector2, writeVector<2>, computeNull }
   };
 
 const ObjLoader::ObjElement *elementDescriptions[] =
@@ -210,7 +229,7 @@ const ObjLoader::ObjElement *ObjLoader::findObjectDescriptionForSemantic(ShaderV
   return elementDescriptions[s];
   }
 
-void ObjLoader::bake(
+bool ObjLoader::bake(
     const Vector<VectorI3D>& unbakedTriangles,
     const ElementData *elements,
     xsize elementCount,
@@ -224,13 +243,19 @@ void ObjLoader::bake(
       {
       const ElementData &element(elements[elIdx]);
       xsize index = idx(elIdx);
+      if (index >= element.data.size())
+        {
+        throw X_PARSE_ERROR(Eks::StringBuilder() << "Error baking attribute '" << element.desc->name << "' invalid index [" << index << "/" << element.data.size() << "]");
+        }
       element.desc->write(element.data[index], bakedData);
       }
     }
+  return true;
   }
 
 bool ObjLoader::readIndices(
     const LineCache &arr,
+    xsize lineIdx,
     xsize start,
     xsize *end,
     VectorI3D &indices,
@@ -279,19 +304,31 @@ bool ObjLoader::readIndices(
 
     if(index >= elementCount)
       {
+      pos = sepEnd + 1;
       continue;
       }
 
-    bool ok = true;
-    int val = _scratchString.toType<int>(&ok);
-    indices(index) = ok ? (val - 1) : 0;
+    if (_scratchString.length())
+      {
+      bool error = false;
+      int val = _scratchString.toType<int>(&error);
+      if(error)
+        {
+        throw X_PARSE_ERROR(Eks::String(arr.data(), arr.length()), lineIdx, pos, Eks::StringBuilder() << "Failed reading index '" << _scratchString << "'");
+        }
+      indices(index) = val - 1;
+      }
+    else
+      {
+      indices(index) = 0;
+      }
 
     pos = sepEnd + 1;
     }
 
   if(count == 0 && pos >= firstSpace)
     {
-    return false;
+    throw X_PARSE_ERROR(Eks::String(arr.data(), arr.length()), lineIdx, pos, "Failed reading indices");
     }
 
   *end = nextSpace;
@@ -320,7 +357,7 @@ bool ObjLoader::findElementType(
   return false;
   }
 
-void ObjLoader::load(
+bool ObjLoader::load(
     const char *data,
     xsize dataSize,
     const ShaderVertexLayoutDescription::Semantic *items,
@@ -334,6 +371,7 @@ void ObjLoader::load(
   xAssert(elementData);
 
   LineCache line(ExpectedLineLength, ' ', _allocator);
+  xsize lineIdx = 0;
 
   *vertexSize = 0;
   for(xsize i = 0; i < itemCount; ++i)
@@ -356,7 +394,7 @@ void ObjLoader::load(
     if(!el)
       {
       xAssertFail();
-      return;
+      return false;
       }
 
     *vertexSize += sizeof(float) * el->components;
@@ -368,6 +406,7 @@ void ObjLoader::load(
   while(pos < (data + dataSize))
     {
     line.clear();
+    ++lineIdx;
 
     while(*pos != '\n' && pos < (data + dataSize))
       {
@@ -392,6 +431,11 @@ void ObjLoader::load(
       nonSpace = skipSpaces(line, 1, firstSpace);
       }
 
+    if(nonSpace == std::numeric_limits<xsize>::max())
+      {
+      throw X_PARSE_ERROR(Eks::String(line.data(), line.length()), lineIdx, 0, "Failed reading line");
+      }
+
     xsize foundItem = 0;
     if(findElementType(line, items, itemCount, &foundItem))
       {
@@ -401,7 +445,10 @@ void ObjLoader::load(
       const ObjElement *element(data.desc);
       xAssert(element);
 
-      element->read(_scratchString, line, nonSpace, &(data.data));
+      if (!element->read(_scratchString, line, lineIdx, nonSpace, &(data.data)))
+        {
+        throw X_PARSE_ERROR(Eks::String(line.data(), line.length()), lineIdx, nonSpace, "Failed reading element");
+        }
       }
     else if(line.compare("f ", 2))
       {
@@ -412,7 +459,7 @@ void ObjLoader::load(
       VectorI3D indices;
       while(
           pos < line.length() &&
-          (valid = readIndices(line, pos, &pos, indices, elementData, itemCount)) == true &&
+          (valid = readIndices(line, lineIdx, pos, &pos, indices, elementData, itemCount)) == true &&
           valid)
         {
         tempPoly << indices;
@@ -424,6 +471,8 @@ void ObjLoader::load(
         }
       }
     }
+
+  return true;
   }
 
 void ObjLoader::computeUnusedElements(
