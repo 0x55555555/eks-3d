@@ -13,17 +13,17 @@ ShaderVertexLayout::~ShaderVertexLayout()
     }
   }
 
-ShaderComponent::ShaderComponent(
-    Renderer *r,
+ShaderComponent::ShaderComponent(Renderer *r,
     ShaderType t,
     const char *source,
     xsize length,
+    ParseErrorInterface *errors,
     const void *extra)
   {
   _renderer = 0;
   if(r)
     {
-    delayedCreate(*this, r, t, source, length, extra);
+    delayedCreate(*this, r, t, source, length, errors, extra);
     }
   }
 
@@ -35,43 +35,43 @@ ShaderComponent::~ShaderComponent()
     }
   }
 
-bool ShaderComponent::delayedCreate(
-    ShaderComponent &ths,
+bool ShaderComponent::delayedCreate(ShaderComponent &ths,
     Renderer *r,
     ShaderType t,
     const char *source,
     xsize length,
+    ParseErrorInterface *errors,
     const void *extraData)
   {
   xAssert(!ths.isValid());
   xAssert(r && source && length);
   ths._renderer = r;
-  return r->functions().create.shaderComponent(r, &ths, t, source, length, extraData);
+  return r->functions().create.shaderComponent(r, &ths, t, source, length, errors, extraData);
   }
 
-ShaderVertexComponent::ShaderVertexComponent(
-    Renderer *r,
+ShaderVertexComponent::ShaderVertexComponent(Renderer *r,
     const char *source,
     xsize length,
     const VertexLayout::Description *vertexDescription,
     xsize vertexItemCount,
-    VertexLayout *layout)
+    VertexLayout *layout,
+    ParseErrorInterface *ifc)
   {
   _renderer = 0;
   if(r)
     {
-    delayedCreate(*this, r, source, length, vertexDescription, vertexItemCount, layout);
+    delayedCreate(*this, r, source, length, vertexDescription, vertexItemCount, layout, ifc);
     }
   }
 
-bool ShaderVertexComponent::delayedCreate(
-    ShaderVertexComponent &ths,
+bool ShaderVertexComponent::delayedCreate(ShaderVertexComponent &ths,
     Renderer *r,
     const char *source,
     xsize length,
     const VertexLayout::Description *vertexDescription,
     xsize vertexItemCount,
-    VertexLayout *layout)
+    VertexLayout *layout,
+    ParseErrorInterface *ifc)
   {
   xAssert(!ths.isValid());
   xAssert(r && source && length);
@@ -86,6 +86,7 @@ bool ShaderVertexComponent::delayedCreate(
                   Vertex,
                   source,
                   length,
+                  ifc,
                   &data);
 
   if(result && vertexDescription && layout)

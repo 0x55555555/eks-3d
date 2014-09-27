@@ -8,6 +8,7 @@
 namespace Eks
 {
 
+class ParseErrorInterface;
 class Renderer;
 class ShaderConstantData;
 class ShaderConstantDataDescription;
@@ -96,6 +97,7 @@ struct RendererCreateFunctions
       xuint32 type,
       const char *s,
       xsize l,
+      Eks::ParseErrorInterface *ifc,
       const void *extraData);
 
   bool (*rasteriserState)(

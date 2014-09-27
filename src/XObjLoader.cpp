@@ -74,11 +74,12 @@ bool readVector(
     ret(count++) = scratch.toType<Real>(&error);
     if (error)
       {
-      throw X_PARSE_ERROR(
+      throw Eks::ParseException(X_PARSE_ERROR(
+        Eks::ParseError::LineContext,
         Eks::String(arr.data(), arr.length()),
         lineIdx,
         pos,
-        Eks::StringBuilder() << "Error reading number '" << scratch << "'");
+        Eks::StringBuilder() << "Error reading number '" << scratch << "'"));
       }
 
     pos = skipSpaces(arr, pos, firstSpace);
@@ -314,7 +315,12 @@ bool ObjLoader::readIndices(
       int val = _scratchString.toType<int>(&error);
       if(error)
         {
-        throw X_PARSE_ERROR(Eks::String(arr.data(), arr.length()), lineIdx, pos, Eks::StringBuilder() << "Failed reading index '" << _scratchString << "'");
+        throw Eks::ParseException(X_PARSE_ERROR(
+          Eks::ParseError::LineContext,
+          Eks::String(arr.data(), arr.length()),
+          lineIdx,
+          pos,
+          Eks::StringBuilder() << "Failed reading index '" << _scratchString << "'"));
         }
       indices(index) = val - 1;
       }
@@ -328,7 +334,12 @@ bool ObjLoader::readIndices(
 
   if(count == 0 && pos >= firstSpace)
     {
-    throw X_PARSE_ERROR(Eks::String(arr.data(), arr.length()), lineIdx, pos, "Failed reading indices");
+    throw Eks::ParseException(X_PARSE_ERROR(
+      Eks::ParseError::LineContext,
+      Eks::String(arr.data(), arr.length()),
+      lineIdx,
+      pos,
+      "Failed reading indices"));
     }
 
   *end = nextSpace;
@@ -433,7 +444,12 @@ bool ObjLoader::load(
 
     if(nonSpace == std::numeric_limits<xsize>::max())
       {
-      throw X_PARSE_ERROR(Eks::String(line.data(), line.length()), lineIdx, 0, "Failed reading line");
+      throw Eks::ParseException(X_PARSE_ERROR(
+        Eks::ParseError::LineContext,
+        Eks::String(line.data(), line.length()),
+        lineIdx,
+        0,
+        "Failed reading line"));
       }
 
     xsize foundItem = 0;
@@ -447,7 +463,12 @@ bool ObjLoader::load(
 
       if (!element->read(_scratchString, line, lineIdx, nonSpace, &(data.data)))
         {
-        throw X_PARSE_ERROR(Eks::String(line.data(), line.length()), lineIdx, nonSpace, "Failed reading element");
+        throw Eks::ParseException(X_PARSE_ERROR(
+          Eks::ParseError::LineContext,
+          Eks::String(line.data(), line.length()),
+          lineIdx,
+          nonSpace,
+          "Failed reading element"));
         }
       }
     else if(line.compare("f ", 2))

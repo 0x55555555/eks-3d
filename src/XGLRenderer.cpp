@@ -34,10 +34,10 @@
 #include "XBlendState.h"
 #include "XDepthStencilState.h"
 #include "Math/XColour.h"
-#include "QVarLengthArray"
-#include "QDebug"
 #include "XShader.h"
-#include "QFile"
+#include "Utilities/XParseException.h"
+#include "Memory/XTemporaryAllocator.h"
+#include "Containers/XStringBuffer.h"
 
 #define GL_REND(x) static_cast<GLRendererImpl*>(x)
 
@@ -477,7 +477,12 @@ public:
 class XGLShaderComponent
   {
 public:
-  bool init(GLRendererImpl *, xuint32 type, const char *data, xsize size);
+  bool init(
+      GLRendererImpl *,
+      xuint32 type,
+      const char *data,
+      xsize size,
+      ParseErrorInterface *ifc);
 
   static bool create(
       Renderer *r,
@@ -485,13 +490,14 @@ public:
       xuint32 type,
       const char *s,
       xsize l,
+      ParseErrorInterface *ifc,
       const void *d)
     {
     XGLShaderComponent *glS = f->create<XGLShaderComponent>();
     glS->_layout = 0;
 
 
-    bool res = glS->init(GL_REND(r), type, s, l);
+    bool res = glS->init(GL_REND(r), type, s, l, ifc);
     if (res && type == ShaderComponent::Vertex)
       {
       auto data = (const ShaderVertexComponent::ExtraCreateData *)d;
@@ -1101,13 +1107,15 @@ GLRendererImpl::GLRendererImpl(const detail::RendererFunctions &fns, int majorVe
   else if(majorVersion == 3)
     {
     _shaderHeader = "#version 330\n"
-                    "#define X_GLSL_VERSION 330\n";
+                    "#define X_GLSL_VERSION 330\n"
+                    "#line 1\n";
     setConstantBuffersInternal = XGLShader::setConstantBuffersInternal33;
     }
   else if(majorVersion == 4)
     {
     _shaderHeader = "#version 410\n"
-                    "#define X_GLSL_VERSION 410\n";
+                    "#define X_GLSL_VERSION 410\n"
+                    "#line 1\n";
     setConstantBuffersInternal = XGLShader::setConstantBuffersInternal33;
     }
   }
@@ -1730,6 +1738,67 @@ void XGL33Framebuffer::unbind(GLRendererImpl *)
   glBindFramebuffer( GL_FRAMEBUFFER, 0 ) GLE;
   }
 
+void parseAppleGlslError(
+    Eks::ParseErrorInterface *ifc,
+    Eks::AllocatorBase *alloc,
+    const char *data,
+    const Eks::String &infoLog)
+  {
+  bool error = false;
+  xsize line = 0;
+  Eks::String msg(alloc);
+    
+  bool hasMsg = false;
+    
+  auto idx1 = std::find(infoLog.begin(), infoLog.end(), ':');
+  if (idx1 != infoLog.end())
+    {
+    Eks::String tmp(alloc);
+    auto c1 = idx1 - infoLog.begin();
+    tmp.mid(infoLog, 0, c1);
+    if (tmp == "ERROR")
+      {
+      error = true;
+      }
+      
+    auto idx2 = std::find(idx1+1, infoLog.end(), ':');
+    if (idx2 != infoLog.end())
+      {
+      auto idx3 = std::find(idx2+1, infoLog.end(), ':');
+      if (idx3 != infoLog.end())
+        {
+
+        auto c2 = idx2 - infoLog.begin();
+        auto c3 = idx3 - infoLog.begin();
+        tmp.mid(infoLog, c2+1, c3 - c2 - 1);
+        line = tmp.toType<xsize>();
+
+        msg.mid(infoLog, c3+1, infoLog.length() - c3 - 2);
+        hasMsg = true;
+        }
+      }
+      
+    if (!hasMsg)
+      {
+      msg.mid(infoLog, c1+1, infoLog.length() - c1 - 2);
+      hasMsg = true;
+      }
+    }
+    
+  if (!hasMsg)
+    {
+    ifc->error(X_PARSE_ERROR(msg));
+    return;
+    }
+
+  auto fn = error ? &Eks::ParseErrorInterface::error : &Eks::ParseErrorInterface::warning;
+  (ifc->*fn)(X_PARSE_ERROR(
+    Eks::ParseError::FullContext,
+    data,
+    line,
+    msg));
+  }
+
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER COMPONENT
 //----------------------------------------------------------------------------------------------------------------------
@@ -1737,7 +1806,8 @@ bool XGLShaderComponent::init(
     GLRendererImpl *impl,
     xuint32 type,
     const char *data,
-    xsize size)
+    xsize size,
+    ParseErrorInterface *ifc)
   {
   _layout = nullptr;
 
@@ -1780,22 +1850,20 @@ bool XGLShaderComponent::init(
 
   if (infoLogLength > 0)
     {
-    Eks::String infoLog(impl->_allocator);
+    TemporaryAllocator alloc(Eks::Core::temporaryAllocator());
+    Eks::String infoLog(&alloc);
     infoLog.resize(infoLogLength, '\0');
     int charsWritten  = 0;
     glGetShaderInfoLog(_component, infoLogLength, &charsWritten, infoLog.data()) GLE;
 
-    const char *typeStr[] =
-    {
-      "GL_VERTEX_SHADER",
-      "GL_TESS_CONTROL_SHADER",
-      "GL_TESS_EVALUATION_SHADER",
-      "GL_FRAGMENT_SHADER",
-      "GL_GEOMETRY_SHADER"
-    };
-
-    std::cout << "Errors compiling shader " << typeStr[type] << ":\n";
-    std::cout << infoLog.data() << std::endl;
+    if (ifc)
+      {
+#ifdef X_OSX
+      parseAppleGlslError(ifc, &alloc, data, infoLog);
+#else
+      xAssertFail();
+#endif
+      }
     }
 
   int success = 0;

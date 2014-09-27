@@ -7,6 +7,7 @@
 namespace Eks
 {
 
+class ParseErrorInterface;
 class Shader;
 class Renderer;
 class Resource;
@@ -139,11 +140,12 @@ public:
     ShaderComponentCount
     };
 
-  ShaderComponent(Renderer *r=nullptr,
+  ShaderComponent(Renderer *r = nullptr,
                   ShaderType t = Vertex,
-                  const char *source=nullptr,
-                  xsize length=0,
-                  const void *extra=nullptr);
+                  const char *source = nullptr,
+                  xsize length = 0,
+                  ParseErrorInterface *errors = nullptr,
+                  const void *extra = nullptr);
   ~ShaderComponent();
 
   static bool delayedCreate(ShaderComponent &ths,
@@ -151,7 +153,8 @@ public:
                             ShaderType t,
                             const char *source,
                             xsize length,
-                            const void *extraData=nullptr);
+                            ParseErrorInterface *errors = nullptr,
+                            const void *extraData = nullptr);
 
 protected:
   X_DISABLE_COPY(ShaderComponent);
@@ -171,20 +174,22 @@ public:
     ShaderVertexLayout *layout;
     };
 
-  ShaderVertexComponent(Renderer *r=0,
-                         const char *source=0,
-                         xsize length=0,
-                         const VertexLayout::Description *vertexDescriptions=0,
-                         xsize vertexItemCount=0,
-                         VertexLayout *layout=0);
+  ShaderVertexComponent(Renderer *r=nullptr,
+                            const char *source=nullptr,
+                            xsize length=0,
+                            const VertexLayout::Description *vertexDescriptions=nullptr,
+                            xsize vertexItemCount=0,
+                            VertexLayout *layout=nullptr,
+                            ParseErrorInterface *ifc = nullptr);
 
   static bool delayedCreate(ShaderVertexComponent &ths,
                             Renderer *r,
                             const char *source,
                             xsize length,
-                            const VertexLayout::Description *vertexDescription=0,
-                            xsize vertexItemCount=0,
-                            VertexLayout *layout=0);
+                            const VertexLayout::Description *vertexDescription,
+                            xsize vertexItemCount,
+                            VertexLayout *layout,
+                            ParseErrorInterface *ifc = nullptr);
 
 
 private:
