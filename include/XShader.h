@@ -205,7 +205,8 @@ public:
          ShaderComponent **v=0,
          xsize componentCount=0,
          const char **outputs=0,
-         xsize outputCount=0);
+         xsize outputCount=0,
+         ParseErrorInterface *errors = nullptr);
   ~Shader();
 
   static bool delayedCreate(Shader &ths,
@@ -213,7 +214,8 @@ public:
               ShaderComponent **v,
               xsize componentCount,
               const char **outputs,
-              xsize outputCount);
+              xsize outputCount,
+              ParseErrorInterface *errors = nullptr);
 
 
   void setShaderConstantData(xsize first, const ConstantData *data);

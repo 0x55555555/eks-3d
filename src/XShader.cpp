@@ -136,12 +136,13 @@ Shader::Shader(Renderer *r,
         ShaderComponent **v,
         xsize compCount,
         const char **outputs,
-        xsize outputCount)
+        xsize outputCount,
+        ParseErrorInterface *errors)
   {
   _renderer = 0;
   if(r)
     {
-    delayedCreate(*this, r, v, compCount, outputs, outputCount);
+    delayedCreate(*this, r, v, compCount, outputs, outputCount, errors);
     }
   }
 
@@ -159,11 +160,12 @@ bool Shader::delayedCreate(
     ShaderComponent **v,
     xsize cmpCount,
     const char **outputs,
-    xsize outputCount)
+    xsize outputCount,
+    ParseErrorInterface *errors)
   {
   xAssert(!ths.isValid());
   xAssert(r);
   ths._renderer = r;
-  return r->functions().create.shader(r, &ths, v, cmpCount, outputs, outputCount);
+  return r->functions().create.shader(r, &ths, v, cmpCount, outputs, outputCount, errors);
   }
 }

@@ -89,7 +89,8 @@ struct RendererCreateFunctions
       ShaderComponent **cmp,
       xsize componentCount,
       const char **outputs,
-      xsize outputCount);
+      xsize outputCount,
+      ParseErrorInterface *errors);
 
   bool (*shaderComponent)(
       Renderer *r,

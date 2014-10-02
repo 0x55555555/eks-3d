@@ -67,13 +67,11 @@ const char *glErrorString( int err )
   }
 
 #ifdef X_DEBUG
-# define GLE ; { int _GL = glGetError(); xAssertMessage(!_GL, "GL Error", _GL, glErrorString( _GL )); }
+# define GLE ; { int error = glGetError(); xAssertMessage(error == GL_NO_ERROR, "GL Error", error, glErrorString(error)); }
 # define GLE_QUIET ; glGetError()
 #else
 # define GLE
 # define GLE_QUIET
-//# define GLE ; { int _GL = glGetError(); if( _GL ) { qCritical() << __FILE__ << __LINE__<< glErrorString( _GL ); } }
-//# define GLE_QUIET ; glGetError()
 #endif
 
 namespace Eks
@@ -527,7 +525,8 @@ public:
     ShaderComponent **v,
     xsize shaderCount,
     const char **outputs,
-    xsize outputCount);
+    xsize outputCount,
+    ParseErrorInterface *errors);
 
   ~XGLShader();
 
@@ -548,10 +547,11 @@ public:
       ShaderComponent **cmp,
       xsize shaderCount,
       const char **outputs,
-      xsize outputCount)
+      xsize outputCount,
+      ParseErrorInterface *errors)
     {
     XGLShader *glS = s->create<XGLShader>();
-    return glS->init(GL_REND(r), cmp, shaderCount, outputs, outputCount);
+    return glS->init(GL_REND(r), cmp, shaderCount, outputs, outputCount, errors);
     }
 
   static void bind(Renderer *ren, const Shader *shader, const ShaderVertexLayout *layout);
@@ -705,7 +705,7 @@ public:
 
   void bindVertexData(const XGLGeometryCache *X_USED_FOR_ASSERTS(cache)) const
     {
-    xAssert(cache->_elementSize == vertexSize);
+    xAssert(cache->_elementSize == vertexSize, cache->_elementSize, (int)vertexSize);
     for(GLuint i = 0, s = (GLuint)_attrCount; i < s; ++i)
       {
       const Attribute &attr = _attrs[i];
@@ -755,12 +755,13 @@ public:
       {
       xAssert(cache->_linkedIndices == indexedCache);
       xAssert(cache->_vao);
-      glBindVertexArray(cache->_vao);
+      glBindVertexArray(cache->_vao) GLE;
       }
     }
 
   void unbindVAO()
     {
+    glBindVertexArray(0) GLE;
     }
 #endif
   };
@@ -1738,12 +1739,18 @@ void XGL33Framebuffer::unbind(GLRendererImpl *)
   glBindFramebuffer( GL_FRAMEBUFFER, 0 ) GLE;
   }
 
-void parseAppleGlslError(
+#ifdef X_OSX
+static void parseGlslError(
     Eks::ParseErrorInterface *ifc,
     Eks::AllocatorBase *alloc,
     const char *data,
     const Eks::String &infoLog)
   {
+  if (!ifc)
+    {
+    return;
+    }
+
   bool error = false;
   xsize line = 0;
   Eks::String msg(alloc);
@@ -1794,10 +1801,11 @@ void parseAppleGlslError(
   auto fn = error ? &Eks::ParseErrorInterface::error : &Eks::ParseErrorInterface::warning;
   (ifc->*fn)(X_PARSE_ERROR(
     Eks::ParseError::FullContext,
-    data,
+    data ? data : "",
     line,
     msg));
   }
+#endif
 
 //----------------------------------------------------------------------------------------------------------------------
 // SHADER COMPONENT
@@ -1856,14 +1864,7 @@ bool XGLShaderComponent::init(
     int charsWritten  = 0;
     glGetShaderInfoLog(_component, infoLogLength, &charsWritten, infoLog.data()) GLE;
 
-    if (ifc)
-      {
-#ifdef X_OSX
-      parseAppleGlslError(ifc, &alloc, data, infoLog);
-#else
-      xAssertFail();
-#endif
-      }
+    parseGlslError(ifc, &alloc, data, infoLog);
     }
 
   int success = 0;
@@ -1905,22 +1906,22 @@ struct ShaderDataType
 
   static void bindFloat(xuint32 location, const xuint8 *data8)
     {
-    glUniform1fv(location, 1, (const float*)data8);
+    glUniform1fv(location, 1, (const float*)data8) GLE;
     }
 
   static void bindFloat3(xuint32 location, const xuint8 *data8)
     {
-    glUniform3fv(location, 1, (const float*)data8);
+    glUniform3fv(location, 1, (const float*)data8) GLE;
     }
 
   static void bindFloat4(xuint32 location, const xuint8 *data8)
     {
-    glUniform4fv(location, 1, (const float*)data8);
+    glUniform4fv(location, 1, (const float*)data8) GLE;
     }
 
   static void bindMat4x4(xuint32 location, const xuint8 *data8)
     {
-    glUniformMatrix4fv(location, 1, false, (const float*)data8);
+    glUniformMatrix4fv(location, 1, false, (const float*)data8) GLE;
     }
   };
 
@@ -1994,7 +1995,7 @@ void XGL21ShaderData::bind(xuint32 program, xuint32 index) const
     memcpy(str + pos, b.name.data(), strl);
     str[strl + pos] = '\0';
 
-    xint32 location = glGetUniformLocation(program, str);
+    xint32 location = glGetUniformLocation(program, str) GLE;
     if(location != -1)
       {
       b.bind(location, data + b.offset);
@@ -2066,7 +2067,8 @@ bool XGLShader::init(
     ShaderComponent **v,
     xsize shaderCount,
     const char **outputs,
-    xsize outputCount)
+    xsize outputCount,
+    ParseErrorInterface *ifc)
   {
   _buffers.allocator() = TypedAllocator<Buffer>(impl->_allocator);
   maxSetupResources = 0;
@@ -2110,8 +2112,9 @@ bool XGLShader::init(
     infoLog.resize(infologLength, '\0');
     int charsWritten  = 0;
     glGetProgramInfoLog(shader, infologLength, &charsWritten, infoLog.data());
-    std::cout << "Errors linking shader:\n";
-    std::cout << infoLog.data() << std::endl;
+
+    Eks::TemporaryAllocator alloc(Eks::Core::temporaryAllocator());
+    parseGlslError(ifc, &alloc, nullptr, infoLog);
     }
 
   int success = 0;
@@ -2141,6 +2144,8 @@ void XGLShader::bind(Renderer *ren, const Shader *shader, const ShaderVertexLayo
     r->_currentShader = const_cast<Shader *>(shader);
     r->_vertexLayout = const_cast<ShaderVertexLayout *>(layout);
     XGLShader* shaderInt = r->_currentShader->data<XGLShader>();
+    XGLVertexLayout* shaderVL = r->_currentShader->data<XGLVertexLayout>();
+    (void)shaderVL;
 
     glUseProgram(shaderInt->shader) GLE;
     }
