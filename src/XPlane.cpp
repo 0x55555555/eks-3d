@@ -1,5 +1,6 @@
 #include "XPlane.h"
 #include "XLine.h"
+#include "QtGlobal"
 
 namespace Eks
 {

@@ -238,7 +238,7 @@ std::ostream &operator<<(std::ostream& str, const BoundingBox& cub)
 
 std::istream &operator>>(std::istream& str, BoundingBox& cub)
   {
-  using ::operator >>;
+  using Eigen::operator >>;
 
   cub = BoundingBox();
   xuint32 valid = false;

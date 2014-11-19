@@ -1,6 +1,7 @@
-	#include "XGLRenderer.h"
+#include "XGLRenderer.h"
 #include "Utilities/XFlags.h"
 #include <iostream>
+#include "QDebug"
 #ifdef X_ENABLE_GL_RENDERER
 
 #ifndef Q_OS_OSX

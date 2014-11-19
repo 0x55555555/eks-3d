@@ -4,7 +4,7 @@
 #include "X3DGlobal.h"
 #include "Math/XMathVector.h"
 #include "Utilities/XProperty.h"
-#include "Math/XFrame.h"
+#include "XFrame.h"
 #include "XTransform.h"
 
 namespace Eks

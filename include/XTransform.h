@@ -34,6 +34,10 @@ template <typename A, int B, int C, int D> std::istream &operator>>(std::istream
   }
 }
 
+#if X_QT_INTEROP
+
+#include "QDebug"
+
 template <typename A, int B, int C, int D> QDebug operator <<(QDebug str, const Eigen::Transform <A, B, C, D> &data)
   {
   return str << data.matrix();
@@ -51,5 +55,7 @@ template <typename A, int B, int C, int D, typename E, int F, int G, int H>
   {
   return a.matrix() != b.matrix();
   }
+
+#endif
 
 #endif // XTRANSFORM_H
