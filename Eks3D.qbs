@@ -13,13 +13,15 @@ Eks.Library {
   }
 
 
-  cpp.includePaths: base.concat( [ "3rdParty" ] )
+  cpp.includePaths: base.concat( [ "3rdParty", "include/GL" ] )
+
+  files: [ ]
 
   Group {
     name: "OpenGL"
     condition: engine == "Opengl"
 
-    files: [ "include/XGL*", "src/XGL*" ]
+    files: [ "include/GL/*", "src/GL/*" ]
   }
 
   Group {
@@ -83,6 +85,6 @@ Eks.Library {
   Export {
     Depends { name: "cpp" }
     Depends { name: "EksCore" }
-    cpp.includePaths: ["include"]
+    cpp.includePaths: ["include", "include/GL", "include/D3D"]
   }
 }

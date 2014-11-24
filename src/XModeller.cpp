@@ -4,7 +4,7 @@
 #include "XBoundingBox.h"
 #include "XShader.h"
 #include "XGeometry.h"
-#include "Math/XFrame.h"
+#include "XFrame.h"
 
 namespace Eks
 {
