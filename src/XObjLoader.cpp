@@ -246,7 +246,7 @@ bool ObjLoader::bake(
       xsize index = idx(elIdx);
       if (index >= element.data.size())
         {
-        throw X_PARSE_ERROR(Eks::StringBuilder() << "Error baking attribute '" << element.desc->name << "' invalid index [" << index << "/" << element.data.size() << "]");
+        throw Eks::ParseException(X_PARSE_ERROR(Eks::StringBuilder() << "Error baking attribute '" << element.desc->name << "' invalid index [" << index << "/" << element.data.size() << "]"));
         }
       element.desc->write(element.data[index], bakedData);
       }
@@ -512,36 +512,5 @@ void ObjLoader::computeUnusedElements(
     el.desc->compute(elements, itemCount, triangles, i);
     }
   }
-
-/*
-  if(computeUnusedEntries)
-    {
-    for(xsize i = 0; i < itemCount; ++i)
-      {
-      ElementData &element = elementData[i];
-      if(element.data.size() == 0)
-        {
-        if(strcmp(element.desc->name, "n") == 0)
-          {
-          xAssertFail();
-          }
-        }
-      }
-//    nor.resize(vtx.size());
-//    for(xsize i = 0; i < ((xsize)bakedTris.size()-2); i+=3)
-//      {
-//      Eks::Vector3D pts[3];
-//      for(xsize j = 0; j < 3; ++j)
-//        {
-//        xsize idx = i + j;
-//        xsize vtxIdx = bakedTris[idx];
-//        pts[j] = vtx[vtxIdx];
-//        }
-
-//      Eks::Vector3D normal = (pts[1] - pts[0]).cross(pts[2] - pts[0]).normalized();
-
-//      nor[i] = nor[i+1] = nor[i+2] = normal;
-//      }
-    }*/
 
 }
