@@ -32,6 +32,11 @@ template <typename A, int B, int C, int D> std::istream &operator>>(std::istream
   {
   return str >> data.matrix();
   }
+
+template <typename Derived, int Dim, int Mode, int Opt> bool operator!=(const Eigen::Transform<Derived, Dim, Mode, Opt> &a, const Eigen::Transform<Derived, Dim, Mode, Opt> &b)
+  {
+  return a != b;
+  }
 }
 
 #if X_QT_INTEROP
