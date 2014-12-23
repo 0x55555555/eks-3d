@@ -1,5 +1,5 @@
 #include "XObjLoader.h"
-#include "Containers/XStringBuffer.h"
+#include "Containers/XStringBuilder.h"
 #include "Utilities/XParseException.h"
 
 namespace Eks
