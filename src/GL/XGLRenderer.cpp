@@ -1,4 +1,4 @@
-#include "XGLRenderer.h"
+#include "GL/XGLRenderer.h"
 #include "Utilities/XFlags.h"
 #include <iostream>
 #include "QDebug"
